@@ -311,7 +311,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			cls: "wewrite-render-preview",
 		})
 		// 使用常规 DOM 容器，避免 Shadow DOM 带来的额外开销
-		this.containerDiv = this.renderDiv.createDiv({ cls: "wewrite-article" });
+		this.containerDiv = this.renderDiv.createDiv({ cls: "wewrite-article wewrite" });
 		this.articleDiv = this.containerDiv.createDiv({ cls: "article-div" });
 	}
 	async checkCoverImage() {
