@@ -1637,3 +1637,14 @@ proofreed
 	line-height: 1.5 !important;
 	font-weight: normal !important;
 }
+
+/* HR Replacement Div */
+.wewrite-hr-replacement {
+	margin: 2.5em auto !important;
+	text-align: center !important;
+	font-size: 1.5em !important;
+	color: #bbb !important;
+	letter-spacing: 0.5em !important;
+	font-weight: bold !important;
+	font-family: Arial, sans-serif !important;
+}

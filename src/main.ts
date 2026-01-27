@@ -56,6 +56,8 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	linkFootnotes: true, // Link footnotes enabled by default for WeChat
 	showImageCaptions: false, // Image captions disabled by default
 	embedArticleStats: false, // Embed stats in article disabled by default
+	hrStyle: "dots",
+	customHrText: "· · ·",
 	accountDataPath: "wewrite-accounts",
 	useCenterToken: false,
 	chatAccounts: [],

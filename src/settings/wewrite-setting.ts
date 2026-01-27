@@ -62,7 +62,8 @@ export type WeWriteSetting = {
     drawAccounts: Array<AITaskAccountInfo>;
     accountDataPath: string;
     chatSetting: ChatSetting;
-
+    hrStyle?: string; // Horizontal rule style: 'dots', 'lines', 'stars', 'custom', 'none'
+    customHrText?: string; // Custom text for HR when style is 'custom'
 }
 
 export type ChatSetting = {

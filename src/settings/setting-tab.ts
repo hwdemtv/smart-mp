@@ -297,6 +297,42 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					});
 			});
 
+		// Horizontal Rule Style
+		new Setting(frame)
+			.setName("分隔线样式")
+			.setDesc("选择分隔线的显示样式")
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("dots", "点状 (· · ·)")
+					.addOption("lines", "线状 (— — —)")
+					.addOption("stars", "星号 (* * *)")
+					.addOption("custom", "自定义")
+					.addOption("none", "隐藏")
+					.setValue(this.plugin.settings.hrStyle || "dots")
+					.onChange((value) => {
+						this.plugin.settings.hrStyle = value;
+						void this.plugin.saveSettings();
+						this.display(); // Refresh to show/hide custom input
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
+
+		if (this.plugin.settings.hrStyle === 'custom') {
+			new Setting(frame)
+				.setName("自定义分隔符")
+				.setDesc("输入自定义的分隔符文本")
+				.addText((text) => {
+					text
+						.setPlaceholder("例如：✦ ✦ ✦")
+						.setValue(this.plugin.settings.customHrText || "· · ·")
+						.onChange((value) => {
+							this.plugin.settings.customHrText = value;
+							void this.plugin.saveSettings();
+							this.plugin.messageService.sendMessage("layout-changed", null);
+						});
+				});
+		}
+
 		// First-line Indent Toggle
 		new Setting(frame)
 			.setName("首行缩进")

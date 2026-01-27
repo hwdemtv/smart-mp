@@ -532,10 +532,63 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.processImageCaptions(element);
 		}
 
+
+		// HR Replacement
+		this.processHR(element);
+		/*
+		let hrContent = '"· · ·"';
+		let hrDisplay = "block";
+
+		switch (hrStyle) {
+			case "lines":
+				hrContent = '"— — —"';
+				break;
+			case "stars":
+				hrContent = '"* * *"';
+				break;
+			case "custom":
+				hrContent = `"${(this.plugin.settings.customHrText || "· · ·").replace(/"/g, '\\"')}"`;
+				break;
+			case "none":
+				hrDisplay = "none";
+				break;
+			case "dots":
+			default:
+				hrContent = '"· · ·"';
+				break;
+		}
+
+		this.containerDiv.style.setProperty("--wewrite-hr-content", hrContent);
+		this.containerDiv.style.setProperty("--wewrite-hr-display", hrDisplay); 
+		*/
+
+
 		// Link footnotes conversion (should be last as it modifies links)
 		if (this.plugin.settings.linkFootnotes) {
 			this.convertLinksToFootnotes(element);
 		}
+	}
+
+	// Process Horizontal Rules
+	processHR(element: HTMLElement) {
+		const hrStyle = this.plugin.settings.hrStyle || "dots";
+		if (hrStyle === 'none') {
+			element.querySelectorAll('hr').forEach(hr => hr.style.display = 'none');
+			return;
+		}
+
+		let content = "· · ·";
+		if (hrStyle === "lines") content = "— — —";
+		else if (hrStyle === "stars") content = "* * *";
+		else if (hrStyle === "custom") content = this.plugin.settings.customHrText || "· · ·";
+
+		const hrs = element.querySelectorAll("hr");
+		hrs.forEach((hr) => {
+			const div = document.createElement("div");
+			div.className = "wewrite-hr-replacement";
+			div.textContent = content;
+			hr.replaceWith(div);
+		});
 	}
 
 	// Wrap tables in a scrollable container
