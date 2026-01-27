@@ -48,6 +48,7 @@ export type WeWriteSetting = {
     fontSize?: string; // Article body font size (e.g. '15px')
     firstLineIndent?: boolean; // Enable first-line indent for paragraphs (2em)
     linkFootnotes?: boolean; // Convert links to footnotes for WeChat compatibility
+    showImageCaptions?: boolean; // Show image alt text as caption
     embedArticleStats?: boolean; // Embed word count and reading time in article content
     css_styles_folder: string;
     _id?: string; // = 'wewrite-setting';

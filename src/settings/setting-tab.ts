@@ -325,6 +325,20 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					});
 			});
 
+		// Image Caption Toggle
+		new Setting(frame)
+			.setName("显示图片说明")
+			.setDesc("尝试将图片的 Alt 文本显示为下方的灰色说明文字（忽略文件名和短文本）")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showImageCaptions ?? false)
+					.onChange((value) => {
+						this.plugin.settings.showImageCaptions = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
+
 		// Embed Article Stats Toggle
 		new Setting(frame)
 			.setName("嵌入字数统计")

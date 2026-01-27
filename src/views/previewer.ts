@@ -520,6 +520,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.embedArticleStatsInContent(element);
 		}
 
+		// Process Image Captions
+		if (this.plugin.settings.showImageCaptions) {
+			this.processImageCaptions(element);
+		}
+
 		// Link footnotes conversion (should be last as it modifies links)
 		if (this.plugin.settings.linkFootnotes) {
 			this.convertLinksToFootnotes(element);
@@ -537,6 +542,45 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			wrapper.className = "wewrite-table-container";
 			table.parentNode?.insertBefore(wrapper, table);
 			wrapper.appendChild(table);
+		});
+	}
+
+	// Process image captions based on Alt text
+	processImageCaptions(element: HTMLElement) {
+		const images = element.querySelectorAll("img");
+		images.forEach((img) => {
+			const altText = img.getAttribute("alt");
+			// Filter out invalid alt text:
+			// 1. Empty
+			// 2. Short (< 2 chars)
+			// 3. File extensions (likely filename)
+			// 4. Pasted image (Obsidian default)
+			if (
+				!altText ||
+				altText.length < 2 ||
+				/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(altText) ||
+				altText.startsWith("Pasted image")
+			) {
+				return;
+			}
+
+			// Check if caption already exists to avoid duplication
+			if (
+				img.nextElementSibling &&
+				img.nextElementSibling.classList.contains("wewrite-caption")
+			) {
+				return;
+			}
+
+			// Create caption element
+			const caption = document.createElement("figcaption");
+			caption.className = "wewrite-caption";
+			caption.textContent = altText;
+
+			// Insert after image
+			// If image has a parent which is just the image (like p tag), maybe insert after parent?
+			// But for now, insert directly after img.
+			img.parentNode?.insertBefore(caption, img.nextSibling);
 		});
 	}
 

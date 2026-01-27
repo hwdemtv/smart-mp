@@ -54,6 +54,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	fontSize: "15px", // Default font size
 	firstLineIndent: false, // First-line indent disabled by default
 	linkFootnotes: true, // Link footnotes enabled by default for WeChat
+	showImageCaptions: false, // Image captions disabled by default
 	embedArticleStats: false, // Embed stats in article disabled by default
 	accountDataPath: "wewrite-accounts",
 	useCenterToken: false,
