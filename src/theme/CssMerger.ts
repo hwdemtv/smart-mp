@@ -17,7 +17,7 @@ import $07 from '../assets/default-styles/07_u.css';
 import $08 from '../assets/default-styles/08_del.css';
 import $09 from '../assets/default-styles/09_codespan.css';
 import $10 from '../assets/default-styles/10_heading.css';
-import $11  from '../assets/default-styles/11_h1.css';
+import $11 from '../assets/default-styles/11_h1.css';
 import $12 from '../assets/default-styles/12_h2.css';
 import $13 from '../assets/default-styles/13_h3.css';
 import $14 from '../assets/default-styles/14_h4.css';
@@ -38,6 +38,7 @@ import $34 from '../assets/default-styles/34_chart.css';
 import $35 from '../assets/default-styles/35_icon.css';
 import $40 from '../assets/default-styles/40_summary.css';
 import $50 from '../assets/default-styles/50_profile.css';
+import $99 from '../assets/default-styles/99_enhancements.css';
 import { Notice } from 'obsidian';
 import { $t } from 'src/lang/i18n';
 
@@ -74,7 +75,8 @@ const baseCSS = [
 	$35,
 	$09,
 	$40,
-	$50
+	$50,
+	$99
 ]
 
 const RESERVED_CLASS_PREFIX = [
@@ -87,7 +89,7 @@ const RESERVED_CLASS_PREFIX = [
 
 const isClassReserved = (className: string) => {
 	return RESERVED_CLASS_PREFIX.some(prefix => className.startsWith(prefix));
-}	
+}
 
 type Rule = Map<string, postcss.Declaration>;
 type Rules = Map<string, Rule>;
@@ -105,7 +107,7 @@ export class CSSMerger {
 			const ast = (await postcss().process(customCSS, { from: undefined })).root;
 			this.pickVariables(ast, this.vars);
 			this.pickRules(ast, this.rules);
-		}catch(e) {
+		} catch (e) {
 			new Notice($t('render.failed-to-parse-custom-css', [e]));
 			console.error(e);
 		}
