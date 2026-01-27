@@ -37,6 +37,9 @@ export async function fetchImageBlob(url: string): Promise<Blob> {
         // Standard fetch works fine for these in the renderer process
         if (url.startsWith('app://') || url.startsWith('blob:app://')) {
             const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
             return await res.blob();
         }
 
@@ -112,7 +115,12 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
     replaceDivs(root);
 
     // 2. Remove restricted tags
-    const restrictedTags = ['script', 'style', 'noscript', 'iframe:not(.video_iframe)', 'object', 'embed'];
+    const restrictedTags = [
+        'script', 'style', 'noscript', 'object', 'embed',
+        'button', 'input', 'textarea', 'select', 'forms',
+        'canvas', 'svg', 'audio', 'video:not(.video_iframe)',
+        'header', 'footer', 'nav', 'aside'
+    ];
     restrictedTags.forEach(tag => {
         root.querySelectorAll(tag).forEach(el => el.remove());
     });
@@ -141,8 +149,14 @@ function cleanAttributes(el: HTMLElement): void {
 
     attrs.forEach(attr => {
         const attrName = attr.name.toLowerCase();
-        // Remove data-*, class, id, and anything not in whitelist
-        if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || !whitelist.includes(attrName)) {
+        // Remove data-*, class, id
+        if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || attrName.startsWith('on')) {
+            el.removeAttribute(attr.name);
+            return;
+        }
+
+        // Only keep whitelisted attributes
+        if (!whitelist.includes(attrName)) {
             el.removeAttribute(attr.name);
         }
     });

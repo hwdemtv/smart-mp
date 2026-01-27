@@ -55,6 +55,20 @@ export class WeWritePostProcessor {
 
         for (const node of Array.from(chartNodes)) {
             try {
+                if (node.tagName === 'IMG' && node.getAttribute('src')?.startsWith('blob:')) {
+                    const src = node.getAttribute('src')!;
+                    try {
+                        const res = await fetch(src, { method: 'HEAD' });
+                        if (!res.ok) {
+                            node.remove();
+                            continue;
+                        }
+                    } catch (e) {
+                        node.remove();
+                        continue;
+                    }
+                }
+
                 let captureEl: HTMLElement | null = null;
 
                 if (node.classList.contains('excalidraw-svg') || (node.tagName === 'IMG' && node.getAttribute('src')?.startsWith('blob:'))) {
@@ -64,7 +78,7 @@ export class WeWritePostProcessor {
                     captureEl = (node.closest('.mermaid') || node.closest('[class*="mermaid"]') || node.parentElement) as HTMLElement;
                 }
 
-                if (!captureEl) continue;
+                if (!captureEl || !captureEl.isConnected) continue;
 
                 // Capture the element as a data URL
                 const dataUrl = await domtoimage.toPng(captureEl, {

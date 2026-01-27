@@ -113,7 +113,9 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
         } catch (error) {
             console.error('Failed to process SVG', error);
             // Remove failing SVGs as they cause "invalid content" errors on WeChat
-            svg.remove();
+            if (svg && svg.parentNode) {
+                svg.remove();
+            }
         }
     })
 
@@ -153,7 +155,9 @@ export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient
         } catch (error) {
             console.error('Failed to process Canvas', error);
             // Remove failing canvas as it would be serialized to nothing or problematic HTML
-            canvas.remove();
+            if (canvas && canvas.parentNode) {
+                canvas.remove();
+            }
         }
     })
     await Promise.all(uploadPromises)
@@ -202,18 +206,19 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
                 // }
             }
 
-            if (blob === undefined) {
-                throw new Error("Blob is undefined");
+            if (blob === undefined || blob.size === 0) {
+                console.error(`Blob is invalid or empty for ${img.src}`);
+                img.remove();
+                return;
             } else {
-                await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                    if (res) {
-                        img.src = res.url
-                        imageCache.set(key, res.url);
-                    } else {
-                        console.error(`upload image failed.`);
-                        throw new Error("Upload failed");
-                    }
-                })
+                const res = await wechatClient.uploadMaterial(blob, imageFileName(blob.type));
+                if (res) {
+                    img.src = res.url
+                    imageCache.set(key, res.url);
+                } else {
+                    console.error(`upload image failed for ${img.src}`);
+                    img.remove();
+                }
             }
         } catch (error) {
             console.error('Failed to process Image', img.src, error);
