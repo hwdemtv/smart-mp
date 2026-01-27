@@ -69,7 +69,7 @@ export class Image extends WeWriteMarkedExtension {
 						}
 					}
 				} catch (error) {
-					console.error(`[WeWrite Image] Failed to process file:// image:`, error);
+					console.error(`[WeWrite] Failed to process file:// image:`, error);
 				}
 			}
 
