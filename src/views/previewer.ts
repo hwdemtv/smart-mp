@@ -325,8 +325,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			await ThemeManager.getInstance(this.plugin).applyTheme(root);
 		}
 
-		// Convert charts to images before uploading
-		await this.convertChartsToImages(this.articleDiv);
+
+		// Charts are now converted to images by WeWritePostProcessor during render
+		// so we skip the redundant (and error-prone) convertChartsToImages call here.
 
 		await uploadSVGs(this.articleDiv, this.plugin.wechatClient);
 		await uploadCanvas(this.articleDiv, this.plugin.wechatClient);
@@ -977,8 +978,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
-		// Convert charts to images
-		await this.convertChartsToImages(this.articleDiv);
+		// Charts are already converted during render by the post-processor
+		// skip conversion here to avoid errors with blob URLs
 
 		const data = this.getArticleContent();
 		await navigator.clipboard.write([
@@ -1020,47 +1021,5 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTimeMinutes} 分钟`);
 	}
 
-	async convertChartsToImages(root: HTMLElement) {
-		const selector = ".mermaid, .excalidraw-plugin-view, .excalidraw-svg";
-		const nodes = Array.from(root.querySelectorAll(selector)) as HTMLElement[];
 
-		if (nodes.length === 0) return;
-
-		new Notice(`正在转换 ${nodes.length} 个图表为图片...`);
-
-		const promises = nodes.map(async (node) => {
-			try {
-				// Style adjustments for better capture
-				const originalBg = node.style.backgroundColor;
-				if (!originalBg || originalBg === 'transparent' || originalBg === 'rgba(0, 0, 0, 0)') {
-					node.style.backgroundColor = '#ffffff';
-				}
-
-				const dataUrl = await domtoimage.toPng(node, {
-					bgcolor: '#ffffff',
-					quality: 1,
-					filter: (n: any) => {
-						// Filter out Excalidraw UI controls if present
-						// Also filter out the "Copy" button in code blocks if we were converting those
-						return true;
-					}
-				});
-
-				const img = document.createElement("img");
-				img.src = dataUrl;
-				img.className = node.className;
-				img.style.maxWidth = "100%";
-				img.style.display = "block";
-				img.style.margin = "1em auto";
-				img.style.boxShadow = "none"; // Reset potential shadows that look weird on images
-
-				node.replaceWith(img);
-			} catch (err) {
-				console.error("Failed to convert chart to image:", err);
-				new Notice("图表转图片失败: " + err);
-			}
-		});
-
-		await Promise.all(promises);
-	}
 }
