@@ -220,8 +220,11 @@ export class WechatRender {
 		const renderedElement = renderer.markdownBody;
 
 		if (renderedElement) {
-			// Apply post-processing (file:// conversion, wikilinks, code blocks, etc.)
+			// Apply post-processing (Mermaid to image, file:// conversion, etc.)
 			await WeWritePostProcessor.formatContent(renderedElement, path);
+
+			// Give a small delay for everything to settle
+			await new Promise(resolve => setTimeout(resolve, 300));
 
 			// Get the HTML string
 			const serializer = new XMLSerializer();

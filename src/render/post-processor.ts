@@ -5,6 +5,7 @@
  */
 
 import { App, TFile } from 'obsidian';
+import domtoimage from './dom-to-image-more';
 
 export class WeWritePostProcessor {
     private static app: App;
@@ -17,6 +18,9 @@ export class WeWritePostProcessor {
      * Main entry point - formats rendered HTML for WeChat MP
      */
     static async formatContent(element: HTMLElement, sourcePath: string): Promise<void> {
+        // Wait a bit for Mermaid/other plugins to finish rendering in the DOM
+        // (Though we already wait in markdown-render.ts, this is extra safety)
+
         // Wrap content in section for WeChat compatibility
         const section = document.createElement('section');
         section.className = 'wewrite-article';
@@ -28,12 +32,45 @@ export class WeWritePostProcessor {
         element.appendChild(section);
 
         // Process elements
+        await this.processMermaidCharts(section);
         await this.processFileProtocolImages(section, sourcePath);
         this.processWikilinks(section);
         this.processCodeBlocks(section);
         this.processFrontmatter(section);
         this.processListItems(section);
         this.processTables(section);
+    }
+
+    /**
+     * Convert Mermaid SVGs to PNG images
+     */
+    private static async processMermaidCharts(container: HTMLElement): Promise<void> {
+        const mermaidNodes = container.querySelectorAll('.mermaid svg');
+
+        for (const svg of Array.from(mermaidNodes)) {
+            try {
+                const parent = svg.parentElement;
+                if (!parent) continue;
+
+                // Capture the SVG as a data URL
+                const dataUrl = await domtoimage.toPng(parent, {
+                    bgcolor: '#ffffff',
+                    quality: 1
+                });
+
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.className = 'wewrite-mermaid-image';
+                img.style.maxWidth = '100%';
+                img.style.display = 'block';
+                img.style.margin = '1em auto';
+
+                // Replace the mermaid container (usually a div/span) with the image
+                parent.replaceWith(img);
+            } catch (error) {
+                console.error('[WeWrite] Failed to convert Mermaid to image:', error);
+            }
+        }
     }
 
     /**

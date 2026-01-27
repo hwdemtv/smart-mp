@@ -394,11 +394,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.articleDiv.empty();
 		this.elementMap = new Map<string, HTMLElement | string>();
 
-		await ObsidianMarkdownRenderer.getInstance(this.plugin.app).render(
-			activeFile.path,
-			this.renderPreviewer,
-			this
-		);
 
 		// 3. Task ID Validation: Check if this task is still the most recent one
 		if (taskId !== this.lastRenderTaskId) {
@@ -416,7 +411,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const articleSection = createEl("section", {
 			cls: "wewrite-article-content wewrite",
 		});
-		const dom = sanitizeHTMLToDom(html);
+		const dom = document.createElement('div');
+		dom.innerHTML = html;
 		articleSection.appendChild(dom);
 
 		this.articleDiv.empty();
