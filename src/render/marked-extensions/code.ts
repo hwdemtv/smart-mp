@@ -80,7 +80,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			let text = lines[i];
 			if (text.length === 0) text = '&nbsp;';
 			// Use a section with fixed height to force absolute compactness
-			body += `<section style="display: block !important; height: 22px !important; line-height: 22px !important; margin: 0 !important; padding: 0 !important; border: none !important; font-size: 13.5px !important; white-space: pre !important; overflow: visible !important; background: transparent !important;">${text}</section>`;
+			body += `<section style="display: block !important; height: 22px !important; line-height: 22px !important; margin: 0 !important; padding: 0 !important; border: none !important; font-size: 14.5px !important; white-space: pre !important; overflow: visible !important; background: transparent !important;">${text}</section>`;
 		}
 
 		let codeSection = '';
@@ -98,9 +98,9 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 				</section>
 			`.replace(/\n/g, '').replace(/\s{2,}/g, ' ');
 
-			codeSection = '<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);">' + macHeader + `<section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 13.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
+			codeSection = '<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);">' + macHeader + `<section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 14.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
 		} else {
-			codeSection = `<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);"><section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 13.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
+			codeSection = `<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);"><section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 14.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
 		}
 
 		return codeSection;
