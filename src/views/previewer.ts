@@ -274,28 +274,28 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				const isSync = this.plugin.settings.scrollSync ?? true;
 				button
 					.setIcon(isSync ? "arrow-up-down" : "lock")
-					.setTooltip(isSync ? "Scroll Sync: ON" : "Scroll Sync: OFF")
+					.setTooltip(isSync ? "滚动同步: 开启" : "滚动同步: 关闭")
 					.onClick(() => {
 						this.plugin.settings.scrollSync = !this.plugin.settings.scrollSync;
 						this.refreshScrollSyncButton();
-						new Notice(this.plugin.settings.scrollSync ? "Scroll Sync Enabled" : "Scroll Sync Disabled");
+						new Notice(this.plugin.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
 						this.plugin.saveSettings();
 					});
 			})
 			.addExtraButton((button) => {
 				button
 					.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone")
-					.setTooltip(this.isMobileView ? "Desktop View" : "Mobile View")
+					.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图")
 					.onClick(() => {
 						this.isMobileView = !this.isMobileView;
 						button.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone");
-						button.setTooltip(this.isMobileView ? "Desktop View" : "Mobile View");
+						button.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图");
 						if (this.isMobileView) {
 							this.renderDiv.addClass("is-mobile-view");
 						} else {
 							this.renderDiv.removeClass("is-mobile-view");
 						}
-						new Notice(this.isMobileView ? "Mobile Preview Mode" : "Desktop View Mode");
+						new Notice(this.isMobileView ? "手机预览模式" : "桌面视图模式");
 					});
 			});
 
@@ -859,7 +859,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (this.scrollSyncButton) {
 			const isSync = this.plugin.settings.scrollSync ?? true;
 			this.scrollSyncButton.setIcon(isSync ? "arrow-up-down" : "lock");
-			this.scrollSyncButton.setTooltip(isSync ? "Scroll Sync: ON" : "Scroll Sync: OFF");
+			this.scrollSyncButton.setTooltip(isSync ? "滚动同步: 开启" : "滚动同步: 关闭");
 		}
 	}
 
@@ -872,7 +872,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		} else {
 			this.renderDiv.removeClass("is-mobile-view");
 		}
-		new Notice(this.isMobileView ? "Mobile Preview Mode" : "Desktop View Mode");
+		new Notice(this.isMobileView ? "手机预览模式" : "桌面视图模式");
 	}
 
 	async copyToClipboard() {
