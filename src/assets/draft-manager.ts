@@ -33,14 +33,15 @@ export type LocalDraftItem = {
     only_fans_can_comment?: number;
     pic_crop_235_1?: string; //X1_Y1_X2_Y2, 用分隔符_拼接为X1_Y1_X2_Y2  
     pic_crop_1_1?: string; //X1_Y1_X2_Y2, 用分隔符_拼接为X1_Y1_X2_Y2
+    article_type?: 'news' | 'newspic';
     last_draft_url?: string; //	草稿的临时链接
     last_draft_id?: string; //
 
 }
 
 export const initDraftDB = () => {
-	const db = new PouchDB('wewrite-local-drafts');
-	return  db;
+    const db = new PouchDB('wewrite-local-drafts');
+    return db;
 }
 export class LocalDraftManager {
     private plugin: WeWritePlugin;
@@ -62,10 +63,10 @@ export class LocalDraftManager {
         const accountName = this.plugin.settings.selectedMPAccount;
         if (accountName !== undefined && accountName) {
             const f = this.plugin.app.workspace.getActiveFile()
-			
+
             if (f) {
                 draft = await this.getDraft(accountName, f.path)
-				
+
                 if (draft === undefined) {
                     draft = {
                         accountName: accountName,
@@ -76,10 +77,10 @@ export class LocalDraftManager {
                     await this.setDraft(draft)
 
                 }
-				if (draft.title.trim() === ''){
-					draft.title = f.basename
-					await this.setDraft(draft)
-				}
+                if (draft.title.trim() === '') {
+                    draft.title = f.basename
+                    await this.setDraft(draft)
+                }
             }
         }
         return draft
@@ -140,23 +141,23 @@ export class LocalDraftManager {
                     if (error.status === 404) {
                         // New document
                         return this.db.put(doc)
-							.then(() => resolve(true))
-							.catch(err => {
-								console.error('Error creating new draft:', err);
-								const reason =
-									err instanceof Error
-										? err
-										: new Error(String(err));
-								reject(reason);
-							});
-					}
-					console.error('Error checking existing draft:', error);
-					const reason =
-						error instanceof Error
-							? error
-							: new Error(String(error));
-					reject(reason);
-				});
+                            .then(() => resolve(true))
+                            .catch(err => {
+                                console.error('Error creating new draft:', err);
+                                const reason =
+                                    err instanceof Error
+                                        ? err
+                                        : new Error(String(err));
+                                reject(reason);
+                            });
+                    }
+                    console.error('Error checking existing draft:', error);
+                    const reason =
+                        error instanceof Error
+                            ? error
+                            : new Error(String(error));
+                    reject(reason);
+                });
         });
     }
 }

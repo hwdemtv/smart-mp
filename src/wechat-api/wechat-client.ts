@@ -191,6 +191,15 @@ export class WechatClient {
 					content: data,
 					digest: localDraft.digest,
 					thumb_media_id: localDraft.thumb_media_id,
+					...(localDraft.article_type && {
+						article_type: localDraft.article_type,
+					}),
+					...(localDraft.pic_crop_235_1 && {
+						pic_crop_235_1: localDraft.pic_crop_235_1.replace(/\s+/g, "_"),
+					}),
+					...(localDraft.pic_crop_1_1 && {
+						pic_crop_1_1: localDraft.pic_crop_1_1.replace(/\s+/g, "_"),
+					}),
 					...(localDraft.content_source_url && {
 						content_source_url: localDraft.content_source_url,
 					}),
