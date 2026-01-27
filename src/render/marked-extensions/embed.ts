@@ -45,7 +45,7 @@ function getEmbedType(link: string) {
 		return "pdf-crop";
 	}
 	// https://mmbiz.qpic.cn
-	if (link.startsWith("https://mmbiz.qpic.cn/")|| link.startsWith("http://mmbiz.qpic.cn/")) {
+	if (link.startsWith("https://mmbiz.qpic.cn/") || link.startsWith("http://mmbiz.qpic.cn/")) {
 		return "image";
 	}
 	switch (ext.toLocaleLowerCase()) {
@@ -414,7 +414,7 @@ export class Embed extends WeWriteMarkedExtension {
 					level: "inline",
 					start: (src: string) => {
 						let index = src.indexOf("![[");
-						
+
 						// if (index === -1) {
 						// 	const match = regexImage.exec(src);
 						// 	if (match) {
@@ -435,7 +435,7 @@ export class Embed extends WeWriteMarkedExtension {
 							// const match = regexImage.exec(src);
 							// if (match) {
 							// 	console.log("tokenizer: match image", match);
-								
+
 							// 	return {
 							// 		type: "Embed",
 							// 		raw: match[0],
@@ -525,9 +525,9 @@ export class Embed extends WeWriteMarkedExtension {
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		const root = renderer.queryElement(index, "div.excalidraw-svg");
+		const root = renderer.queryElement(index, ".excalidraw-svg, .excalidraw-plugin-view");
 		if (!root) {
-			console.error(`renderExcalidrawAsync error:`, "root is null");
+			console.error(`renderExcalidrawAsync error:`, "root is null for index " + index);
 			return;
 		}
 		root.removeAttribute("style");

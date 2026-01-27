@@ -69,6 +69,9 @@ export class ObsidianMarkdownRenderer {
             if (/```\s*mermaid/i.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 3000)); // Adjusted timeout
             }
+            if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
+                waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw-plugin-view", 5000));
+            }
             if (waiters.length) {
                 await Promise.all(waiters);
             }
