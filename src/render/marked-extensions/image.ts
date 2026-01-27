@@ -7,7 +7,7 @@
  */
 
 import { MarkedExtension } from "marked";
-import { arrayBufferToBase64, sanitizeHTMLToDom } from "obsidian";
+import { sanitizeHTMLToDom } from "obsidian";
 import { WeWriteMarkedExtension } from "./extension";
 
 
@@ -26,7 +26,7 @@ export class Image extends WeWriteMarkedExtension {
 				continue
 			}
 
-			// Handle file:// protocol images
+			// Handle file:// protocol images - convert src to proper resource path
 			const src = currentImg.getAttribute('src');
 			if (src && src.startsWith('file://')) {
 				console.log(`[WeWrite Image] Processing file:// src: ${src}`);
@@ -42,24 +42,25 @@ export class Image extends WeWriteMarkedExtension {
 				console.log(`[WeWrite Image] Decoded file path: ${filePath}`);
 
 				try {
-					// Try to read the file as binary and convert to data URL
-					const fileData = await this.plugin.app.vault.adapter.readBinary(filePath);
-					const base64 = arrayBufferToBase64(fileData);
-
-					// Determine MIME type from file extension
-					const ext = filePath.split('.').pop()?.toLowerCase();
-					let mimeType = 'image/png'; // default
-					if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
-					else if (ext === 'gif') mimeType = 'image/gif';
-					else if (ext === 'webp') mimeType = 'image/webp';
-					else if (ext === 'svg') mimeType = 'image/svg+xml';
-
-					const dataUrl = `data:${mimeType};base64,${base64}`;
-					currentImg.setAttribute('src', dataUrl);
-					console.log(`[WeWrite Image] Converted to data URL, length: ${dataUrl.length}`);
+					// Try to find the file in the vault
+					const file = (this.plugin.app.vault as any).getAbstractFileByPath(filePath);
+					if (file) {
+						// Use adapter.getResourcePath like mp-preview does
+						const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(file.path);
+						currentImg.setAttribute('src', resPath);
+						console.log(`[WeWrite Image] Converted to resource path: ${resPath}`);
+					} else {
+						// Try using metadataCache
+						const linktext = filePath.split('|')[0];
+						const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linktext, '');
+						if (metaFile) {
+							const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(metaFile.path);
+							currentImg.setAttribute('src', resPath);
+							console.log(`[WeWrite Image] Converted via metadata cache to: ${resPath}`);
+						}
+					}
 				} catch (error) {
-					console.error(`[WeWrite Image] Failed to load file:// image:`, error);
-					// Keep original src, which won't work but shows the intent
+					console.error(`[WeWrite Image] Failed to process file:// image:`, error);
 				}
 			}
 

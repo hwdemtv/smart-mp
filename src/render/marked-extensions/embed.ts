@@ -192,11 +192,21 @@ export class Embed extends WeWriteMarkedExtension {
 
 			console.log(`[WeWrite] Processing file:// URL: ${path} -> ${filePath}`);
 
-			// Try to find the file in the vault
+			// Try to find the file in the vault using getAbstractFileByPath
 			const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
 			if (file instanceof TFile) {
-				const resPath = this.plugin.app.vault.getResourcePath(file);
+				// Use adapter.getResourcePath like mp-preview does
+				const resPath = this.plugin.app.vault.adapter.getResourcePath(file.path);
 				console.log(`[WeWrite] File found in vault, resource path: ${resPath}`);
+				return resPath;
+			}
+
+			// If not found by absolute path, try using metadataCache like mp-preview
+			const linktext = filePath.split('|')[0];
+			const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linktext, '');
+			if (metaFile && metaFile instanceof TFile) {
+				const resPath = this.plugin.app.vault.adapter.getResourcePath(metaFile.path);
+				console.log(`[WeWrite] File found via metadata cache, resource path: ${resPath}`);
 				return resPath;
 			}
 
@@ -213,7 +223,7 @@ export class Embed extends WeWriteMarkedExtension {
 			return "";
 		}
 		if (file instanceof TFile) {
-			const resPath = this.plugin.app.vault.getResourcePath(file);
+			const resPath = this.plugin.app.vault.adapter.getResourcePath(file.path);
 			const info = {
 				resUrl: resPath,
 				filePath: file.path,
