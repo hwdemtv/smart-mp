@@ -35,25 +35,19 @@ export class ObsidianMarkdownRenderer {
         this.view = view
         this.path = path
 
-        // if (this.previewEl !== undefined && this.previewEl) {
-        //     this.previewEl.parentNode?.removeChild(this.previewEl)
-        // }
         this.container.empty();
         this.container.show();
-        // Force off-screen visible rendering to allow Canvas/Excalidraw dimension calculations
+
+        // Use visible container for proper Excalidraw/Canvas rendering
+        // No need for off-screen positioning
         this.container.style.display = "block";
-        this.container.style.position = "absolute";
-        this.container.style.left = "-9999px";
-        this.container.style.top = "0";
-        this.container.style.width = "800px";
-        this.container.style.visibility = "visible";
-        this.container.style.zIndex = "-1";
+        this.container.style.width = "100%"; // Let container use full width
 
         this.rendering = true
         if (this.mdv) {
             this.mdv.unload();
         }
-        // await this.loadComponents(view)
+
         this.previewEl = createDiv()
         this.markdownBody = this.previewEl.createDiv()
         this.mdv = new MarkdownRenderChild(this.markdownBody)
@@ -62,6 +56,7 @@ export class ObsidianMarkdownRenderer {
         this.path = path
         const markdown = await this.app.vault.adapter.read(path)
         await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.view)
+
         try {
             const waiters: Promise<void>[] = [];
 
@@ -72,7 +67,7 @@ export class ObsidianMarkdownRenderer {
                 waiters.push(this.waitForSelector(this.previewEl, ".callout", 1500));
             }
             if (/```\s*mermaid/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 3000)); // Adjusted timeout
+                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 3000));
             }
             if (/!\[\[/.test(markdown) || /!\[.*?\]\(/.test(markdown)) {
                 // Wait for any obsidian embed to finish loading
@@ -84,12 +79,8 @@ export class ObsidianMarkdownRenderer {
         } catch (err) {
             console.warn("[WeWrite] Optional plugin rendering wait timed out or failed:", err);
         }
+
         this.rendering = false
-        // Restore container if needed or keep off-screen for next render
-        this.container.hide();
-        this.container.style.position = "";
-        this.container.style.left = "";
-        this.container.style.visibility = "";
     }
     public queryElement(index: number, query: string) {
         if (this.previewEl === undefined || !this.previewEl) {

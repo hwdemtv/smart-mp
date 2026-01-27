@@ -406,7 +406,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
-		let html = await WechatRender.getInstance(this.plugin, this).parseNote(
+		let html = await WechatRender.getInstance(this.plugin, this).parseNoteNative(
 			activeFile.path,
 			this.renderPreviewer,
 			this
@@ -442,7 +442,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						const body = await WechatRender.getInstance(
 							this.plugin,
 							this
-						).parseNote(file.path, this.articleDiv, this);
+						).parseNoteNative(file.path, this.articleDiv, this);
 						item.empty();
 						item.appendChild(sanitizeHTMLToDom(body));
 					}
