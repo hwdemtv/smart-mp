@@ -503,6 +503,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.containerDiv.removeClass("wewrite-indent-enabled");
 		}
 
+		// Font Size
+		const fontSize = this.plugin.settings.fontSize || "15px";
+		this.containerDiv.style.setProperty("--wewrite-font-size", fontSize);
+		// Force redraw for !important override in CSS if needed, though we set it on container
+		// Actually, we need to set it on the element itself or via a class that injects the variable
+		// Let's set it directly on the container as an inline style which inherits
+		element.style.fontSize = fontSize;
+
+
 		// Embed article stats at the beginning
 		if (this.plugin.settings.embedArticleStats) {
 			this.embedArticleStatsInContent(element);

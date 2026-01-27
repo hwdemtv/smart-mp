@@ -44,6 +44,8 @@ export type WeWriteSetting = {
     custom_theme?: string;
     codeTheme?: string; // Code syntax highlighting theme (e.g., 'github', 'monokai', 'atom-one-dark')
     codeLineNumber: boolean;
+    codeBlockHeader?: boolean; // Show macOS-style header for code blocks
+    fontSize?: string; // Article body font size (e.g. '15px')
     firstLineIndent?: boolean; // Enable first-line indent for paragraphs (2em)
     linkFootnotes?: boolean; // Convert links to footnotes for WeChat compatibility
     embedArticleStats?: boolean; // Embed word count and reading time in article content

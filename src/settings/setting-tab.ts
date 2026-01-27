@@ -262,8 +262,40 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					});
 			});
 
+		// Code Block Header Toggle
+		new Setting(frame)
+			.setName("代码块可显示语言")
+			.setDesc("开启后，每个代码块顶部将显示编程语言名称（类似 IDE 效果）")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.codeBlockHeader ?? true)
+					.onChange((value) => {
+						this.plugin.settings.codeBlockHeader = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("code-theme-changed", null); // Re-render code
+					});
+			});
+
 		// Layout Enhancement Settings
 		new Setting(frame).setName("排版增强").setHeading();
+
+		// Font Size Setting
+		new Setting(frame)
+			.setName("正文字号")
+			.setDesc("调整文章正文及列表的字体大小")
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("14px", "14px (小)")
+					.addOption("15px", "15px (标准)")
+					.addOption("16px", "16px (大)")
+					.addOption("17px", "17px (超大)")
+					.setValue(this.plugin.settings.fontSize || "15px")
+					.onChange((value) => {
+						this.plugin.settings.fontSize = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
 
 		// First-line Indent Toggle
 		new Setting(frame)

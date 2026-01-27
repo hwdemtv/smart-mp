@@ -1472,3 +1472,53 @@ proofreed
 	color: #1e88e5 !important;
 	text-decoration: underline !important;
 }
+
+/* Code Block Header (Mac Style) */
+.code-header {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 8px 12px !important;
+	background-color: rgba(0, 0, 0, 0.05) !important;
+	border-radius: 6px 6px 0 0 !important;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.code-header-buttons {
+	display: flex !important;
+	gap: 6px !important;
+}
+
+.code-header-btn {
+	width: 10px !important;
+	height: 10px !important;
+	border-radius: 50% !important;
+	display: inline-block !important;
+}
+
+.btn-red {
+	background-color: #ff5f56 !important;
+}
+
+.btn-yellow {
+	background-color: #ffbd2e !important;
+}
+
+.btn-green {
+	background-color: #27c93f !important;
+}
+
+.code-header-title {
+	font-family: inherit !important;
+	font-size: 12px !important;
+	color: #888 !important;
+	font-weight: bold !important;
+	text-transform: uppercase !important;
+}
+
+/* Adjust code block border radius when header is present */
+.wewrite-article .code-snippet__fix pre {
+	border-top-left-radius: 0 !important;
+	border-top-right-radius: 0 !important;
+	margin-top: 0 !important;
+}

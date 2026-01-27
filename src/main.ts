@@ -50,6 +50,8 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	css_styles_folder: "wewrite-css-styles",
 	codeLineNumber: true,
 	codeTheme: "github", // Default code highlighting theme
+	codeBlockHeader: true, // Show code block header enabled by default
+	fontSize: "15px", // Default font size
 	firstLineIndent: false, // First-line indent disabled by default
 	linkFootnotes: true, // Link footnotes enabled by default for WeChat
 	embedArticleStats: false, // Embed stats in article disabled by default

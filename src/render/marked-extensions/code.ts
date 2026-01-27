@@ -85,6 +85,21 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		// Get code theme from plugin settings
 		const codeTheme = this.plugin.settings.codeTheme || 'github';
 		let codeSection = `<section class="code-section code-snippet__fix hljs hljs-theme-${codeTheme}">`;
+
+		// Add Code Block Header (Mac Style)
+		if (this.plugin.settings.codeBlockHeader && lang) {
+			const headerHtml = `
+			<div class="code-header">
+				<div class="code-header-buttons">
+					<span class="code-header-btn btn-red"></span>
+					<span class="code-header-btn btn-yellow"></span>
+					<span class="code-header-btn btn-green"></span>
+				</div>
+				<div class="code-header-title">${lang.toUpperCase()}</div>
+			</div>`;
+			codeSection += headerHtml;
+		}
+
 		let html = '';
 		if (lang) {
 			html = codeSection + `<pre style="max-width:1000% !important;" class="hljs language-${lang}">${body}</pre></section>`;
