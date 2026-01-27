@@ -1,0 +1,121 @@
+/*
+manage the wechat account settings
+
+*/
+import PouchDB from 'pouchdb';
+import { areObjectsEqual } from 'src/utils/utils';
+
+export type WeChatAccountInfo = {
+    _id?: string;
+    accountName: string;
+    appId: string;
+    appSecret: string;
+    access_token?: string;
+    expires_in?: number;
+    lastRefreshTime?: number;
+    isTokenValid?: boolean;
+    doc_id?: string;
+}
+
+export type AIChatAccountInfo = {
+    _id?: string;
+    accountName: string;
+    baseUrl: string;
+    apiKey: string;
+    model: string;
+    doc_id?: string;
+}
+export type AITaskAccountInfo = {
+    _id?: string;
+    accountName: string;
+    baseUrl: string;
+    taskUrl: string;
+    apiKey: string;
+    model: string;
+    doc_id?: string;
+}
+
+// export type WeWriteAccountInfo = WeChatAccountInfo | AIChatAccountInfo | AITaskAccountInfo;
+export type WeWriteSetting = {
+    useCenterToken: boolean;
+    realTimeRender: boolean;
+    scrollSync?: boolean;
+    previewer_wxname?: string;
+    custom_theme?: string;
+    codeLineNumber: boolean;
+    css_styles_folder: string;
+    _id?: string; // = 'wewrite-setting';
+    _rev?: string;
+    ipAddress?: string;
+    selectedMPAccount?: string;
+    selectedChatAccount?: string;
+    selectedDrawAccount?: string;
+    mpAccounts: Array<WeChatAccountInfo>;
+    chatAccounts: Array<AIChatAccountInfo>;
+    drawAccounts: Array<AITaskAccountInfo>;
+    accountDataPath: string;
+    chatSetting: ChatSetting;
+
+}
+
+export type ChatSetting = {
+    _id?: string;
+    _rev?: string;
+    chatSelected?: string;
+    modelSelected?: string;
+    temperature?: number;
+    top_p?: number;
+    frequency_penalty?: number;
+    presence_penalty?: number;
+    max_tokens?: number;
+}
+
+export const initWeWriteDB = () => {
+    const db = new PouchDB('wewrite-settings');
+    return db;
+}
+// Create a new database
+const db = initWeWriteDB();
+
+
+export const getWeWriteSetting = (): Promise<WeWriteSetting | undefined> => {
+    return new Promise((resolve, reject) => {
+        db.get('wewrite-settings')
+            .then((doc) => {
+                resolve(doc as WeWriteSetting);
+            })
+            .catch((error: unknown) => {
+                console.warn('获取 WeWriteSetting 失败:', error);
+                resolve(undefined)
+            });
+    })
+}
+
+export const saveWeWriteSetting = (doc: WeWriteSetting): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        doc._id = 'wewrite-settings';
+        db.get(doc._id).then(existedDoc => {
+            if (areObjectsEqual(doc, existedDoc)) {
+                resolve()
+            }
+            doc._rev = existedDoc._rev;
+            db.put(doc)
+                .then(() => {
+                    resolve();
+                })
+                .catch((error: unknown) => {
+                    console.error('Error setting WeWriteSetting:', error);
+                    resolve()
+                });
+        }).catch(error => {
+            db.put(doc)
+                .then(() => {
+                    resolve();
+                })
+                .catch((error: unknown) => {
+                    console.error('Error setting WeWriteSetting:', error);
+                    resolve()
+                });
+        })
+    })
+}
