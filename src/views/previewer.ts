@@ -751,6 +751,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 	// Public methods for hotkey commands
 	toggleMobileView() {
+		if (!this.renderDiv) return; // Guard against early invocation
 		this.isMobileView = !this.isMobileView;
 		if (this.isMobileView) {
 			this.renderDiv.addClass("is-mobile-view");
@@ -761,6 +762,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 
 	async copyToClipboard() {
+		if (!this.articleDiv || !this.articleDiv.innerHTML) {
+			new Notice("No content to copy");
+			return;
+		}
 		const data = this.getArticleContent();
 		await navigator.clipboard.write([
 			new ClipboardItem({
@@ -779,6 +784,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 
 	updateArticleStats() {
+		if (!this.articleStats) return; // Guard against early invocation
 		const content = this.lastRenderedContent;
 		if (!content) {
 			this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
