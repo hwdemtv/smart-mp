@@ -564,12 +564,14 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
-		console.log("[Excalidraw] Starting renderExcalidrawAsync for token:", token);
+		console.log(`[Excalidraw] Starting renderExcalidrawAsync for token:`, token);
 
 		if (!this.isPluginInstalled("obsidian-excalidraw-plugin")) {
 			console.warn("[Excalidraw] Plugin not installed");
-			return false;
+			token.html = $t("render.excalidraw-plugin-not-installed");
+			return;
 		}
+
 		console.log("[Excalidraw] Plugin is installed");
 
 		// define default failed
@@ -588,6 +590,8 @@ export class Embed extends WeWriteMarkedExtension {
 		const selector = `.internal-embed[src*="${escapedPath}"], .excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw`;
 
 		console.log(`[Excalidraw] Using selector: ${selector}`);
+		console.log(`[Excalidraw] previewEl HTML:`, renderer.previewEl?.innerHTML.substring(0, 500));
+		console.log(`[Excalidraw] All internal-embeds:`, renderer.previewEl?.querySelectorAll('.internal-embed'));
 
 		let root = renderer.queryElement(index, selector);
 
@@ -595,7 +599,10 @@ export class Embed extends WeWriteMarkedExtension {
 
 		if (!root) {
 			console.error(`[Excalidraw] ERROR: root is null for index ${index}, path: ${cleanPath}`);
-			console.log(`[Excalidraw] Available elements in previewEl:`, renderer.previewEl?.innerHTML);
+			console.log(`[Excalidraw] All elements with .internal-embed class:`);
+			renderer.previewEl?.querySelectorAll('.internal-embed').forEach((el, i) => {
+				console.log(`  [${i}] src="${el.getAttribute('src')}" classes="${el.className}"`);
+			});
 			return;
 		}
 
@@ -603,27 +610,75 @@ export class Embed extends WeWriteMarkedExtension {
 		root.removeAttribute("style");
 
 		try {
-			// Ensure it's not hidden
-			if (root.style.display === 'none') {
-				console.log(`[Excalidraw] Root was hidden, setting to block`);
-				root.style.display = 'block';
-			}
-
-			const image = root.querySelector("img");
+			const image = root.querySelector("img") as HTMLImageElement;
 			console.log(`[Excalidraw] Found image element:`, image);
 
 			if (image) {
-				image.setAttr("width", "100%");
-				image.setAttr("height", "100%");
-				image.setAttr("style", "width:100%;height:100%");
-				console.log(`[Excalidraw] Image attributes set`);
+				// Get original dimensions from the w attribute if available
+				const originalWidth = image.getAttribute("w") || "800";
+				console.log(`[Excalidraw] Original width: ${originalWidth}`);
+
+				// If the image uses a blob URL, fetch it and convert to data URL
+				if (image.src.startsWith('blob:')) {
+					console.log(`[Excalidraw] Fetching blob URL and converting to data URL...`);
+					try {
+						const response = await fetch(image.src);
+						const blob = await response.blob();
+
+						// Convert blob to data URL
+						const dataUrl = await new Promise<string>((resolve, reject) => {
+							const reader = new FileReader();
+							reader.onloadend = () => resolve(reader.result as string);
+							reader.onerror = reject;
+							reader.readAsDataURL(blob);
+						});
+
+						image.src = dataUrl;
+						console.log(`[Excalidraw] Blob URL converted to data URL, length: ${dataUrl.length}`);
+
+						// Wait a bit for the image to update
+						await new Promise(resolve => setTimeout(resolve, 100));
+					} catch (blobError) {
+						console.error(`[Excalidraw] Failed to fetch blob URL:`, blobError);
+					}
+				}
+
+				// Wait for image to fully load
+				if (!image.complete) {
+					console.log(`[Excalidraw] Waiting for image to load...`);
+					await new Promise((resolve, reject) => {
+						image.onload = resolve;
+						image.onerror = reject;
+						setTimeout(() => reject(new Error('Image load timeout')), 5000);
+					});
+				}
+
+				console.log(`[Excalidraw] Image natural size: ${image.naturalWidth}x${image.naturalHeight}`);
+
+				// Set container to use natural image dimensions
+				if (image.naturalWidth > 0) {
+					root.style.width = `${image.naturalWidth}px`;
+					root.style.height = `${image.naturalHeight}px`;
+				} else {
+					root.style.width = `${originalWidth}px`;
+					root.style.height = 'auto';
+				}
+				root.style.display = 'block';
+
+				// Let image use its full natural size
+				image.removeAttribute("width");
+				image.removeAttribute("height");
+				image.style.width = `${image.naturalWidth}px`;
+				image.style.height = `${image.naturalHeight}px`;
+				image.style.maxWidth = 'none';
+				image.style.display = 'block';
 			}
 
 			console.log(`[Excalidraw] Converting to image...`);
 			const dataUrl = await renderer.domToImage(root);
 			console.log(`[Excalidraw] Conversion successful, dataUrl length: ${dataUrl.length}`);
 
-			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" style="width: 100%; height: auto; display: block; margin: 0 auto;"></section>`;
+			token.html = `<section class="excalidraw"><img src="${dataUrl}" class="exclaidraw-image" style="width: 100%; height: auto; display: block; margin: 0 auto;"></section>`;
 			console.log(`[Excalidraw] token.html set successfully`);
 		} catch (e) {
 			console.error(`[Excalidraw] ERROR during conversion:`, e);
