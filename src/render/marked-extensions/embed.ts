@@ -525,9 +525,10 @@ export class Embed extends WeWriteMarkedExtension {
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		const root = renderer.queryElement(index, ".excalidraw-svg, .excalidraw-plugin-view");
+		// Broaden selector to find any possible Excalidraw container
+		const root = renderer.queryElement(index, ".excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw");
 		if (!root) {
-			console.error(`renderExcalidrawAsync error:`, "root is null for index " + index);
+			console.error(`renderExcalidrawAsync error:`, `root is null for index ${index}. Check if Excalidraw plugin is enabled and the drawing is rendered.`);
 			return;
 		}
 		root.removeAttribute("style");
