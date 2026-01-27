@@ -88,6 +88,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}, 2000);
 
 	private draftHeader: MPArticleHeader;
+	private lastRenderedContent: string = "";
+	private lastRenderTaskId: number = 0;
 	articleProperties: Map<string, string> = new Map();
 	editorView: EditorView | null = null;
 	lastLeaf: WorkspaceLeaf | undefined;
@@ -326,30 +328,39 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		return Promise.resolve();
 	}
 
-	async parseActiveMarkdown() {
-		// get properties
-		const prop = this.getArticleProperties();
-		const mview = ResourceManager.getInstance(
-			this.plugin
-		).getCurrentMarkdownView();
-		if (!mview) {
-			return $t("views.previewer.not-a-markdown-view");
+	async parseActiveMarkdown(taskId: number) {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile || activeFile.extension !== "md") {
+			return;
 		}
+
+		const content = await this.plugin.app.vault.adapter.read(activeFile.path);
+
+		// 1. Content Hashing: Skip if content is exactly the same as last time
+		if (content === this.lastRenderedContent) {
+			console.debug("Render skipped: Content not changed");
+			return;
+		}
+
+		// Update last rendered content tracking
+		this.lastRenderedContent = content;
+
+		// 2. Prepare rendering
 		this.articleDiv.empty();
 		this.elementMap = new Map<string, HTMLElement | string>();
-		const activeFile = this.app.workspace.getActiveFile();
 
-		if (!activeFile) {
-			return `<h1>No active file</h1>`;
-		}
-		if (activeFile.extension !== "md") {
-			return `<h1>Not a markdown file</h1>`;
-		}
 		await ObsidianMarkdownRenderer.getInstance(this.plugin.app).render(
 			activeFile.path,
 			this.renderPreviewer,
 			this
 		);
+
+		// 3. Task ID Validation: Check if this task is still the most recent one
+		if (taskId !== this.lastRenderTaskId) {
+			console.debug("Render cancelled: Newer task started");
+			return;
+		}
+
 		let html = await WechatRender.getInstance(this.plugin, this).parseNote(
 			activeFile.path,
 			this.renderPreviewer,
@@ -402,13 +413,24 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
-		await this.parseActiveMarkdown();
+		// 1. Generation a new Task ID to track this specific render request
+		const taskId = ++this.lastRenderTaskId;
+
+		await this.parseActiveMarkdown(taskId);
+
+		// 2. Final Validation: If a newer task has already started/finished, abort this one
+		if (taskId !== this.lastRenderTaskId) {
+			return;
+		}
+
 		if (this.articleDiv === null || this.articleDiv.firstChild === null) {
 			return;
 		}
 		const element = this.articleDiv.firstChild as HTMLElement;
 		const apply = () => {
-			if (!element.isConnected) return;
+			// Double check connectivity and task ID before heavy theme application
+			if (!element.isConnected || taskId !== this.lastRenderTaskId) return;
+
 			void ThemeManager.getInstance(this.plugin)
 				.applyTheme(element)
 				.catch((error) => {
