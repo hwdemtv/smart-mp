@@ -503,7 +503,6 @@ export class Embed extends WeWriteMarkedExtension {
 					},
 					renderer: (token: Tokens.Generic) => {
 						const embedType = getEmbedType(token.href);
-						console.debug("render embed type:", token, embedType);
 
 						if (embedType == "image" || embedType == "webp") {
 							// images
@@ -549,24 +548,16 @@ export class Embed extends WeWriteMarkedExtension {
 			],
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
-				console.log("[Embed walkTokens] Processing token:", token.type, token);
-
 				if (token.type !== "Embed") {
-					console.log("[Embed walkTokens] Skipping non-Embed token:", token.type);
 					return;
 				}
 
 				const embedType = getEmbedType(token.href);
-				console.log(`[Embed walkTokens] Embed type detected: "${embedType}" for href: "${token.href}"`);
 
 				if (embedType === "excalidraw") {
-					console.log("[Embed walkTokens] Calling renderExcalidrawAsync...");
 					await this.renderExcalidrawAsync(token);
 				} else if (embedType === "note") {
-					console.log("[Embed walkTokens] Calling renderMarkdownEmbedAsync...");
 					await this.renderMarkdownEmbedAsync(token);
-				} else {
-					console.log(`[Embed walkTokens] Unhandled embed type: "${embedType}"`);
 				}
 			},
 		};
