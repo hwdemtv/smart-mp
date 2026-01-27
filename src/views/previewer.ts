@@ -34,7 +34,8 @@ import {
 	uploadURLImage,
 	uploadURLVideo,
 } from "src/render/post-render";
-import { serializeChildren } from "src/utils/utils";
+import { UrlUtils } from "src/utils/urls";
+import { areObjectsEqual, cleanHtmlForWechat, serializeChildren } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
 import { ObsidianMarkdownRenderer } from "src/render/markdown-render";
 import { ResourceManager } from "../assets/resource-manager";
@@ -257,7 +258,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					.setTooltip($t("views.previewer.copy-article-to-clipboard"))
 					.onClick(() => {
 						void (async () => {
-							const data = this.getArticleContent();
+							const articleEl = this.articleDiv.cloneNode(true) as HTMLElement;
+							cleanHtmlForWechat(articleEl);
+							const data = serializeChildren(articleEl);
 							await navigator.clipboard.write([
 								new ClipboardItem({
 									"text/html": new Blob([data], {
@@ -334,9 +337,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		await uploadURLImage(this.articleDiv, this.plugin.wechatClient);
 		await uploadURLVideo(this.articleDiv, this.plugin.wechatClient);
 
+		// Final cleanup: remove all data-* attributes, restricted classes, and IDs for WeChat MP compatibility
+		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
+		cleanHtmlForWechat(finalArticleEl);
+		const data = serializeChildren(finalArticleEl);
+
 		const media_id = await this.wechatClient.sendArticleToDraftBox(
 			this.draftHeader.getActiveLocalDraft()!,
-			this.getArticleContent()
+			data
 		);
 
 		if (media_id) {

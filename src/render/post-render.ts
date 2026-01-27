@@ -163,6 +163,10 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
     const images: HTMLImageElement[] = []
 
     root.querySelectorAll('img').forEach(img => {
+        if (!img.src || img.src === "" || img.src.includes('undefined') || img.src.includes('null')) {
+            img.remove();
+            return;
+        }
         images.push(img)
     })
 

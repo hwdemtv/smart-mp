@@ -24,7 +24,7 @@ export function areObjectsEqual(obj1: unknown, obj2: unknown): boolean {
 }
 
 export async function fetchImageBlob(url: string): Promise<Blob> {
-    if (!url) {
+    if (!url || url === "undefined" || url === "null") {
         throw new Error(`Invalid URL: ${url}`);
     }
 
@@ -82,4 +82,41 @@ export function removeThinkTags(content: string): string {
     // 使用正则表达式匹配 <think> 和 </think> 标签及其内容，并替换为空字符串
     const regex = /<think>[\s\S]*<\/think>/g;
     return content.replace(regex, "");
+}
+
+/**
+ * Deeply cleans an HTMLElement to satisfy WeChat MP API's strict content rules.
+ * Removes all data-* attributes, classes, ids, and restricted tags.
+ */
+export function cleanHtmlForWechat(root: HTMLElement): void {
+    // 1. Remove all data- attributes, class, and id from the root itself
+    cleanAttributes(root);
+
+    // 2. Remove restricted tags
+    const restrictedTags = ['script', 'style', 'noscript', 'iframe:not(.video_iframe)', 'object', 'embed'];
+    restrictedTags.forEach(tag => {
+        root.querySelectorAll(tag).forEach(el => el.remove());
+    });
+
+    // 3. Remove all attributes from all descendants except whitelisted ones
+    const allDescendants = root.querySelectorAll('*');
+    allDescendants.forEach(el => {
+        cleanAttributes(el as HTMLElement);
+    });
+}
+
+function cleanAttributes(el: HTMLElement): void {
+    const attrs = el.attributes;
+    const toRemove: string[] = [];
+    const whitelist = ['style', 'src', 'href', 'alt', 'width', 'height', 'colspan', 'rowspan', 'border', 'cellspacing', 'cellpadding'];
+
+    for (let i = 0; i < attrs.length; i++) {
+        const attrName = attrs[i].name.toLowerCase();
+        if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || !whitelist.includes(attrName)) {
+            // Keep some specific WeChat classes if needed, but for now, strip all for safety
+            toRemove.push(attrs[i].name);
+        }
+    }
+
+    toRemove.forEach(attr => el.removeAttribute(attr));
 }
