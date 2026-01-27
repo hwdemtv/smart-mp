@@ -23,7 +23,8 @@ export class WeWritePostProcessor {
 
         // Wrap content in section for WeChat compatibility
         const section = document.createElement('section');
-        section.className = 'wewrite-article';
+        // Restore original classes to ensure styles apply correctly
+        section.className = 'wewrite-article-content wewrite';
 
         // Move all content to section
         while (element.firstChild) {
