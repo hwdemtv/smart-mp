@@ -1304,11 +1304,14 @@ proofreed
 
 /* Inline Code */
 .wewrite-article code:not(pre code) {
-	background-color: rgba(27, 31, 35, 0.05) !important;
+	background-color: #282c34 !important;
+	color: #e5c07b !important;
 	padding: 0.2em 0.4em !important;
-	border-radius: 3px !important;
+	border-radius: 4px !important;
 	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
-	font-size: 0.9em !important;
+	font-size: 0.85em !important;
+	margin: 0 0.2em !important;
+	vertical-align: middle !important;
 }
 
 /* Code Block */
