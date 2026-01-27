@@ -253,6 +253,22 @@ left side view
 	flex-grow: 1;
 	overflow-y: auto;
 	min-height: 0;
+	transition: all 0.3s ease;
+	/* Smooth transition when toggling modes */
+}
+
+/* Mobile Preview Mode */
+.render-container.is-mobile-view {
+	max-width: 375px;
+	margin: 0 auto;
+	border: 8px solid #333;
+	/* Simulate phone frame */
+	border-radius: 20px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.render-container.is-mobile-view .wewrite-article {
+	width: 100%;
 }
 
 /* Obsidian Callout Styles */

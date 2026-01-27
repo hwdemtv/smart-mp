@@ -99,6 +99,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	containerDiv: HTMLElement;
 	mpModal: WebViewModal;
 	isActive: boolean = false;
+	isMobileView: boolean = false;
 	renderPreviewer!: HTMLElement;
 	getViewType(): string {
 		return VIEW_TYPE_WEWRITE_PREVIEW;
@@ -261,6 +262,22 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						this.refreshScrollSyncButton();
 						new Notice(this.plugin.settings.scrollSync ? "Scroll Sync Enabled" : "Scroll Sync Disabled");
 						this.plugin.saveSettings();
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone")
+					.setTooltip(this.isMobileView ? "Desktop View" : "Mobile View")
+					.onClick(() => {
+						this.isMobileView = !this.isMobileView;
+						button.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone");
+						button.setTooltip(this.isMobileView ? "Desktop View" : "Mobile View");
+						if (this.isMobileView) {
+							this.renderDiv.addClass("is-mobile-view");
+						} else {
+							this.renderDiv.removeClass("is-mobile-view");
+						}
+						new Notice(this.isMobileView ? "Mobile Preview Mode" : "Desktop View Mode");
 					});
 			});
 
