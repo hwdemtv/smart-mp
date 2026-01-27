@@ -407,16 +407,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this
 		);
 
-		// return; //to see the render tree.
-		const articleSection = createEl("section", {
-			cls: "wewrite-article-content wewrite",
-		});
-		const dom = document.createElement('div');
-		dom.innerHTML = html;
-		articleSection.appendChild(dom);
-
-		this.articleDiv.empty();
-		this.articleDiv.appendChild(articleSection);
+		// Set the HTML directly to bypass sanitization which might strip SVGs or complex styles
+		this.articleDiv.innerHTML = html;
 
 		for (const [id, node] of this.elementMap.entries()) {
 			const item = this.articleDiv.querySelector(

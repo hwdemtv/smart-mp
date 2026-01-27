@@ -42,33 +42,46 @@ export class WeWritePostProcessor {
     }
 
     /**
-     * Convert Mermaid SVGs to PNG images
+     * Convert Mermaid SVGs and Excalidraw charts to PNG images
      */
     private static async processMermaidCharts(container: HTMLElement): Promise<void> {
-        const mermaidNodes = container.querySelectorAll('.mermaid svg');
+        // Wait a bit specifically for Mermaid/Excalidraw to finish rendering
+        // Even though we wait in markdown-render.ts, some complex charts take longer
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        for (const svg of Array.from(mermaidNodes)) {
+        // Select Mermaid SVGs and Excalidraw elements
+        const chartNodes = container.querySelectorAll('.mermaid svg, [class*="mermaid"] svg, .excalidraw-svg, .excalidraw-plugin-view img[src^="blob:"]');
+
+        for (const node of Array.from(chartNodes)) {
             try {
-                const parent = svg.parentElement;
-                if (!parent) continue;
+                let captureEl: HTMLElement | null = null;
 
-                // Capture the SVG as a data URL
-                const dataUrl = await domtoimage.toPng(parent, {
+                if (node.classList.contains('excalidraw-svg') || (node.tagName === 'IMG' && node.getAttribute('src')?.startsWith('blob:'))) {
+                    captureEl = node.closest('.excalidraw-plugin-view, .internal-embed') as HTMLElement || node as HTMLElement;
+                } else {
+                    // Mermaid SVG
+                    captureEl = (node.closest('.mermaid') || node.closest('[class*="mermaid"]') || node.parentElement) as HTMLElement;
+                }
+
+                if (!captureEl) continue;
+
+                // Capture the element as a data URL
+                const dataUrl = await domtoimage.toPng(captureEl, {
                     bgcolor: '#ffffff',
                     quality: 1
                 });
 
                 const img = document.createElement('img');
                 img.src = dataUrl;
-                img.className = 'wewrite-mermaid-image';
+                img.className = 'wewrite-converted-image';
                 img.style.maxWidth = '100%';
                 img.style.display = 'block';
                 img.style.margin = '1em auto';
 
-                // Replace the mermaid container (usually a div/span) with the image
-                parent.replaceWith(img);
+                // Replace the original container with the image
+                captureEl.replaceWith(img);
             } catch (error) {
-                console.error('[WeWrite] Failed to convert Mermaid to image:', error);
+                console.error('[WeWrite] Failed to convert chart to image:', error);
             }
         }
     }

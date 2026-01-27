@@ -227,10 +227,7 @@ export class WechatRender {
 			await new Promise(resolve => setTimeout(resolve, 300));
 
 			// Get the HTML string
-			const serializer = new XMLSerializer();
-			const html = Array.from(renderedElement.childNodes)
-				.map((node: Node) => serializer.serializeToString(node))
-				.join('');
+			const html = renderedElement.innerHTML;
 
 			return html;
 		}
