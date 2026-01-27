@@ -244,8 +244,8 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 		// Code Syntax Highlighting Theme
 		new Setting(frame)
-			.setName("Code Highlighting Theme")
-			.setDesc("Choose the syntax highlighting theme for code blocks")
+			.setName("代码高亮主题")
+			.setDesc("选择代码块的语法高亮主题")
 			.addDropdown((dropdown) => {
 				dropdown
 					.addOption("github", "GitHub")
@@ -263,12 +263,12 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			});
 
 		// Layout Enhancement Settings
-		new Setting(frame).setName("Layout Enhancements").setHeading();
+		new Setting(frame).setName("排版增强").setHeading();
 
 		// First-line Indent Toggle
 		new Setting(frame)
-			.setName("First-line Indent")
-			.setDesc("Enable 2em indent for paragraphs (Chinese style)")
+			.setName("首行缩进")
+			.setDesc("为段落启用 2 字符缩进（中文排版风格）")
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.firstLineIndent ?? false)
@@ -281,8 +281,8 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 		// Link Footnotes Toggle
 		new Setting(frame)
-			.setName("Convert Links to Footnotes")
-			.setDesc("Automatically convert hyperlinks to footnote references for WeChat compatibility")
+			.setName("链接转脚注")
+			.setDesc("自动将超链接转换为脚注引用，提高微信兼容性")
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.linkFootnotes ?? true)
@@ -295,8 +295,8 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 		// Embed Article Stats Toggle
 		new Setting(frame)
-			.setName("Embed Word Count in Article")
-			.setDesc("Add word count and reading time at the beginning of the article content")
+			.setName("嵌入字数统计")
+			.setDesc("在文章开头添加字数统计和预计阅读时长")
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.embedArticleStats ?? false)
