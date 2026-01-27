@@ -64,11 +64,12 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export function serializeElement(element: Element): string {
-    return element.outerHTML;
+    // WeChat API doesn't like XML namespaces (xmlns)
+    return element.outerHTML.replace(/\s?xmlns="[^"]*"/g, "");
 }
 
 export function serializeChildren(element: Element): string {
-    return (element as HTMLElement).innerHTML || "";
+    return (element as HTMLElement).innerHTML.replace(/\s?xmlns="[^"]*"/g, "") || "";
 }
 
 export function replaceDivWithSection(root: HTMLElement) {
@@ -89,18 +90,26 @@ export function removeThinkTags(content: string): string {
  * Removes all data-* attributes, classes, ids, and restricted tags.
  */
 export function cleanHtmlForWechat(root: HTMLElement): void {
-    // 1. Pre-process: Replace all DIVs with SECTIONs as WeChat preferred
-    const divs = Array.from(root.querySelectorAll('div'));
-    divs.forEach(div => {
-        const section = document.createElement('section');
-        // Copy innerHTML first
-        section.innerHTML = div.innerHTML;
-        // Copy styles if any
-        if (div.getAttribute('style')) {
-            section.setAttribute('style', div.getAttribute('style')!);
-        }
-        div.replaceWith(section);
-    });
+    // 1. Recursive replacement of DIV with SECTION using node movement
+    // Doing it this way ensures nested divs are also processed correctly
+    const replaceDivs = (parent: HTMLElement) => {
+        const divs = Array.from(parent.querySelectorAll('div'));
+        divs.forEach(div => {
+            const section = document.createElement('section');
+            // Move all children to the new section (retaining references, handling nested divs)
+            while (div.firstChild) {
+                section.appendChild(div.firstChild);
+            }
+            // Copy relevant attributes if they exist
+            if (div.getAttribute('style')) {
+                section.setAttribute('style', div.getAttribute('style')!);
+            }
+            div.replaceWith(section);
+        });
+    };
+
+    // Initial replacement
+    replaceDivs(root);
 
     // 2. Remove restricted tags
     const restrictedTags = ['script', 'style', 'noscript', 'iframe:not(.video_iframe)', 'object', 'embed'];
@@ -118,7 +127,6 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
     });
 
     // 5. Final pass: Remove any empty spans/sections that might trigger "invalid content"
-    // (But keep them if they have images or videos)
     const empties = Array.from(root.querySelectorAll('span, section, p'));
     empties.forEach(el => {
         if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas')) {

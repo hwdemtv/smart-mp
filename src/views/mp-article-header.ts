@@ -446,8 +446,9 @@ export class MPArticleHeader {
 			this._onlyFansCanComment.setValue(
 				(this.activeLocalDraft.only_fans_can_comment || 0) > 0
 			);
-			this.cover_image = this.activeLocalDraft.cover_image_url || "";
-			const [xStr, yStr] = this.activeLocalDraft.pic_crop_235_1?.split(" ") ?? [];
+			const raw_cover = this.activeLocalDraft.cover_image_url || "";
+			this.cover_image = (raw_cover === "undefined" || raw_cover === "null") ? "" : raw_cover;
+			const [xStr, yStr] = this.activeLocalDraft.pic_crop_235_1?.split("_") ?? (this.activeLocalDraft.pic_crop_235_1?.split(" ") ?? []);
 			x = xStr ? Number(xStr) : 0;
 			y = yStr ? Number(yStr) : 0;
 		} else {

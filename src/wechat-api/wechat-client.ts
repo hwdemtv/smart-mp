@@ -129,7 +129,8 @@ export class WechatClient {
 		const respAccessToken: string = resp.json["access_token"];
 
 		if (access_token === undefined) {
-			new Notice(getErrorMessage(errcode), 0);
+			console.error("Wechat API Error (Token):", errcode, getErrorMessage(errcode));
+			new Notice(`Wechat API Token Error: ${getErrorMessage(errcode)}`, 0);
 			return false;
 		}
 		return { access_token, expires_in };
@@ -213,6 +214,8 @@ export class WechatClient {
 				},
 			],
 		};
+
+		console.log("WeWrite: Sending article to draft box. Payload:", JSON.stringify(body, null, 2));
 
 		const res = await requestUrl({
 			method: "POST",
