@@ -193,7 +193,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 									: String(error);
 							new Notice(
 								$t("settings.settings-imported-failed") +
-									errorMessage
+								errorMessage
 							);
 							console.error(error);
 						}
@@ -239,6 +239,26 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						void ThemeManager.getInstance(
 							this.plugin
 						).downloadThemes();
+					});
+			});
+
+		// Code Syntax Highlighting Theme
+		new Setting(frame)
+			.setName("Code Highlighting Theme")
+			.setDesc("Choose the syntax highlighting theme for code blocks")
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("github", "GitHub")
+					.addOption("monokai", "Monokai")
+					.addOption("atom-one-dark", "Atom One Dark")
+					.addOption("vs2015", "VS2015 (Dark)")
+					.addOption("default", "Default (hljs)")
+					.setValue(this.plugin.settings.codeTheme || "github")
+					.onChange((value) => {
+						this.plugin.settings.codeTheme = value;
+						void this.plugin.saveSettings();
+						// Trigger re-render for instant preview
+						this.plugin.messageService.sendMessage("code-theme-changed", value);
 					});
 			});
 	}
@@ -472,29 +492,29 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName($t("settings.llm-access-base-url"))
 			.addText((text) =>
-			text.setValue(account.baseUrl).onChange((value) => {
-				account.baseUrl = value;
-				void this.plugin.saveSettings();
-			})
-		);
+				text.setValue(account.baseUrl).onChange((value) => {
+					account.baseUrl = value;
+					void this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.llm-access-api-key"))
 			.addText((text) =>
-			text.setValue(account.apiKey).onChange((value) => {
-				account.apiKey = value;
-				void this.plugin.saveSettings();
-			})
-		);
+				text.setValue(account.apiKey).onChange((value) => {
+					account.apiKey = value;
+					void this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.llm-model-to-be-used"))
 			.addText((text) =>
-			text.setValue(account.model).onChange((value) => {
-				account.model = value;
-				void this.plugin.saveSettings();
-			})
-		);
+				text.setValue(account.model).onChange((value) => {
+					account.model = value;
+					void this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.delete-account"))
@@ -694,45 +714,45 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName($t("settings.llm-access-base-url"))
 			.addText((text) =>
-			text.setValue(account.baseUrl).onChange((value) => {
-				if (value.trim() !== account.baseUrl) {
-					account.baseUrl = value;
-					void this.plugin.saveSettings();
-				}
-			})
-		);
+				text.setValue(account.baseUrl).onChange((value) => {
+					if (value.trim() !== account.baseUrl) {
+						account.baseUrl = value;
+						void this.plugin.saveSettings();
+					}
+				})
+			);
 		new Setting(container)
 			.setName($t("settings.llm-task-url"))
 			.addText((text) =>
-			text.setValue(account.taskUrl).onChange((value) => {
-				if (value.trim() !== account.taskUrl) {
-					account.taskUrl = value;
-					void this.plugin.saveSettings();
-				}
-			})
-		);
+				text.setValue(account.taskUrl).onChange((value) => {
+					if (value.trim() !== account.taskUrl) {
+						account.taskUrl = value;
+						void this.plugin.saveSettings();
+					}
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.llm-access-api-key"))
 			.addText((text) =>
-			text.setValue(account.apiKey).onChange((value) => {
-				if (value.trim() !== account.apiKey) {
-					account.apiKey = value;
-					void this.plugin.saveSettings();
-				}
-			})
-		);
+				text.setValue(account.apiKey).onChange((value) => {
+					if (value.trim() !== account.apiKey) {
+						account.apiKey = value;
+						void this.plugin.saveSettings();
+					}
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.llm-model-to-be-used"))
 			.addText((text) =>
-			text.setValue(account.model).onChange((value) => {
-				if (value.trim() !== account.model) {
-					account.model = value;
-					void this.plugin.saveSettings();
-				}
-			})
-		);
+				text.setValue(account.model).onChange((value) => {
+					if (value.trim() !== account.model) {
+						account.model = value;
+						void this.plugin.saveSettings();
+					}
+				})
+			);
 
 		new Setting(container)
 			.setName($t("settings.delete-account"))
@@ -772,9 +792,9 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		const ip = new Setting(mpFrame)
 			.setName(
 				$t("settings.public-ip-address") +
-					": " +
-					// this.plugin.settings.ipAddress
-					$t("settings.fetching")
+				": " +
+				// this.plugin.settings.ipAddress
+				$t("settings.fetching")
 			)
 			.setHeading()
 			.setDesc($t("settings.you-should-add-this-ip-to-ip-whitelist-o"));
@@ -790,8 +810,8 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			.catch(() => {
 				ip.setName(
 					$t("settings.public-ip-address") +
-						": " +
-						$t("settings.no-ip-address")
+					": " +
+					$t("settings.no-ip-address")
 				);
 			});
 
@@ -893,7 +913,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 				dropdown
 					.setValue(
 						this.plugin.settings.selectedMPAccount ??
-							$t("settings.select-account")
+						$t("settings.select-account")
 					)
 					.onChange((value) => {
 						this.plugin.settings.selectedMPAccount = value;

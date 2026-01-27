@@ -49,6 +49,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	ipAddress: "",
 	css_styles_folder: "wewrite-css-styles",
 	codeLineNumber: true,
+	codeTheme: "github", // Default code highlighting theme
 	accountDataPath: "wewrite-accounts",
 	useCenterToken: false,
 	chatAccounts: [],

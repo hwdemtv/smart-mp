@@ -82,7 +82,9 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			body += '<code>' + text + '</code>';
 		}
 
-		let codeSection = '<section class="code-section code-snippet__fix hljs">';
+		// Get code theme from plugin settings
+		const codeTheme = this.plugin.settings.codeTheme || 'github';
+		let codeSection = `<section class="code-section code-snippet__fix hljs hljs-theme-${codeTheme}">`;
 		let html = '';
 		if (lang) {
 			html = codeSection + `<pre style="max-width:1000% !important;" class="hljs language-${lang}">${body}</pre></section>`;

@@ -42,6 +42,7 @@ export type WeWriteSetting = {
     scrollSync?: boolean;
     previewer_wxname?: string;
     custom_theme?: string;
+    codeTheme?: string; // Code syntax highlighting theme (e.g., 'github', 'monokai', 'atom-one-dark')
     codeLineNumber: boolean;
     css_styles_folder: string;
     _id?: string; // = 'wewrite-setting';

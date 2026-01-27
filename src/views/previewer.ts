@@ -139,7 +139,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.plugin.messageService.registerListener(
 			"custom-theme-changed",
 			(theme: string) => {
-				this.debouncedCustomThemeChange(theme);
+				// Instant theme preview - no debounce for immediate feedback
+				void this.applyCustomThemeChange(theme);
+			}
+		);
+		this.plugin.messageService.registerListener(
+			"code-theme-changed",
+			() => {
+				// Instant code theme preview
+				this.lastRenderedContent = ""; // Force re-render
+				void this.renderDraft();
 			}
 		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);

@@ -1,9 +1,9 @@
 /** message slot for internal communication */
 import { SrcThumbList } from "./src-thumb-list";
 
-export type MSG_TYPE  = 
-  'src-thumb-list-updated' | 
-  'material-updated' | 
+export type MSG_TYPE =
+  'src-thumb-list-updated' |
+  'material-updated' |
   'wechat-account-changed' |
   'selected-theme-changed' |
   'draft-title-updated' |
@@ -29,6 +29,7 @@ export type MSG_TYPE  =
   'thumb-item-updated' |
   'thumb-item-deleted' |
   'custom-theme-changed' |
+  'code-theme-changed' |
   'set-draft-cover-image' |
   'set-image-as-cover' |
   'delete-media-item' |
@@ -36,31 +37,31 @@ export type MSG_TYPE  =
   'publish-draft-item' |
   'custom-theme-folder-changed' |
   'image-generated' |
-  'show-spinner' | 
+  'show-spinner' |
   'hide-spinner'
 
-  
+
 
 export type MessagePayload = SrcThumbList | null | Record<string, unknown> | string;
 
 export class MessageService {
-    private listeners: Map<string, ((data: MessagePayload) => void)[]> = new Map();
-  
-    registerListener<T extends MessagePayload>(msg: MSG_TYPE, listener: (data: T) => void) {
-      const listeners = this.listeners.get(msg)
-      if (listeners == undefined || listeners === null) {
-        this.listeners.set(msg, [listener as (data: MessagePayload) => void]);
-      } else {
-        listeners.push(listener as (data: MessagePayload) => void);
-      }
-    }
-  
-    sendMessage<T extends MessagePayload>(msg: MSG_TYPE, data: T) {
-      const listeners = this.listeners.get(msg)
-      if (listeners == undefined || listeners === null) {
-        return;
-      } else {
-        listeners.forEach(listener => listener(data));
-      }
+  private listeners: Map<string, ((data: MessagePayload) => void)[]> = new Map();
+
+  registerListener<T extends MessagePayload>(msg: MSG_TYPE, listener: (data: T) => void) {
+    const listeners = this.listeners.get(msg)
+    if (listeners == undefined || listeners === null) {
+      this.listeners.set(msg, [listener as (data: MessagePayload) => void]);
+    } else {
+      listeners.push(listener as (data: MessagePayload) => void);
     }
   }
+
+  sendMessage<T extends MessagePayload>(msg: MSG_TYPE, data: T) {
+    const listeners = this.listeners.get(msg)
+    if (listeners == undefined || listeners === null) {
+      return;
+    } else {
+      listeners.forEach(listener => listener(data));
+    }
+  }
+}
