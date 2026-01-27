@@ -43,6 +43,8 @@ import { MPArticleHeader } from "./mp-article-header";
 import { ThemeManager } from "../theme/theme-manager";
 import { ThemeSelector } from "../theme/theme-selector";
 import { WebViewModal } from "./webview";
+// @ts-ignore
+import domtoimage from "../render/dom-to-image-more";
 
 export const VIEW_TYPE_WEWRITE_PREVIEW = "wewrite-article-preview";
 export interface ElectronWindow extends Window {
@@ -322,6 +324,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (root) {
 			await ThemeManager.getInstance(this.plugin).applyTheme(root);
 		}
+
+		// Convert charts to images before uploading
+		await this.convertChartsToImages(this.articleDiv);
+
 		await uploadSVGs(this.articleDiv, this.plugin.wechatClient);
 		await uploadCanvas(this.articleDiv, this.plugin.wechatClient);
 		await uploadURLImage(this.articleDiv, this.plugin.wechatClient);
@@ -514,7 +520,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const fontSize = this.plugin.settings.fontSize || "15px";
 		this.containerDiv.style.setProperty("--wewrite-font-size", fontSize);
 		// Force redraw for !important override in CSS if needed, though we set it on container
-		// Actually, we need to set it on the element itself or via a class that injects the variable
 		// Let's set it directly on the container as an inline style which inherits
 		element.style.fontSize = fontSize;
 
@@ -1007,6 +1012,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			new Notice("No content to copy");
 			return;
 		}
+
+		// Convert charts to images
+		await this.convertChartsToImages(this.articleDiv);
+
 		const data = this.getArticleContent();
 		await navigator.clipboard.write([
 			new ClipboardItem({
@@ -1045,5 +1054,49 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const readingTimeMinutes = Math.max(1, Math.ceil(totalWords / 200));
 
 		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTimeMinutes} 分钟`);
+	}
+
+	async convertChartsToImages(root: HTMLElement) {
+		const selector = ".mermaid, .excalidraw-plugin-view, .excalidraw-svg";
+		const nodes = Array.from(root.querySelectorAll(selector)) as HTMLElement[];
+
+		if (nodes.length === 0) return;
+
+		new Notice(`正在转换 ${nodes.length} 个图表为图片...`);
+
+		const promises = nodes.map(async (node) => {
+			try {
+				// Style adjustments for better capture
+				const originalBg = node.style.backgroundColor;
+				if (!originalBg || originalBg === 'transparent' || originalBg === 'rgba(0, 0, 0, 0)') {
+					node.style.backgroundColor = '#ffffff';
+				}
+
+				const dataUrl = await domtoimage.toPng(node, {
+					bgcolor: '#ffffff',
+					quality: 1,
+					filter: (n: any) => {
+						// Filter out Excalidraw UI controls if present
+						// Also filter out the "Copy" button in code blocks if we were converting those
+						return true;
+					}
+				});
+
+				const img = document.createElement("img");
+				img.src = dataUrl;
+				img.className = node.className;
+				img.style.maxWidth = "100%";
+				img.style.display = "block";
+				img.style.margin = "1em auto";
+				img.style.boxShadow = "none"; // Reset potential shadows that look weird on images
+
+				node.replaceWith(img);
+			} catch (err) {
+				console.error("Failed to convert chart to image:", err);
+				new Notice("图表转图片失败: " + err);
+			}
+		});
+
+		await Promise.all(promises);
 	}
 }
