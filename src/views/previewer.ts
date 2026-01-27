@@ -1,5 +1,10 @@
 /**
- * Define the right-side leaf of view as Previewer view
+ * WeWrite Previewer - High Precision Version
+ * 
+ * Modifications by ryfineZ (2024-01-27):
+ * 1. Fixed Header Layout (Sticky Header)
+ * 2. Heading-Based Scroll Sync (High Precision)
+ * 3. Command & Hotkey support for Scroll Sync Toggle
  */
 
 import { EditorView } from "@codemirror/view";
@@ -583,7 +588,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				}
 
 				// Apply scroll
-				// Using requestAnimationFrame for smoothness
+				// Using requestAnimationFrame for high performance and smoothness
+				// The target position is calculated by interpolating between two heading anchors
 				requestAnimationFrame(() => {
 					previewEl.scrollTop = startElTop + ratio * (endElTop - startElTop);
 				});
