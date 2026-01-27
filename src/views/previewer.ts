@@ -573,7 +573,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			}
 
 			// Create caption element
-			const caption = document.createElement("figcaption");
+			const caption = document.createElement("span");
 			caption.className = "wewrite-caption";
 			caption.textContent = altText;
 
