@@ -95,7 +95,22 @@ WeWrite 是一款将 Obsidian 的强大功能与微信公众号编辑需求完�
 
 ### 其他功能
 - **主题管理**：支持自定义主题样式。
-- **实时预览**：提供文章实时预览功能。
+	- **实时预览**：提供文章实时预览功能。
+
+### 🎨 主题高级定制
+除了内置的主题选择，您还可以完全自定义样式。例如，想要自定义**行内代码** (`Inline Code`) 的样式，可以在您的主题文件（.md）末尾添加如下 CSS：
+
+```css
+/* 自定义行内代码样式 */
+.wewrite code {
+  color: #d73a49 !important; /* 文字颜色 */
+  background-color: #f6f8fa !important; /* 背景色 */
+  padding: 0.2em 0.4em !important;
+  border-radius: 3px !important;
+  font-family: "Menlo", monospace !important;
+}
+```
+*注意：由于微信兼容性要求，插件默认样式使用了 `!important`，因此您的自定义样式也需要加上 `!important` 才能成功覆盖。*
 
 ## 安装指南
 
