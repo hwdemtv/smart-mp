@@ -387,7 +387,7 @@ export class MPArticleHeader {
 						true
 					);
 					this.activeLocalDraft.thumb_media_id = media_id;
-					return true;
+					return !!media_id;
 				}
 			} else {
 				return true;

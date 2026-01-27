@@ -79,6 +79,7 @@ export default class WeWritePlugin extends Plugin {
 	wechatClient: WechatClient;
 	assetsManager: AssetsManager;
 	aiClient: AiClient | null = null;
+	private refreshPromise: Promise<string | false> | null = null;
 	private editorChangeListener: EventRef | null = null;
 	private imageGenerateModal: ImageGenerateModal | undefined;
 	matierialView: MaterialView;
@@ -560,66 +561,76 @@ export default class WeWritePlugin extends Plugin {
 		}
 		return false;
 	}
-	async refreshAccessToken(accountName: string | undefined) {
-		if (this.settings.useCenterToken) {
-			return this.wechatClient.requestToken();
-		}
-		if (accountName === undefined) {
-			return false;
-		}
-		const account = this.getMPAccountByName(accountName);
-		if (account === undefined) {
-			new Notice($t("main.no-wechat-mp-account-selected"));
-			return false;
-		}
-		const { appId, appSecret } = account;
-		if (
-			appId === undefined ||
-			appSecret === undefined ||
-			!appId ||
-			!appSecret
-		) {
-			new Notice($t("main.please-check-you-appid-and-appsecret"));
-			return false;
-		}
-		const {
-			access_token: accessToken,
-			expires_in: expiresIn,
-			lastRefreshTime,
-		} = account;
-		if (accessToken === undefined || accessToken === "") {
-			const token = await this.wechatClient.getAccessToken(
-				appId,
-				appSecret
-			);
-			if (token) {
-				this.setAccessToken(
-					accountName,
-					token.access_token,
-					token.expires_in
-				);
-				return token.access_token;
+	async refreshAccessToken(accountName: string | undefined): Promise<string | false> {
+		if (this.refreshPromise) return this.refreshPromise;
+
+		this.refreshPromise = (async () => {
+			try {
+				if (this.settings.useCenterToken) {
+					return await this.wechatClient.requestToken();
+				}
+				if (accountName === undefined) {
+					return false;
+				}
+				const account = this.getMPAccountByName(accountName);
+				if (account === undefined) {
+					new Notice($t("main.no-wechat-mp-account-selected"));
+					return false;
+				}
+				const { appId, appSecret } = account;
+				if (
+					appId === undefined ||
+					appSecret === undefined ||
+					!appId ||
+					!appSecret
+				) {
+					new Notice($t("main.please-check-you-appid-and-appsecret"));
+					return false;
+				}
+				const {
+					access_token: accessToken,
+					expires_in: expiresIn,
+					lastRefreshTime,
+				} = account;
+				if (accessToken === undefined || accessToken === "") {
+					const token = await this.wechatClient.getAccessToken(
+						appId,
+						appSecret
+					);
+					if (token) {
+						this.setAccessToken(
+							accountName,
+							token.access_token,
+							token.expires_in
+						);
+						return token.access_token;
+					}
+				} else if (
+					lastRefreshTime! + expiresIn! * 1000 <
+					new Date().getTime()
+				) {
+					const token = await this.wechatClient.getAccessToken(
+						appId,
+						appSecret
+					);
+					if (token) {
+						this.setAccessToken(
+							accountName,
+							token.access_token,
+							token.expires_in
+						);
+						return token.access_token;
+					}
+				} else {
+					return accessToken;
+				}
+				return false;
+			} finally {
+				this.refreshPromise = null;
 			}
-		} else if (
-			lastRefreshTime! + expiresIn! * 1000 <
-			new Date().getTime()
-		) {
-			const token = await this.wechatClient.getAccessToken(
-				appId,
-				appSecret
-			);
-			if (token) {
-				this.setAccessToken(
-					accountName,
-					token.access_token,
-					token.expires_in
-				);
-				return token.access_token;
-			}
-		} else {
-			return accessToken;
-		}
-		return false;
+		})();
+
+		return this.refreshPromise;
 	}
 	getMPAccountByName(accountName: string | undefined) {
 		return this.settings.mpAccounts.find(

@@ -89,8 +89,18 @@ export function removeThinkTags(content: string): string {
  * Removes all data-* attributes, classes, ids, and restricted tags.
  */
 export function cleanHtmlForWechat(root: HTMLElement): void {
-    // 1. Remove all data- attributes, class, and id from the root itself
-    cleanAttributes(root);
+    // 1. Pre-process: Replace all DIVs with SECTIONs as WeChat preferred
+    const divs = Array.from(root.querySelectorAll('div'));
+    divs.forEach(div => {
+        const section = document.createElement('section');
+        // Copy innerHTML first
+        section.innerHTML = div.innerHTML;
+        // Copy styles if any
+        if (div.getAttribute('style')) {
+            section.setAttribute('style', div.getAttribute('style')!);
+        }
+        div.replaceWith(section);
+    });
 
     // 2. Remove restricted tags
     const restrictedTags = ['script', 'style', 'noscript', 'iframe:not(.video_iframe)', 'object', 'embed'];
@@ -98,25 +108,34 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
         root.querySelectorAll(tag).forEach(el => el.remove());
     });
 
-    // 3. Remove all attributes from all descendants except whitelisted ones
-    const allDescendants = root.querySelectorAll('*');
+    // 3. Clean attributes from the root itself
+    cleanAttributes(root);
+
+    // 4. Clean attributes from all descendants
+    const allDescendants = Array.from(root.querySelectorAll('*'));
     allDescendants.forEach(el => {
         cleanAttributes(el as HTMLElement);
+    });
+
+    // 5. Final pass: Remove any empty spans/sections that might trigger "invalid content"
+    // (But keep them if they have images or videos)
+    const empties = Array.from(root.querySelectorAll('span, section, p'));
+    empties.forEach(el => {
+        if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas')) {
+            el.remove();
+        }
     });
 }
 
 function cleanAttributes(el: HTMLElement): void {
-    const attrs = el.attributes;
-    const toRemove: string[] = [];
-    const whitelist = ['style', 'src', 'href', 'alt', 'width', 'height', 'colspan', 'rowspan', 'border', 'cellspacing', 'cellpadding'];
+    const attrs = Array.from(el.attributes);
+    const whitelist = ['style', 'src', 'href', 'alt', 'width', 'height', 'colspan', 'rowspan', 'border', 'cellspacing', 'cellpadding', 'valign', 'align'];
 
-    for (let i = 0; i < attrs.length; i++) {
-        const attrName = attrs[i].name.toLowerCase();
+    attrs.forEach(attr => {
+        const attrName = attr.name.toLowerCase();
+        // Remove data-*, class, id, and anything not in whitelist
         if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || !whitelist.includes(attrName)) {
-            // Keep some specific WeChat classes if needed, but for now, strip all for safety
-            toRemove.push(attrs[i].name);
+            el.removeAttribute(attr.name);
         }
-    }
-
-    toRemove.forEach(attr => el.removeAttribute(attr));
+    });
 }

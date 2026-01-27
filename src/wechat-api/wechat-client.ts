@@ -173,6 +173,13 @@ export class WechatClient {
 		if (!accessToken) {
 			return false;
 		}
+		if (!localDraft.thumb_media_id) {
+			new Notice($t("views.previewer.please-set-cover-image"));
+			return false;
+		}
+
+		console.log("Sending article to draft box with thumb_media_id:", localDraft.thumb_media_id);
+
 		const accessTokenValue = String(accessToken);
 		const url =
 			"https://api.weixin.qq.com/cgi-bin/draft/add?access_token=" +
@@ -274,8 +281,8 @@ export class WechatClient {
 
 		bodyParts.push(
 			`-----${randomBoundryString}\r\n` +
-				`Content-Disposition: form-data; name="media"; filename="${filename}"\r\n` +
-				`Content-Type: "application/octet-stream"\r\n\r\n`
+			`Content-Disposition: form-data; name="media"; filename="${filename}"\r\n` +
+			`Content-Type: "application/octet-stream"\r\n\r\n`
 		);
 
 		// 将 Blob 转换为 Uint8Array
@@ -287,10 +294,10 @@ export class WechatClient {
 		if (type === "video") {
 			bodyParts.push(
 				`-----${randomBoundryString}\r\n` +
-					'Content-Disposition: form-data; name="description"\r\n' +
-					"Content-Type: application/json\r\n\r\n" +
-					description +
-					"\r\n"
+				'Content-Disposition: form-data; name="description"\r\n' +
+				"Content-Type: application/json\r\n\r\n" +
+				description +
+				"\r\n"
 			);
 		}
 
@@ -334,7 +341,10 @@ export class WechatClient {
 	}
 
 	async uploadMaterial(data: Blob, filename: string, type?: string) {
-
+		if (!(data instanceof Blob)) {
+			console.error("uploadMaterial: data is not a Blob", data);
+			throw new TypeError("Parameter 'data' must be a Blob");
+		}
 		//check size
 		if (type === "video") {
 			// < 10M
@@ -387,8 +397,8 @@ export class WechatClient {
 		// 添加 media 部分
 		bodyParts.push(
 			`--${boundary}\r\n` +
-				`Content-Disposition: form-data; name="media"; filename="${fileName}"\r\n` +
-				"Content-Type: application/octet-stream\r\n\r\n"
+			`Content-Disposition: form-data; name="media"; filename="${fileName}"\r\n` +
+			"Content-Type: application/octet-stream\r\n\r\n"
 		);
 		bodyParts.push(new Uint8Array(fileBuffer));
 		bodyParts.push("\r\n");
@@ -397,10 +407,10 @@ export class WechatClient {
 		if (type === "video" && description) {
 			bodyParts.push(
 				`--${boundary}\r\n` +
-					'Content-Disposition: form-data; name="description"\r\n' +
-					"Content-Type: application/json\r\n\r\n" +
-					JSON.stringify(description) +
-					"\r\n"
+				'Content-Disposition: form-data; name="description"\r\n' +
+				"Content-Type: application/json\r\n\r\n" +
+				JSON.stringify(description) +
+				"\r\n"
 			);
 		}
 
@@ -422,9 +432,9 @@ export class WechatClient {
 			}, new Uint8Array(0));
 
 		// 4. 使用 requestUrl 发送请求
-		
+
 		try {
-			this.plugin.showSpinner($t('wechat-api.uploading-material-type', [type?type:'unknown']))
+			this.plugin.showSpinner($t('wechat-api.uploading-material-type', [type ? type : 'unknown']))
 			const response = await requestUrl({
 				url: url,
 				method: "POST",
@@ -461,13 +471,13 @@ export class WechatClient {
 		offset: number = 0,
 		count: number = 20
 	) {
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/material/batchget_material?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/material/batchget_material?access_token=${accessTokenValue}`;
 		const body = {
 			type: type, // image, video, voice, news
 			offset: offset,
@@ -491,13 +501,13 @@ export class WechatClient {
 		if (accountName === undefined) {
 			accountName = this.plugin.settings.selectedMPAccount;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/material/get_material?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/material/get_material?access_token=${accessTokenValue}`;
 		const body = {
 			media_id: media_id,
 		};
@@ -516,13 +526,13 @@ export class WechatClient {
 		offset: number = 0,
 		count: number = 20
 	) {
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/draft/batchget?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/draft/batchget?access_token=${accessTokenValue}`;
 		const body = {
 			offset: offset,
 			count: count,
@@ -541,13 +551,13 @@ export class WechatClient {
 	}
 
 	public async getMaterialCounts(accountName: string) {
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
 
-	const url = `${this.baseUrl}/material/get_materialcount?access_token=${accessTokenValue}`;
+		const url = `${this.baseUrl}/material/get_materialcount?access_token=${accessTokenValue}`;
 		const req: RequestUrlParam = {
 			url: url,
 			method: "GET",
@@ -565,12 +575,12 @@ export class WechatClient {
 		}
 	}
 	public async getDraftCount(accountName: string) {
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	const url = `${this.baseUrl}/draft/count?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		const url = `${this.baseUrl}/draft/count?access_token=${accessTokenValue}`;
 		const req: RequestUrlParam = {
 			url: url,
 			method: "GET",
@@ -587,13 +597,13 @@ export class WechatClient {
 		}
 	}
 	public async getDraftById(accountName: string, meida_id: string) {
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/draft/get?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/draft/get?access_token=${accessTokenValue}`;
 		const body = {
 			media_id: meida_id,
 		};
@@ -618,13 +628,13 @@ export class WechatClient {
 		if (!accountName) {
 			accountName = this.plugin.settings.selectedMPAccount!;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/freepublish/submit?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/freepublish/submit?access_token=${accessTokenValue}`;
 		const body = {
 			media_id: meida_id,
 		};
@@ -649,13 +659,13 @@ export class WechatClient {
 		if (!accountName) {
 			accountName = this.plugin.settings.selectedMPAccount!;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/material/del_material?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/material/del_material?access_token=${accessTokenValue}`;
 		const body = {
 			media_id: meida_id,
 		};
@@ -680,13 +690,13 @@ export class WechatClient {
 		if (!accountName) {
 			accountName = this.plugin.settings.selectedMPAccount!;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/draft/delete?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/draft/delete?access_token=${accessTokenValue}`;
 		const body = {
 			media_id: meida_id,
 		};
@@ -711,13 +721,13 @@ export class WechatClient {
 		if (!accountName) {
 			accountName = this.plugin.settings.selectedMPAccount!;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	// get all images by loop
-	const url = `${this.baseUrl}/message/mass/sendall?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		// get all images by loop
+		const url = `${this.baseUrl}/message/mass/sendall?access_token=${accessTokenValue}`;
 		const body = {
 			filter: {
 				is_to_all: true,
@@ -755,12 +765,12 @@ export class WechatClient {
 		if (!wxname) {
 			wxname = this.plugin.settings.previewer_wxname!;
 		}
-	const accessToken = await this.plugin.refreshAccessToken(accountName);
-	if (!accessToken) {
-		return false;
-	}
-	const accessTokenValue = String(accessToken);
-	const url = `${this.baseUrl}/message/mass/preview?access_token=${accessTokenValue}`;
+		const accessToken = await this.plugin.refreshAccessToken(accountName);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		const url = `${this.baseUrl}/message/mass/preview?access_token=${accessTokenValue}`;
 		const body = {
 			towxname: wxname,
 			mpnews: {
