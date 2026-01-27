@@ -512,6 +512,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		element.style.fontSize = fontSize;
 
 
+		// Wrap tables for mobile responsiveness
+		this.wrapTables(element);
+
 		// Embed article stats at the beginning
 		if (this.plugin.settings.embedArticleStats) {
 			this.embedArticleStatsInContent(element);
@@ -521,6 +524,20 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (this.plugin.settings.linkFootnotes) {
 			this.convertLinksToFootnotes(element);
 		}
+	}
+
+	// Wrap tables in a scrollable container
+	wrapTables(element: HTMLElement) {
+		const tables = element.querySelectorAll("table");
+		tables.forEach((table) => {
+			if (table.parentElement?.classList.contains("wewrite-table-container")) {
+				return;
+			}
+			const wrapper = document.createElement("div");
+			wrapper.className = "wewrite-table-container";
+			table.parentNode?.insertBefore(wrapper, table);
+			wrapper.appendChild(table);
+		});
 	}
 
 	// Embed word count and reading time at the beginning of article

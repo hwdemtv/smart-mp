@@ -1533,3 +1533,40 @@ proofreed
 	border-radius: 6px !important;
 	overflow: hidden !important;
 }
+
+/* Decorative Horizontal Rule */
+.wewrite-article hr {
+	border: none !important;
+	border-top: none !important;
+	margin: 2.5em auto !important;
+	text-align: center !important;
+	height: auto !important;
+	background: transparent !important;
+	position: relative !important;
+	overflow: visible !important;
+}
+
+.wewrite-article hr::after {
+	content: "· · ·" !important;
+	display: inline-block !important;
+	position: relative !important;
+	top: -0.8em !important;
+	font-size: 1.5em !important;
+	color: #bbb !important;
+	letter-spacing: 0.5em !important;
+	font-weight: bold !important;
+	font-family: Arial, sans-serif !important;
+}
+
+/* Scrollable Table Container */
+.wewrite-table-container {
+	width: 100% !important;
+	overflow-x: auto !important;
+	-webkit-overflow-scrolling: touch !important;
+	margin: 1em 0 !important;
+}
+
+.wewrite-article table {
+	min-width: 100% !important;
+	margin: 0 !important;
+}
