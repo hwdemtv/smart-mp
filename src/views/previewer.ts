@@ -586,6 +586,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 	// Embed word count and reading time at the beginning of article
 	embedArticleStatsInContent(element: HTMLElement) {
+		// Remove existing stats if present to avoid duplication
+		const existingStats = element.querySelector(".wewrite-embedded-stats");
+		if (existingStats) {
+			existingStats.remove();
+		}
+
 		const content = element.textContent || "";
 
 		// Count Chinese characters
