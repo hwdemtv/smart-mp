@@ -120,6 +120,7 @@ export class MPArticleHeader {
 
 		new Setting(details)
 			.setName($t("views.article-header.article-title"))
+			.setClass("wewrite-title-setting")
 			.addText((text) => {
 				this._title = text;
 				text.setPlaceholder(
@@ -249,7 +250,7 @@ export class MPArticleHeader {
 						}
 						if (this._digest.value !== undefined && this._digest.value) {
 							const prompt = this._digest.value.trim()
-							if (prompt){
+							if (prompt) {
 								this.imageGenerateModal.prompt = prompt;
 							}
 						}
@@ -322,7 +323,7 @@ export class MPArticleHeader {
 
 		return coverframe;
 	}
-	
+
 	setCoverImage(url: string | null) {
 		while (this.coverFrame.firstChild) {
 			this.coverFrame.firstChild.remove();
@@ -353,7 +354,7 @@ export class MPArticleHeader {
 				img.height * scale
 			);
 
-			
+
 
 			this.coverFrame.appendChild(canvas);
 		};
@@ -364,12 +365,12 @@ export class MPArticleHeader {
 		}
 		if (this._digest.value !== undefined && this._digest.value) {
 			const prompt = this._digest.value.trim()
-			if (prompt){
-			this.imageGenerateModal.prompt = prompt;
+			if (prompt) {
+				this.imageGenerateModal.prompt = prompt;
+			}
 		}
+		this.imageGenerateModal.open();
 	}
-	this.imageGenerateModal.open();
-}
 	resetImage() {
 		this.setCoverImageXY(0, 0);
 	}
@@ -457,7 +458,7 @@ export class MPArticleHeader {
 			this._onlyFansCanComment.setValue(false);
 			this.cover_image = "";
 		}
-		
+
 		this.setCoverImageXY(Number(x), Number(y));
 		this.plugin.messageService.sendMessage(
 			"draft-title-updated",

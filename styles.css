@@ -1654,3 +1654,10 @@ proofreed
 	width: 300px !important;
 	max-width: 100% !important;
 }
+
+/* Specific Title Field Styling */
+.wewrite-title-setting .setting-item-control input {
+	width: 450px !important;
+	font-size: 1.1em !important;
+	padding: 6px 12px !important;
+}
