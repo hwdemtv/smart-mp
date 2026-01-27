@@ -46,6 +46,7 @@ export type WeWriteSetting = {
     codeLineNumber: boolean;
     firstLineIndent?: boolean; // Enable first-line indent for paragraphs (2em)
     linkFootnotes?: boolean; // Convert links to footnotes for WeChat compatibility
+    embedArticleStats?: boolean; // Embed word count and reading time in article content
     css_styles_folder: string;
     _id?: string; // = 'wewrite-setting';
     _rev?: string;

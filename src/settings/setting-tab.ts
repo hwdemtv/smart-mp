@@ -292,6 +292,20 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						this.plugin.messageService.sendMessage("layout-changed", null);
 					});
 			});
+
+		// Embed Article Stats Toggle
+		new Setting(frame)
+			.setName("Embed Word Count in Article")
+			.setDesc("Add word count and reading time at the beginning of the article content")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.embedArticleStats ?? false)
+					.onChange((value) => {
+						this.plugin.settings.embedArticleStats = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
 	}
 	newMPAccountInfo() {
 		let n = 0;

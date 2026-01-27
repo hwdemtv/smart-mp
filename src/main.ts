@@ -52,6 +52,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	codeTheme: "github", // Default code highlighting theme
 	firstLineIndent: false, // First-line indent disabled by default
 	linkFootnotes: true, // Link footnotes enabled by default for WeChat
+	embedArticleStats: false, // Embed stats in article disabled by default
 	accountDataPath: "wewrite-accounts",
 	useCenterToken: false,
 	chatAccounts: [],

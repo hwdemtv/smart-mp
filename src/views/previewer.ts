@@ -503,9 +503,38 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.containerDiv.removeClass("wewrite-indent-enabled");
 		}
 
-		// Link footnotes conversion
+		// Embed article stats at the beginning
+		if (this.plugin.settings.embedArticleStats) {
+			this.embedArticleStatsInContent(element);
+		}
+
+		// Link footnotes conversion (should be last as it modifies links)
 		if (this.plugin.settings.linkFootnotes) {
 			this.convertLinksToFootnotes(element);
+		}
+	}
+
+	// Embed word count and reading time at the beginning of article
+	embedArticleStatsInContent(element: HTMLElement) {
+		const content = element.textContent || "";
+
+		// Count Chinese characters
+		const chineseChars = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
+		// Count English words
+		const englishWords = (content.match(/[a-zA-Z]+/g) || []).length;
+		const totalWords = chineseChars + englishWords;
+		const readingTime = Math.max(1, Math.ceil(totalWords / 200));
+
+		// Create stats element
+		const statsDiv = document.createElement("section");
+		statsDiv.className = "wewrite-embedded-stats";
+		statsDiv.innerHTML = `<p style="text-align: center; color: #999; font-size: 14px; margin-bottom: 1.5em;">📖 全文约 <strong>${totalWords}</strong> 字 · 预计阅读 <strong>${readingTime}</strong> 分钟</p>`;
+
+		// Insert at the beginning of the article
+		if (element.firstChild) {
+			element.insertBefore(statsDiv, element.firstChild);
+		} else {
+			element.appendChild(statsDiv);
 		}
 	}
 
