@@ -503,6 +503,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.containerDiv.removeClass("wewrite-indent-enabled");
 		}
 
+
+		// Code Theme Class
+		const codeTheme = this.plugin.settings.codeTheme || "github";
+		// Remove existing theme classes
+		element.removeClass("wewrite-theme-github", "wewrite-theme-monokai", "wewrite-theme-atom-one-dark", "wewrite-theme-vs2015", "wewrite-theme-default");
+		element.addClass(`wewrite-theme-${codeTheme}`);
+
 		// Font Size
 		const fontSize = this.plugin.settings.fontSize || "15px";
 		this.containerDiv.style.setProperty("--wewrite-font-size", fontSize);
