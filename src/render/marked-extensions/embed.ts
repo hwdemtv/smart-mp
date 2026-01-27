@@ -514,8 +514,7 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
-		if (!this.isPluginInstlled("obsidian-excalidraw-plugin")) {
-
+		if (!this.isPluginInstalled("obsidian-excalidraw-plugin")) {
 			return false;
 		}
 		// define default failed
@@ -525,14 +524,23 @@ export class Embed extends WeWriteMarkedExtension {
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		// Broaden selector to find any possible Excalidraw container
-		const root = renderer.queryElement(index, ".excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw");
+
+		// Find by specific path if possible, or fallback to general selectors
+		const cleanPath = href.split("|")[0];
+		const escapedPath = cleanPath.replace(/"/g, '\\"');
+		const selector = `.internal-embed[src*="${escapedPath}"], .excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw`;
+
+		let root = renderer.queryElement(index, selector);
+
 		if (!root) {
-			console.error(`renderExcalidrawAsync error:`, `root is null for index ${index}. Check if Excalidraw plugin is enabled and the drawing is rendered.`);
+			console.error(`renderExcalidrawAsync error:`, `root is null for index ${index}, path: ${cleanPath}`);
 			return;
 		}
 		root.removeAttribute("style");
 		try {
+			// Ensure it's not hidden
+			if (root.style.display === 'none') root.style.display = 'block';
+
 			const image = root.querySelector("img");
 			if (image) {
 				image.setAttr("width", "100%");
@@ -541,7 +549,7 @@ export class Embed extends WeWriteMarkedExtension {
 			}
 			const dataUrl = await renderer.domToImage(root);
 
-			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" ></section>`;
+			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" style="width: 100%; height: auto; display: block; margin: 0 auto;"></section>`;
 		} catch (e) {
 			console.error(`renderExcalidrawAsync error:`, e);
 		}
@@ -553,7 +561,7 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	renderPdfCrop(href: string): string | false | undefined {
-		if (!this.isPluginInstlled("pdf-plus")) {
+		if (!this.isPluginInstalled("pdf-plus")) {
 			return false;
 		}
 		const root = ObsidianMarkdownRenderer.getInstance(

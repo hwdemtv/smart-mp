@@ -242,7 +242,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 
 	renderCharts(_token: Tokens.Generic) {
 		//the MarkdownRender doen't work well with it. use the preview instead.
-		if (!this.isPluginInstlled('obsidian-charts')) {
+		if (!this.isPluginInstalled('obsidian-charts')) {
 			console.debug(`charts plugin not installed.`);
 			new Notice($t('rnder.charts-plugin-not-installed'))
 			return false;

@@ -40,6 +40,15 @@ export class ObsidianMarkdownRenderer {
         // }
         this.container.empty();
         this.container.show();
+        // Force off-screen visible rendering to allow Canvas/Excalidraw dimension calculations
+        this.container.style.display = "block";
+        this.container.style.position = "absolute";
+        this.container.style.left = "-9999px";
+        this.container.style.top = "0";
+        this.container.style.width = "800px";
+        this.container.style.visibility = "visible";
+        this.container.style.zIndex = "-1";
+
         this.rendering = true
         if (this.mdv) {
             this.mdv.unload();
@@ -52,11 +61,7 @@ export class ObsidianMarkdownRenderer {
         this.container.appendChild(this.previewEl)
         this.path = path
         const markdown = await this.app.vault.adapter.read(path)
-        await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.mdv
-            // this.app.workspace.getActiveViewOfType(MarkdownView)!
-            // || this.app.workspace.activeLeaf?.view
-            // || this.mdv //new MarkdownRenderChild(this.el)
-        )
+        await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.view)
         try {
             const waiters: Promise<void>[] = [];
 
@@ -69,9 +74,9 @@ export class ObsidianMarkdownRenderer {
             if (/```\s*mermaid/i.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 3000)); // Adjusted timeout
             }
-            if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown) || /!\[.*?\]\(.*?\.excalidraw.*?\)/i.test(markdown)) {
-                // Broaden selector to find any possible Excalidraw container and increase timeout
-                waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw", 10000));
+            if (/!\[\[/.test(markdown) || /!\[.*?\]\(/.test(markdown)) {
+                // Wait for any obsidian embed to finish loading
+                waiters.push(this.waitForSelector(this.previewEl, ".internal-embed.is-loaded, .excalidraw-svg, .excalidraw-plugin-view", 10000));
             }
             if (waiters.length) {
                 await Promise.all(waiters);
@@ -80,7 +85,11 @@ export class ObsidianMarkdownRenderer {
             console.warn("[WeWrite] Optional plugin rendering wait timed out or failed:", err);
         }
         this.rendering = false
-        // this.container.hide() 
+        // Restore container if needed or keep off-screen for next render
+        this.container.hide();
+        this.container.style.position = "";
+        this.container.style.left = "";
+        this.container.style.visibility = "";
     }
     public queryElement(index: number, query: string) {
         if (this.previewEl === undefined || !this.previewEl) {
