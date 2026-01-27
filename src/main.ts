@@ -49,13 +49,13 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	ipAddress: "",
 	css_styles_folder: "wewrite-css-styles",
 	codeLineNumber: true,
-	codeTheme: "github", // Default code highlighting theme
-	codeBlockHeader: true, // Show code block header enabled by default
-	fontSize: "15px", // Default font size
-	firstLineIndent: false, // First-line indent disabled by default
-	linkFootnotes: true, // Link footnotes enabled by default for WeChat
-	showImageCaptions: false, // Image captions disabled by default
-	embedArticleStats: false, // Embed stats in article disabled by default
+	codeTheme: "github",
+	showCodeMacHeader: true,
+	fontSize: "15px",
+	firstLineIndent: false,
+	linkFootnotes: true,
+	showImageCaptions: false,
+	embedArticleStats: false,
 	hrStyle: "dots",
 	customHrText: "· · ·",
 	accountDataPath: "wewrite-accounts",
@@ -63,6 +63,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	chatAccounts: [],
 	drawAccounts: [],
 	realTimeRender: true,
+	realTimeRenderDelay: 500,
 	scrollSync: true,
 	chatSetting: {
 		temperature: 0.7,
@@ -73,13 +74,11 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	},
 };
 
-
 export default class WeWritePlugin extends Plugin {
 	settings: WeWriteSetting;
 	wechatClient: WechatClient;
 	assetsManager: AssetsManager;
 	aiClient: AiClient | null = null;
-	private refreshPromise: Promise<string | false> | null = null;
 	private editorChangeListener: EventRef | null = null;
 	private imageGenerateModal: ImageGenerateModal | undefined;
 	matierialView: MaterialView;
@@ -561,76 +560,66 @@ export default class WeWritePlugin extends Plugin {
 		}
 		return false;
 	}
-	async refreshAccessToken(accountName: string | undefined): Promise<string | false> {
-		if (this.refreshPromise) return this.refreshPromise;
-
-		this.refreshPromise = (async () => {
-			try {
-				if (this.settings.useCenterToken) {
-					return await this.wechatClient.requestToken();
-				}
-				if (accountName === undefined) {
-					return false;
-				}
-				const account = this.getMPAccountByName(accountName);
-				if (account === undefined) {
-					new Notice($t("main.no-wechat-mp-account-selected"));
-					return false;
-				}
-				const { appId, appSecret } = account;
-				if (
-					appId === undefined ||
-					appSecret === undefined ||
-					!appId ||
-					!appSecret
-				) {
-					new Notice($t("main.please-check-you-appid-and-appsecret"));
-					return false;
-				}
-				const {
-					access_token: accessToken,
-					expires_in: expiresIn,
-					lastRefreshTime,
-				} = account;
-				if (accessToken === undefined || accessToken === "") {
-					const token = await this.wechatClient.getAccessToken(
-						appId,
-						appSecret
-					);
-					if (token) {
-						this.setAccessToken(
-							accountName,
-							token.access_token,
-							token.expires_in
-						);
-						return token.access_token;
-					}
-				} else if (
-					lastRefreshTime! + expiresIn! * 1000 <
-					new Date().getTime()
-				) {
-					const token = await this.wechatClient.getAccessToken(
-						appId,
-						appSecret
-					);
-					if (token) {
-						this.setAccessToken(
-							accountName,
-							token.access_token,
-							token.expires_in
-						);
-						return token.access_token;
-					}
-				} else {
-					return accessToken;
-				}
-				return false;
-			} finally {
-				this.refreshPromise = null;
+	async refreshAccessToken(accountName: string | undefined) {
+		if (this.settings.useCenterToken) {
+			return this.wechatClient.requestToken();
+		}
+		if (accountName === undefined) {
+			return false;
+		}
+		const account = this.getMPAccountByName(accountName);
+		if (account === undefined) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
+		}
+		const { appId, appSecret } = account;
+		if (
+			appId === undefined ||
+			appSecret === undefined ||
+			!appId ||
+			!appSecret
+		) {
+			new Notice($t("main.please-check-you-appid-and-appsecret"));
+			return false;
+		}
+		const {
+			access_token: accessToken,
+			expires_in: expiresIn,
+			lastRefreshTime,
+		} = account;
+		if (accessToken === undefined || accessToken === "") {
+			const token = await this.wechatClient.getAccessToken(
+				appId,
+				appSecret
+			);
+			if (token) {
+				this.setAccessToken(
+					accountName,
+					token.access_token,
+					token.expires_in
+				);
+				return token.access_token;
 			}
-		})();
-
-		return this.refreshPromise;
+		} else if (
+			lastRefreshTime! + expiresIn! * 1000 <
+			new Date().getTime()
+		) {
+			const token = await this.wechatClient.getAccessToken(
+				appId,
+				appSecret
+			);
+			if (token) {
+				this.setAccessToken(
+					accountName,
+					token.access_token,
+					token.expires_in
+				);
+				return token.access_token;
+			}
+		} else {
+			return accessToken;
+		}
+		return false;
 	}
 	getMPAccountByName(accountName: string | undefined) {
 		return this.settings.mpAccounts.find(
@@ -932,43 +921,22 @@ export default class WeWritePlugin extends Plugin {
 				void this.activateMaterialView();
 			},
 		});
+
 		this.addCommand({
-			id: "toggle-mobile-view",
-			name: "Toggle Mobile Preview",
+			id: "toggle-scroll-sync",
+			name: $t("main.toggle-scroll-sync"),
 			callback: () => {
-				this.app.workspace
-					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
-					.forEach((leaf) => {
-						if (leaf.view instanceof PreviewPanel) {
-							leaf.view.toggleMobileView();
-						}
-					});
-			},
-		});
-		this.addCommand({
-			id: "copy-article-to-clipboard",
-			name: "Copy Article to Clipboard",
-			callback: () => {
-				this.app.workspace
-					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
-					.forEach((leaf) => {
-						if (leaf.view instanceof PreviewPanel) {
-							leaf.view.copyToClipboard();
-						}
-					});
-			},
-		});
-		this.addCommand({
-			id: "send-article-to-draft",
-			name: "Send Article to Draft Box",
-			callback: () => {
-				this.app.workspace
-					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
-					.forEach((leaf) => {
-						if (leaf.view instanceof PreviewPanel) {
-							leaf.view.sendToDraft();
-						}
-					});
+				const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)[0];
+				if (leaf && leaf.view instanceof PreviewPanel) {
+					// Use the existing logic in PreviewPanel
+					const button = (leaf.view as any).scrollSyncButton;
+					leaf.view.toggleScrollSync(button);
+				} else {
+					// Fallback if view not open
+					this.settings.scrollSync = !this.settings.scrollSync;
+					new Notice(this.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
+					void this.saveSettings();
+				}
 			},
 		});
 

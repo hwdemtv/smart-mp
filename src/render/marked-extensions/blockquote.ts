@@ -54,14 +54,11 @@ const calloutIcons = new Map<string, CalloutInfo>(Object.entries({
 }));
 
 function matchCallout(text: string | undefined) {
-	if (!text) return { type: "", collapse: "" };
-	const regex = /\[!(.*?)\]([-+])?/;
+	if (!text) return "";
+	const regex = /\[!(.*?)\]/;
 	const match = text.match(regex);
-	if (!match) return { type: "", collapse: "" };
-	return {
-		type: match[1].trim(),
-		collapse: match[2] || ""
-	};
+	if (!match) return "";
+	return match[1].trim();
 }
 
 function normalizeBlockquoteText(raw: string) {
@@ -76,9 +73,8 @@ function normalizeBlockquoteText(raw: string) {
 function getCalloutTitle(callout: string, text: string) {
 	let title = callout.charAt(0).toUpperCase() + callout.slice(1).toLowerCase();
 	let start = text.indexOf("]") + 1;
-	// Skip collapse markers if present
-	if (text.charAt(start) === "-" || text.charAt(start) === "+") {
-		start++;
+	if (text.indexOf("]-") > 0 || text.indexOf("]+") > 0) {
+		start = start + 1;
 	}
 	let end = text.indexOf("\n");
 	if (end === -1) end = text.length;
@@ -107,7 +103,7 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 
 	async rendererCallout(token: Tokens.Blockquote) {
 		const rawText = token.text || normalizeBlockquoteText(token.raw || "");
-		const { type: callout, collapse } = matchCallout(rawText);
+		const callout = matchCallout(rawText);
 		if (!callout) {
 			return this.rendererBlockquote(token);
 		}
@@ -127,12 +123,7 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 		}
 		const info = calloutIcons.get(calloutType) || calloutIcons.get("note");
 		const icon = info ? info.icon : "";
-
-		let extraClasses = "";
-		if (collapse === "-") extraClasses += " is-collapsed";
-		if (collapse === "+" || collapse === "-") extraClasses += " is-collapsible";
-
-		return `<section class="wewrite-callout callout-type-${calloutType}${extraClasses}" data-callout="${calloutType}"><div class="callout-title"><div class="callout-icon">${icon}</div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${body}</div></section>`;
+		return `<section class="wewrite-callout" data-callout="${calloutType}"><div class="callout-title"><div class="callout-icon">${icon}</div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${body}</div></section>`;
 	}
 
 	markedExtension(): MarkedExtension {
@@ -148,7 +139,7 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 				if (!blockquote.text && rawText) {
 					blockquote.text = rawText;
 				}
-				const { type: matched } = matchCallout(rawText || blockquote.text);
+				const matched = matchCallout(rawText || blockquote.text);
 				if (matched) {
 					token.html = await this.rendererCallout(blockquote);
 				} else {

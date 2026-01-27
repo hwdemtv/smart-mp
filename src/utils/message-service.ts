@@ -8,6 +8,7 @@ export type MSG_TYPE =
   'selected-theme-changed' |
   'draft-title-updated' |
   'active-file-changed' |
+  'render-active-note' |
   'wechat-material-updated' |
   'clear-draft-list' |
   'clear-news-list' |
@@ -29,8 +30,6 @@ export type MSG_TYPE =
   'thumb-item-updated' |
   'thumb-item-deleted' |
   'custom-theme-changed' |
-  'code-theme-changed' |
-  'layout-changed' |
   'set-draft-cover-image' |
   'set-image-as-cover' |
   'delete-media-item' |
@@ -40,7 +39,6 @@ export type MSG_TYPE =
   'image-generated' |
   'show-spinner' |
   'hide-spinner'
-
 
 
 

@@ -35,7 +35,8 @@
     "open-material-view": "素材管理",
     "open-previewer": "文章渲染预览",
     "image-generation-failed": "图片生成失败。",
-    "fetch-wechat-profile": "提取公众号信息"
+    "fetch-wechat-profile": "提取公众号信息",
+    "toggle-scroll-sync": "切换滚动同步"
   },
   "modals": {
     "be-careful": "注意！",
@@ -135,6 +136,8 @@
     "no-ip-address": "无IP地址",
     "public-ip-address": "公网IP地址",
     "refresh-all-material-from-remote": "从远程刷新所有素材。",
+    "real-time-render-delay": "实时渲染延迟 (ms)",
+    "real-time-render-delay-desc": "输入停止后的渲染等待时间。增加此值可降低大文件的 CPU 占用，提高流畅度。",
     "select-account": "选择账号",
     "select-wechat-mp-account": "选择微信公众号账号",
     "send-article-to-draft-box-successfully": "文章成功发送到草稿箱。",
@@ -152,6 +155,10 @@
     "themes-folder-path": "主题文件夹路径",
     "use-center-token-server": "使用中心令牌服务器",
     "wechat-account": "微信公众号账号",
+    "code-theme": "语法高亮主题",
+    "choose-syntax-highlighting-theme": "为您的代码块选择一种高亮主题。",
+    "show-mac-header": "显示 Mac 风格标题栏",
+    "show-mac-style-code-block-header": "为代码块增加 Mac 风格的装饰条（包含三个圆点和语言标识）。",
     "you-should-add-this-ip-to-ip-whitelist-o": "请将此IP添加到IP白名单中。点击下方账号信息中的图片访问“微信公众号平台”进行设置。",
     "your-wechat-official-account": "您的微信公众号"
   },
@@ -212,7 +219,9 @@
       "send-article-to-draft-box": "发送文章到草稿箱",
       "testing-button": "测试按钮",
       "to-verify-the-images-in-article": "验证文章中的图片",
-      "wewrite-previewer": "WeWrite预览器"
+      "wewrite-previewer": "WeWrite预览器",
+      "mobile-view": "手机预览",
+      "desktop-view": "桌面预览"
     },
     "send-mass-message": "群发消息",
     "theme-manager": {

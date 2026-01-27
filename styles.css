@@ -161,14 +161,7 @@ left side view
 	display: none;
 }
 
-.wewrite-article-header summary::before {
-	content: "";
-	font-weight: normal;
-}
 
-.wewrite-article-header details[open] summary::before {
-	content: "";
-}
 
 .wewrite-article-header .cover-container {
 	max-width: 500px;
@@ -1690,4 +1683,261 @@ proofreed
 	padding: 0 !important;
 	font-size: 15px !important;
 	/* Standard WeChat font size */
+}
+
+/* Toolbar & Article Header Refinement */
+.wewrite-previewer-toolbar {
+	display: flex;
+	align-items: center;
+	padding: 6px 12px;
+	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--divider-color);
+	margin-bottom: 0px;
+}
+
+.wewrite-toolbar-item {
+	border: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
+.wewrite-toolbar-spacer {
+	flex-grow: 1;
+}
+
+.wewrite-toolbar-buttons {
+	display: flex;
+	gap: 4px;
+}
+
+.wewrite-article-header {
+	margin: 0px;
+	border-bottom: 1px solid var(--divider-color);
+	background-color: var(--background-primary);
+}
+
+.wewrite-article-header details {
+	padding: 0;
+}
+
+.wewrite-draft-header {
+	padding: 8px 16px;
+	background-color: var(--background-primary);
+	font-weight: 500;
+	cursor: pointer;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	font-size: 0.9em;
+	color: var(--text-muted);
+	transition: color 0.2s;
+}
+
+.wewrite-draft-header:hover {
+	color: var(--text-normal);
+}
+
+.wewrite-article-header .wewrite-draft-header::before {
+	content: "▼" !important;
+	font-size: 10px;
+	margin-right: 10px;
+	color: var(--text-muted);
+	display: inline-block;
+	transition: transform 0.2s ease-in-out;
+}
+
+.wewrite-article-header details[open] .wewrite-draft-header::before {
+	transform: rotate(0deg);
+}
+
+.wewrite-article-header details:not([open]) .wewrite-draft-header::before {
+	transform: rotate(-90deg);
+}
+
+.wewrite-article-header .setting-item {
+	padding: 8px 16px;
+	border-top: 1px solid var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+}
+
+.wewrite-article-header .setting-item-info {
+	flex: 0 0 auto;
+	margin-right: 12px;
+	min-width: 80px;
+}
+
+.wewrite-article-header .setting-item-control {
+	flex: 1 1 auto;
+	display: flex;
+}
+
+.wewrite-article-header input[type="text"] {
+	width: 100% !important;
+	max-width: none !important;
+	flex: 1 1 auto;
+}
+
+.wewrite-article-header .digest {
+	width: calc(100% - 32px);
+	margin: 8px 16px 12px 16px;
+	border-radius: 4px;
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--divider-color);
+	padding: 8px;
+	font-size: 13px;
+	color: var(--text-normal);
+}
+
+.wewrite-article-header .cover-container {
+	padding: 0 16px 12px 16px;
+}
+
+.wewrite-article-header .cover-frame {
+	border: 1px dashed var(--divider-color);
+	border-radius: 4px;
+	min-height: 80px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--background-primary-alt);
+}
+
+.wewrite-article-header .cover-frame canvas {
+	max-width: 100%;
+}
+
+/* Obsidian-like Code Block Styling (GH Style) */
+.wewrite .code-container {
+	border-radius: 6px !important;
+	margin: 0.8rem 0 !important;
+	overflow: hidden !important;
+}
+
+/* GitHub (Default Light) */
+.wewrite.wewrite-theme-github,
+.wewrite.wewrite-theme-default {
+	--code-bg: #f6f8fa;
+	--code-header-bg: #eef1f5;
+	--code-border: #e1e4e8;
+	--code-text: #24292e;
+	--code-keyword: #d73a49;
+	--code-string: #032f62;
+	--code-title: #6f42c1;
+	--code-comment: #6a737d;
+}
+
+/* Dracula (Dark) */
+.wewrite.wewrite-theme-dracula {
+	--code-bg: #282a36;
+	--code-header-bg: #191a21;
+	--code-border: #44475a;
+	--code-text: #f8f8f2;
+	--code-keyword: #ff79c6;
+	--code-string: #f1fa8c;
+	--code-title: #50fa7b;
+	--code-comment: #6272a4;
+}
+
+/* Monokai */
+.wewrite.wewrite-theme-monokai {
+	--code-bg: #272822;
+	--code-header-bg: #1e1f1c;
+	--code-border: #49483e;
+	--code-text: #f8f8f2;
+	--code-keyword: #f92672;
+	--code-string: #e6db74;
+	--code-title: #a6e22e;
+	--code-comment: #75715e;
+}
+
+/* Atom One Dark */
+.wewrite.wewrite-theme-atom-one-dark {
+	--code-bg: #282c34;
+	--code-header-bg: #21252b;
+	--code-border: #181a1f;
+	--code-text: #abb2bf;
+	--code-keyword: #c678dd;
+	--code-string: #98c379;
+	--code-title: #61aeee;
+	--code-comment: #5c6370;
+}
+
+/* VS2015 (Dark) */
+.wewrite.wewrite-theme-vs2015 {
+	--code-bg: #1e1e1e;
+	--code-header-bg: #252526;
+	--code-border: #3e3e42;
+	--code-text: #dcdcdc;
+	--code-keyword: #569cd6;
+	--code-string: #d69d85;
+	--code-title: #4ec9b0;
+	--code-comment: #57a64a;
+}
+
+.wewrite[class*="wewrite-theme-"] .code-container {
+	background-color: var(--code-bg) !important;
+	border: 1px solid var(--code-border) !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .code-mac-header {
+	background-color: var(--code-header-bg) !important;
+	border-bottom: 1px solid var(--code-border) !important;
+	padding: 4px 12px !important;
+}
+
+/* Apply Syntax Colors */
+.wewrite[class*="wewrite-theme-"] .hljs {
+	color: var(--code-text) !important;
+	background: transparent !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .hljs-comment {
+	color: var(--code-comment) !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .hljs-keyword {
+	color: var(--code-keyword) !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .hljs-string {
+	color: var(--code-string) !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .hljs-title {
+	color: var(--code-title) !important;
+}
+
+.wewrite[class*="wewrite-theme-"] .hljs-variable {
+	color: var(--code-text) !important;
+}
+
+/* Global Code Formatting */
+.wewrite .code-section code,
+.wewrite .code-section pre,
+.wewrite .code-section span {
+	font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
+	font-size: 13.5px !important;
+	line-height: 0.8 !important;
+	/* Extremely tight */
+	display: block;
+	/* We'll override for spans */
+	padding: 0 !important;
+	margin: 0 !important;
+	height: auto !important;
+	min-height: 0 !important;
+}
+
+.wewrite .code-section code {
+	display: block !important;
+}
+
+.wewrite .code-section span {
+	display: inline !important;
+}
+
+.wewrite .code-section ul,
+.wewrite .code-section ul li {
+	line-height: 0.8 !important;
+	font-size: 13.5px !important;
 }

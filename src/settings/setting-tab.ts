@@ -20,6 +20,7 @@ import {
 	WeChatAccountInfo,
 	WeWriteSetting,
 } from "./wewrite-setting";
+import { PreviewPanel, VIEW_TYPE_WEWRITE_PREVIEW } from "../views/previewer";
 
 interface FileSystemFileHandle {
 	createWritable(): Promise<FileSystemWritableFileStream>;
@@ -242,150 +243,57 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					});
 			});
 
-		// Code Syntax Highlighting Theme
 		new Setting(frame)
-			.setName("代码高亮主题")
-			.setDesc("选择代码块的语法高亮主题")
+			.setName($t("settings.code-theme"))
+			.setDesc($t("settings.choose-syntax-highlighting-theme"))
 			.addDropdown((dropdown) => {
 				dropdown
 					.addOption("github", "GitHub")
+					.addOption("dracula", "Dracula")
 					.addOption("monokai", "Monokai")
 					.addOption("atom-one-dark", "Atom One Dark")
-					.addOption("vs2015", "VS2015 (Dark)")
-					.addOption("default", "Default (hljs)")
+					.addOption("vs2015", "VS2015")
+					.addOption("default", "Default")
 					.setValue(this.plugin.settings.codeTheme || "github")
-					.onChange((value) => {
+					.onChange(async (value: any) => {
 						this.plugin.settings.codeTheme = value;
-						void this.plugin.saveSettings();
-						// Trigger re-render for instant preview
-						this.plugin.messageService.sendMessage("code-theme-changed", value);
+						await this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("render-active-note", null);
 					});
 			});
 
-		// Code Block Header Toggle
 		new Setting(frame)
-			.setName("代码块可显示语言")
-			.setDesc("开启后，每个代码块顶部将显示编程语言名称（类似 IDE 效果）")
+			.setName($t("settings.show-mac-header"))
+			.setDesc($t("settings.show-mac-style-code-block-header"))
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.plugin.settings.codeBlockHeader ?? true)
-					.onChange((value) => {
-						this.plugin.settings.codeBlockHeader = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("code-theme-changed", null); // Re-render code
+					.setValue(this.plugin.settings.showCodeMacHeader !== false)
+					.onChange(async (value) => {
+						this.plugin.settings.showCodeMacHeader = value;
+						await this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("render-active-note", null);
 					});
 			});
 
-		// Layout Enhancement Settings
-		new Setting(frame).setName("排版增强").setHeading();
-
-		// Font Size Setting
 		new Setting(frame)
-			.setName("正文字号")
-			.setDesc("调整文章正文及列表的字体大小")
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("14px", "14px (小)")
-					.addOption("15px", "15px (标准)")
-					.addOption("16px", "16px (大)")
-					.addOption("17px", "17px (超大)")
-					.setValue(this.plugin.settings.fontSize || "15px")
-					.onChange((value) => {
-						this.plugin.settings.fontSize = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("layout-changed", null);
-					});
-			});
+			.setName($t("settings.real-time-render-delay"))
+			.setDesc($t("settings.real-time-render-delay-desc"))
+			.addSlider((slider) => {
+				slider
+					.setLimits(300, 2000, 100)
+					.setValue(this.plugin.settings.realTimeRenderDelay || 500)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.realTimeRenderDelay = value;
+						await this.plugin.saveSettings();
 
-		// Horizontal Rule Style
-		new Setting(frame)
-			.setName("分隔线样式")
-			.setDesc("选择分隔线的显示样式")
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("dots", "点状 (· · ·)")
-					.addOption("lines", "线状 (— — —)")
-					.addOption("stars", "星号 (* * *)")
-					.addOption("custom", "自定义")
-					.addOption("none", "隐藏")
-					.setValue(this.plugin.settings.hrStyle || "dots")
-					.onChange((value) => {
-						this.plugin.settings.hrStyle = value;
-						void this.plugin.saveSettings();
-						this.display(); // Refresh to show/hide custom input
-						this.plugin.messageService.sendMessage("layout-changed", null);
-					});
-			});
-
-		if (this.plugin.settings.hrStyle === 'custom') {
-			new Setting(frame)
-				.setName("自定义分隔符")
-				.setDesc("输入自定义的分隔符文本")
-				.addText((text) => {
-					text
-						.setPlaceholder("例如：✦ ✦ ✦")
-						.setValue(this.plugin.settings.customHrText || "· · ·")
-						.onChange((value) => {
-							this.plugin.settings.customHrText = value;
-							void this.plugin.saveSettings();
-							this.plugin.messageService.sendMessage("layout-changed", null);
-						});
-				});
-		}
-
-		// First-line Indent Toggle
-		new Setting(frame)
-			.setName("首行缩进")
-			.setDesc("为段落启用 2 字符缩进（中文排版风格）")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.firstLineIndent ?? false)
-					.onChange((value) => {
-						this.plugin.settings.firstLineIndent = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("layout-changed", null);
-					});
-			});
-
-		// Link Footnotes Toggle
-		new Setting(frame)
-			.setName("链接转脚注")
-			.setDesc("自动将超链接转换为脚注引用，提高微信兼容性")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.linkFootnotes ?? true)
-					.onChange((value) => {
-						this.plugin.settings.linkFootnotes = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("layout-changed", null);
-					});
-			});
-
-		// Image Caption Toggle
-		new Setting(frame)
-			.setName("显示图片说明")
-			.setDesc("尝试将图片的 Alt 文本显示为下方的灰色说明文字（忽略文件名和短文本）")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.showImageCaptions ?? false)
-					.onChange((value) => {
-						this.plugin.settings.showImageCaptions = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("layout-changed", null);
-					});
-			});
-
-		// Embed Article Stats Toggle
-		new Setting(frame)
-			.setName("嵌入字数统计")
-			.setDesc("在文章开头添加字数统计和预计阅读时长")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.embedArticleStats ?? false)
-					.onChange((value) => {
-						this.plugin.settings.embedArticleStats = value;
-						void this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("layout-changed", null);
+						// Rebuild debounce for active previewer
+						const leaves = this.app.workspace.getLeavesOfType("wewrite-article-preview");
+						for (const leaf of leaves) {
+							if (leaf.view instanceof PreviewPanel) {
+								(leaf.view as any).rebuildDebounce();
+							}
+						}
 					});
 			});
 	}

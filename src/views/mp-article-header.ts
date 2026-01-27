@@ -120,7 +120,6 @@ export class MPArticleHeader {
 
 		new Setting(details)
 			.setName($t("views.article-header.article-title"))
-			.setClass("wewrite-title-setting")
 			.addText((text) => {
 				this._title = text;
 				text.setPlaceholder(
@@ -250,7 +249,7 @@ export class MPArticleHeader {
 						}
 						if (this._digest.value !== undefined && this._digest.value) {
 							const prompt = this._digest.value.trim()
-							if (prompt) {
+							if (prompt){
 								this.imageGenerateModal.prompt = prompt;
 							}
 						}
@@ -323,7 +322,7 @@ export class MPArticleHeader {
 
 		return coverframe;
 	}
-
+	
 	setCoverImage(url: string | null) {
 		while (this.coverFrame.firstChild) {
 			this.coverFrame.firstChild.remove();
@@ -354,7 +353,7 @@ export class MPArticleHeader {
 				img.height * scale
 			);
 
-
+			
 
 			this.coverFrame.appendChild(canvas);
 		};
@@ -365,12 +364,12 @@ export class MPArticleHeader {
 		}
 		if (this._digest.value !== undefined && this._digest.value) {
 			const prompt = this._digest.value.trim()
-			if (prompt) {
-				this.imageGenerateModal.prompt = prompt;
-			}
+			if (prompt){
+			this.imageGenerateModal.prompt = prompt;
 		}
-		this.imageGenerateModal.open();
 	}
+	this.imageGenerateModal.open();
+}
 	resetImage() {
 		this.setCoverImageXY(0, 0);
 	}
@@ -387,7 +386,7 @@ export class MPArticleHeader {
 						true
 					);
 					this.activeLocalDraft.thumb_media_id = media_id;
-					return !!media_id;
+					return true;
 				}
 			} else {
 				return true;
@@ -446,9 +445,8 @@ export class MPArticleHeader {
 			this._onlyFansCanComment.setValue(
 				(this.activeLocalDraft.only_fans_can_comment || 0) > 0
 			);
-			const raw_cover = this.activeLocalDraft.cover_image_url || "";
-			this.cover_image = (raw_cover === "undefined" || raw_cover === "null") ? "" : raw_cover;
-			const [xStr, yStr] = this.activeLocalDraft.pic_crop_235_1?.split("_") ?? (this.activeLocalDraft.pic_crop_235_1?.split(" ") ?? []);
+			this.cover_image = this.activeLocalDraft.cover_image_url || "";
+			const [xStr, yStr] = this.activeLocalDraft.pic_crop_235_1?.split(" ") ?? [];
 			x = xStr ? Number(xStr) : 0;
 			y = yStr ? Number(yStr) : 0;
 		} else {
@@ -459,7 +457,7 @@ export class MPArticleHeader {
 			this._onlyFansCanComment.setValue(false);
 			this.cover_image = "";
 		}
-
+		
 		this.setCoverImageXY(Number(x), Number(y));
 		this.plugin.messageService.sendMessage(
 			"draft-title-updated",

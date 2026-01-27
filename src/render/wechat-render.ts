@@ -31,7 +31,6 @@ import { Footnote } from "./marked-extensions/footnote";
 import { Links } from "./marked-extensions/links";
 import { Summary } from "./marked-extensions/summary";
 import { Image } from "./marked-extensions/image";
-import { ObsidianMarkdownRenderer } from "./markdown-render";
 // import { ListItem } from './marked-extensions/list-item'
 
 const markedOptiones = {
@@ -195,42 +194,6 @@ export class WechatRender {
 		html = await this.postprocess(html);
 		return html;
 	}
-
-	/**
-	 * New native rendering method (v1.4.0)
-	 * Uses Obsidian's native MarkdownRenderer instead of marked.js
-	 * This allows Excalidraw and other plugins to render correctly
-	 */
-	public async parseNoteNative(
-		path: string,
-		container: HTMLElement,
-		view: Component
-	) {
-		// Import post-processor
-		const { WeWritePostProcessor } = await import('./post-processor');
-
-		// Initialize if not already done
-		WeWritePostProcessor.initialize(this.plugin.app);
-
-		// Use ObsidianMarkdownRenderer to render with native Obsidian
-		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		const renderedElement = await renderer.render(path, container, view);
-
-		if (renderedElement) {
-			// Apply post-processing (Mermaid to image, file:// conversion, etc.)
-			await WeWritePostProcessor.formatContent(renderedElement, path);
-
-			// Give a small delay for everything to settle
-			await new Promise(resolve => setTimeout(resolve, 300));
-
-			// Get the HTML string
-			const html = renderedElement.innerHTML;
-
-			return html;
-		}
-
-		return '';
-	}
 }
 
 function renderListItem(parser: RendererThis["parser"], token: Tokens.ListItem) {
@@ -239,5 +202,8 @@ function renderListItem(parser: RendererThis["parser"], token: Tokens.ListItem) 
 }
 
 function serializeChildren(wrapper: HTMLElement): string {
-	return wrapper.innerHTML || "";
+	const serializer = new XMLSerializer();
+	return Array.from(wrapper.childNodes)
+		.map((node) => serializer.serializeToString(node))
+		.join('');
 }

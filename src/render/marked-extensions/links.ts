@@ -31,43 +31,23 @@ export class Links extends WeWriteMarkedExtension {
     }
 
     markedExtension(): MarkedExtension {
-        const wikilinkRegex = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/;
         return {
-            extensions: [
-                {
-                    name: 'link',
-                    level: 'inline',
-                    renderer: (token: Tokens.Link) => {
-                        if (token.href.startsWith('http')) {
-                            this.allLinks.push(token.href);
-                            return `<a href="${token.href}">${token.text}<sup>[${this.allLinks.length}]</sup></a>`;
-                        } else {
-                            return `<a href="${token.href}">${token.text}</a>`;
-                        }
+            extensions: [{
+                name: 'link',
+                level: 'inline',
+                renderer: (token: Tokens.Link) => {
+                    if (token.href.startsWith('http')) {
+                        this.allLinks.push(token.href);
+                        return `<a href="${token.href}">${token.text}<sup>[${this.allLinks.length}]</sup></a>`;
+                    } else {
+                        // 非http外链直接返回，不添加到foot-links中
+                        return `<a href="${token.href}">${token.text}</a>`;
                     }
-                },
-                {
-                    name: 'wikilink',
-                    level: 'inline',
-                    start: (src: string) => src.indexOf('[['),
-                    tokenizer: (src: string) => {
-                        const match = wikilinkRegex.exec(src);
-                        if (match) {
-                            return {
-                                type: 'wikilink',
-                                raw: match[0],
-                                href: match[1],
-                                text: match[2] || match[1] // Use alias if exists, else use path
-                            };
-                        }
-                    },
-                    renderer: (token: Tokens.Generic) => {
-                        // For WeChat MP, wikilinks are treated as normal text or added to foot links if they look like URLs (rare)
-                        // Usually they are just internal links which WeChat doesn't support, so we render as styled text
-                        return `<span class="wewrite-wikilink">${token.text}</span>`;
-                    }
+                    // else {
+                    //     return `<a>${token.text}[${token.href}]</a>`;
+                    // }
                 }
-            ]
+            }]
         }
     }
 }

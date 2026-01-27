@@ -1,10 +1,5 @@
 /**
- * WeWrite Previewer - High Precision Version
- * 
- * Modifications by ryfineZ (2024-01-27):
- * 1. Fixed Header Layout (Sticky Header)
- * 2. Heading-Based Scroll Sync (High Precision)
- * 3. Command & Hotkey support for Scroll Sync Toggle
+ * Define the right-side leaf of view as Previewer view
  */
 
 import { EditorView } from "@codemirror/view";
@@ -13,17 +8,16 @@ import {
 	debounce,
 	DropdownComponent,
 	Editor,
-	EditorPosition,
 	EventRef,
-	ExtraButtonComponent,
 	ItemView,
 	MarkdownView,
-	MenuItem,
 	Notice,
 	sanitizeHTMLToDom,
 	Setting,
 	TFile,
 	WorkspaceLeaf,
+	ExtraButtonComponent,
+	EditorPosition,
 } from "obsidian";
 import { $t } from "src/lang/i18n";
 import WeWritePlugin from "src/main";
@@ -34,8 +28,7 @@ import {
 	uploadURLImage,
 	uploadURLVideo,
 } from "src/render/post-render";
-import { UrlUtils } from "src/utils/urls";
-import { areObjectsEqual, cleanHtmlForWechat, serializeChildren } from "src/utils/utils";
+import { serializeChildren, cleanHtmlForWechat } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
 import { ObsidianMarkdownRenderer } from "src/render/markdown-render";
 import { ResourceManager } from "../assets/resource-manager";
@@ -44,8 +37,6 @@ import { MPArticleHeader } from "./mp-article-header";
 import { ThemeManager } from "../theme/theme-manager";
 import { ThemeSelector } from "../theme/theme-selector";
 import { WebViewModal } from "./webview";
-// @ts-ignore
-import domtoimage from "../render/dom-to-image-more";
 
 export const VIEW_TYPE_WEWRITE_PREVIEW = "wewrite-article-preview";
 export interface ElectronWindow extends Window {
@@ -69,8 +60,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	markdownView: MarkdownView | null = null;
 	private articleDiv: HTMLDivElement;
 	private listeners: EventRef[] = [];
-	private editorScrollListener: ((event: Event) => void) | null = null;
-	private scrollSyncButton: ExtraButtonComponent | null = null;
 	currentView: EditorView;
 	observer: MutationObserver | null = null;
 	private wechatClient: WechatClient;
@@ -80,12 +69,27 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (this.plugin.settings.realTimeRender) {
 			void this.renderDraft();
 		}
-	}, 2000);
+	}, 500);
 	private debouncedUpdate = debounce(() => {
 		if (this.plugin.settings.realTimeRender) {
 			void this.renderDraft();
 		}
-	}, 2000);
+	}, 500);
+
+	rebuildDebounce() {
+		const delay = this.plugin.settings.realTimeRenderDelay || 500;
+		this.debouncedRender = debounce(() => {
+			if (this.plugin.settings.realTimeRender) {
+				void this.renderDraft();
+			}
+		}, delay);
+		this.debouncedUpdate = debounce(() => {
+			if (this.plugin.settings.realTimeRender) {
+				void this.renderDraft();
+			}
+		}, delay);
+	}
+
 	private debouncedCustomThemeChange = debounce((theme: string) => {
 		void this.applyCustomThemeChange(theme);
 	}, 2000);
@@ -98,13 +102,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	lastLeaf: WorkspaceLeaf | undefined;
 	renderDiv!: HTMLElement;
 	elementMap: Map<string, HTMLElement | string> = new Map();
-	articleTitle: Setting;
 	containerDiv: HTMLElement;
 	mpModal: WebViewModal;
 	isActive: boolean = false;
 	isMobileView: boolean = false;
-	articleStats: HTMLElement;
 	renderPreviewer!: HTMLElement;
+	private editorScrollListener: ((event: Event) => void) | null = null;
+	private scrollSyncButton: ExtraButtonComponent | null = null;
+	private articleStats: HTMLElement;
+	private currentArticleStats = { totalWords: 0, readingTime: 0 };
+
 	getViewType(): string {
 		return VIEW_TYPE_WEWRITE_PREVIEW;
 	}
@@ -119,6 +126,27 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.plugin = plugin;
 		this.wechatClient = WechatClient.getInstance(this.plugin);
 		this.themeSelector = new ThemeSelector(plugin);
+		this.rebuildDebounce();
+	}
+
+	toggleMobileView(button: ExtraButtonComponent) {
+		this.isMobileView = !this.isMobileView;
+		if (this.isMobileView) {
+			this.renderDiv.addClass("is-mobile-view");
+			button.setTooltip("切换为桌面视图");
+			button.setIcon("monitor");
+		} else {
+			this.renderDiv.removeClass("is-mobile-view");
+			button.setTooltip("切换为手机视图");
+			button.setIcon("tablet-smartphone");
+		}
+	}
+
+	toggleScrollSync(button: ExtraButtonComponent) {
+		this.plugin.settings.scrollSync = !this.plugin.settings.scrollSync;
+		this.refreshScrollSyncButton();
+		new Notice(this.plugin.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
+		void this.plugin.saveSettings();
 	}
 
 	private async applyCustomThemeChange(theme: string) {
@@ -132,34 +160,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.buildUI();
 		this.startListen();
 
-		this.plugin.messageService.registerListener(
-			"draft-title-updated",
-			(title: string) => {
-				this.articleTitle.setName(title);
-			}
-		);
 		this.themeSelector.startWatchThemes();
 		this.plugin.messageService.registerListener(
 			"custom-theme-changed",
 			(theme: string) => {
 				// Instant theme preview - no debounce for immediate feedback
 				void this.applyCustomThemeChange(theme);
-			}
-		);
-		this.plugin.messageService.registerListener(
-			"code-theme-changed",
-			() => {
-				// Instant code theme preview
-				this.lastRenderedContent = ""; // Force re-render
-				void this.renderDraft();
-			}
-		);
-		this.plugin.messageService.registerListener(
-			"layout-changed",
-			() => {
-				// Re-render on layout settings change
-				this.lastRenderedContent = ""; // Force re-render
-				void this.renderDraft();
 			}
 		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);
@@ -221,13 +227,23 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const mainDiv = container.createDiv({
 			cls: "wewrite-previewer-container",
 		});
-		this.articleTitle = new Setting(mainDiv)
-			.setName($t("views.previewer.article-title"))
-			.setHeading()
+
+		// Compact Toolbar Container
+		const toolbar = mainDiv.createDiv({ cls: "wewrite-previewer-toolbar" });
+
+		// Theme Selector (Dropdown)
+		const themeSetting = new Setting(toolbar)
 			.addDropdown((dropdown: DropdownComponent) => {
 				void this.themeSelector.dropdown(dropdown);
 			})
+			.setClass("wewrite-toolbar-item");
 
+		// Utility Buttons
+		toolbar.createDiv({ cls: "wewrite-toolbar-spacer" });
+
+		const buttonsDiv = toolbar.createDiv({ cls: "wewrite-toolbar-buttons" });
+
+		new Setting(buttonsDiv)
 			.addExtraButton((button) => {
 				button
 					.setIcon("refresh-cw")
@@ -276,33 +292,22 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			})
 			.addExtraButton((button) => {
 				this.scrollSyncButton = button;
-				const isSync = this.plugin.settings.scrollSync ?? true;
-				button
-					.setIcon(isSync ? "arrow-up-down" : "lock")
-					.setTooltip(isSync ? "滚动同步: 开启" : "滚动同步: 关闭")
-					.onClick(() => {
-						this.plugin.settings.scrollSync = !this.plugin.settings.scrollSync;
-						this.refreshScrollSyncButton();
-						new Notice(this.plugin.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
-						this.plugin.saveSettings();
-					});
+				this.refreshScrollSyncButton();
+				button.onClick(() => {
+					this.toggleScrollSync(button);
+				});
 			})
 			.addExtraButton((button) => {
 				button
 					.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone")
 					.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图")
 					.onClick(() => {
-						this.isMobileView = !this.isMobileView;
+						this.toggleMobileView(button);
 						button.setIcon(this.isMobileView ? "monitor" : "tablet-smartphone");
 						button.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图");
-						if (this.isMobileView) {
-							this.renderDiv.addClass("is-mobile-view");
-						} else {
-							this.renderDiv.removeClass("is-mobile-view");
-						}
-						new Notice(this.isMobileView ? "手机预览模式" : "桌面视图模式");
 					});
-			});
+			})
+			.setClass("wewrite-toolbar-item");
 
 		this.draftHeader = new MPArticleHeader(this.plugin, mainDiv);
 
@@ -312,11 +317,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		this.renderDiv = mainDiv.createDiv({ cls: "render-container" });
 		this.renderDiv.id = "render-div";
-		this.renderPreviewer = mainDiv.createDiv({
-			cls: "wewrite-render-preview",
+		this.renderPreviewer = this.renderDiv.createDiv({
+			cls: "render-previewer",
 		})
 		// 使用常规 DOM 容器，避免 Shadow DOM 带来的额外开销
-		this.containerDiv = this.renderDiv.createDiv({ cls: "wewrite-article wewrite" });
+		this.containerDiv = this.renderPreviewer.createDiv({ cls: "wewrite-article" });
 		this.articleDiv = this.containerDiv.createDiv({ cls: "article-div" });
 	}
 	async checkCoverImage() {
@@ -403,29 +408,32 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.articleDiv.empty();
 		this.elementMap = new Map<string, HTMLElement | string>();
 
-
 		// 3. Task ID Validation: Check if this task is still the most recent one
 		if (taskId !== this.lastRenderTaskId) {
 			console.debug("Render cancelled: Newer task started");
 			return;
 		}
 
-
-		// Render directly into articleDiv to preserve live DOM and avoid serialization issues
-		// This also fixes the blank preview issue by avoiding intermediate buffer divs
-		let html = await WechatRender.getInstance(this.plugin, this).parseNoteNative(
+		// Render directly into articleDiv to preserve live DOM
+		let html = await WechatRender.getInstance(this.plugin, this).parseNote(
 			activeFile.path,
 			this.articleDiv,
 			this
 		);
 
+		// Populate articleDiv with the rendered HTML
+		const articleSection = createEl("section", {
+			cls: "wewrite-article-content wewrite",
+		});
+		const dom = sanitizeHTMLToDom(html);
+		articleSection.appendChild(dom);
 
-		// Native rendering handles transclusions automatically
+		this.articleDiv.empty();
+		this.articleDiv.appendChild(articleSection);
+
 		this.elementMap.clear();
-
-		// return this.articleDiv.innerHTML;
-		// return this.articleDiv.innerHTML;
 	}
+
 	async renderDraft() {
 		if (!this.isViewActive()) {
 			return;
@@ -445,6 +453,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 		const element = this.articleDiv.firstChild as HTMLElement;
+
+		// Calculate stats from fresh rendered content (before layout enhancements)
+		const textContent = element.textContent || "";
+		this.currentArticleStats = this.calculateStats(textContent);
 
 		// Apply layout enhancements
 		this.applyLayoutEnhancements(element);
@@ -482,20 +494,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.containerDiv.removeClass("wewrite-indent-enabled");
 		}
 
-
 		// Code Theme Class
 		const codeTheme = this.plugin.settings.codeTheme || "github";
-		// Remove existing theme classes
 		element.removeClass("wewrite-theme-github", "wewrite-theme-monokai", "wewrite-theme-atom-one-dark", "wewrite-theme-vs2015", "wewrite-theme-default");
 		element.addClass(`wewrite-theme-${codeTheme}`);
 
 		// Font Size
 		const fontSize = this.plugin.settings.fontSize || "15px";
 		this.containerDiv.style.setProperty("--wewrite-font-size", fontSize);
-		// Force redraw for !important override in CSS if needed, though we set it on container
-		// Let's set it directly on the container as an inline style which inherits
 		element.style.fontSize = fontSize;
-
 
 		// Wrap tables for mobile responsiveness
 		this.wrapTables(element);
@@ -510,36 +517,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.processImageCaptions(element);
 		}
 
-
 		// HR Replacement
 		this.processHR(element);
-		/*
-		let hrContent = '"· · ·"';
-		let hrDisplay = "block";
-
-		switch (hrStyle) {
-			case "lines":
-				hrContent = '"— — —"';
-				break;
-			case "stars":
-				hrContent = '"* * *"';
-				break;
-			case "custom":
-				hrContent = `"${(this.plugin.settings.customHrText || "· · ·").replace(/"/g, '\\"')}"`;
-				break;
-			case "none":
-				hrDisplay = "none";
-				break;
-			case "dots":
-			default:
-				hrContent = '"· · ·"';
-				break;
-		}
-
-		this.containerDiv.style.setProperty("--wewrite-hr-content", hrContent);
-		this.containerDiv.style.setProperty("--wewrite-hr-display", hrDisplay); 
-		*/
-
 
 		// Link footnotes conversion (should be last as it modifies links)
 		if (this.plugin.settings.linkFootnotes) {
@@ -588,11 +567,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const images = element.querySelectorAll("img");
 		images.forEach((img) => {
 			const altText = img.getAttribute("alt");
-			// Filter out invalid alt text:
-			// 1. Empty
-			// 2. Short (< 2 chars)
-			// 3. File extensions (likely filename)
-			// 4. Pasted image (Obsidian default)
 			if (
 				!altText ||
 				altText.length < 2 ||
@@ -602,7 +576,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				return;
 			}
 
-			// Check if caption already exists to avoid duplication
 			if (
 				img.nextElementSibling &&
 				img.nextElementSibling.classList.contains("wewrite-caption")
@@ -610,46 +583,40 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				return;
 			}
 
-			// Create caption element
 			const caption = document.createElement("span");
 			caption.className = "wewrite-caption";
 			caption.textContent = altText;
 
-			// Insert after image
-			// If image has a parent which is just the image (like p tag), maybe insert after parent?
-			// But for now, insert directly after img.
 			img.parentNode?.insertBefore(caption, img.nextSibling);
 		});
 	}
 
 	// Embed word count and reading time at the beginning of article
 	embedArticleStatsInContent(element: HTMLElement) {
-		// Remove existing stats if present to avoid duplication
 		const existingStats = element.querySelector(".wewrite-embedded-stats");
 		if (existingStats) {
 			existingStats.remove();
 		}
 
-		const content = element.textContent || "";
+		const { totalWords, readingTime } = this.currentArticleStats;
 
-		// Count Chinese characters
-		const chineseChars = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
-		// Count English words
-		const englishWords = (content.match(/[a-zA-Z]+/g) || []).length;
-		const totalWords = chineseChars + englishWords;
-		const readingTime = Math.max(1, Math.ceil(totalWords / 200));
-
-		// Create stats element
 		const statsDiv = document.createElement("section");
 		statsDiv.className = "wewrite-embedded-stats";
 		statsDiv.innerHTML = `<p style="text-align: center; color: #999; font-size: 14px; margin-bottom: 1.5em;">📖 全文约 <strong>${totalWords}</strong> 字 · 预计阅读 <strong>${readingTime}</strong> 分钟</p>`;
 
-		// Insert at the beginning of the article
 		if (element.firstChild) {
 			element.insertBefore(statsDiv, element.firstChild);
 		} else {
 			element.appendChild(statsDiv);
 		}
+	}
+
+	calculateStats(text: string) {
+		const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+		const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
+		const totalWords = chineseChars + englishWords;
+		const readingTime = Math.max(1, Math.ceil(totalWords / 200));
+		return { totalWords, readingTime };
 	}
 
 	// Convert hyperlinks to footnote references for WeChat compatibility
@@ -663,23 +630,19 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			const href = anchor.getAttribute("href");
 			const text = anchor.textContent || "";
 
-			// Skip internal links and anchors
 			if (!href || href.startsWith("#") || href.startsWith("obsidian://")) {
 				return;
 			}
 
-			// Add footnote reference
 			const footnoteRef = document.createElement("sup");
 			footnoteRef.className = "wewrite-footnote-ref";
 			footnoteRef.textContent = `[${index}]`;
 			anchor.after(footnoteRef);
 
-			// Store footnote data
 			footnotes.push({ text, url: href });
 			index++;
 		});
 
-		// Add footnotes section at the end if there are any
 		if (footnotes.length > 0) {
 			const footnotesSection = document.createElement("section");
 			footnotesSection.className = "wewrite-footnotes";
@@ -700,6 +663,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		}
 	}
 
+	updateArticleStats() {
+		if (!this.articleStats) return;
+		const { totalWords, readingTime } = this.currentArticleStats;
+		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTime} 分钟`);
+	}
 	isViewActive(): boolean {
 		return this.isActive && !this.app.workspace.rightSplit.collapsed
 	}
@@ -732,17 +700,25 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						"active-file-changed",
 						null
 					);
+					// Reset content hash on file change
+					this.lastRenderedContent = "";
 					void this.debouncedUpdate();
 					// Re-bind scroll listener when active file changes
 					this.registerEditorScroll();
 				} else {
+
 					this.isActive = leaf.view.getViewType() === VIEW_TYPE_WEWRITE_PREVIEW
 				}
+
 			}
 		});
 		this.listeners.push(el);
 
 		this.registerEditorScroll();
+
+		this.plugin.messageService.registerListener("render-active-note", () => {
+			void this.renderDraft();
+		});
 	}
 
 	registerEditorScroll() {
@@ -783,10 +759,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				let nextHeadingTop = scrollDom.scrollHeight;
 
 				// Get Heading positions in Editor
-				// Note: cache lines are 0-indexed, CM6 doc lines are 1-indexed
 				const headingPositions = headings.map(h => {
 					try {
-						// Safety check for line existence
 						const lineNo = h.position.start.line + 1;
 						const doc = cmView.state.doc;
 						if (lineNo > doc.lines) return -1;
@@ -813,25 +787,20 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				}
 
 				// Calculate ratio
-				// If before the first heading
 				if (currentIndex === -1) {
-					// From 0 to First Heading
 					nextHeadingTop = headingPositions[0] !== -1 ? headingPositions[0] : scrollDom.scrollHeight;
 					currentHeadingTop = 0;
 				}
-				// If after the last heading
 				else if (currentIndex === headingPositions.length - 1) {
 					nextHeadingTop = scrollDom.scrollHeight;
 				}
 
-				// Avoid division by zero
 				const range = nextHeadingTop - currentHeadingTop;
 				const ratio = range > 0 ? (currentScrollTop - currentHeadingTop) / range : 0;
 
 				// Map to Preview DOM
 				const previewHeadings = previewEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
 
-				// Handle mismatch/empty preview headers
 				if (previewHeadings.length === 0) {
 					this.syncScrollPercentage(scrollDom, previewEl);
 					return;
@@ -841,30 +810,20 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				let endElTop = previewEl.scrollHeight - previewEl.clientHeight;
 
 				if (currentIndex === -1) {
-					// Before first header
 					if (previewHeadings.length > 0) {
 						endElTop = (previewHeadings[0] as HTMLElement).offsetTop;
 					}
 				} else if (currentIndex >= previewHeadings.length) {
-					// Index out of bounds (preview has fewer headers than editor?)
-					// Fallback to last available header
 					startElTop = (previewHeadings[previewHeadings.length - 1] as HTMLElement).offsetTop;
 				} else {
-					// Normal case
 					startElTop = (previewHeadings[currentIndex] as HTMLElement).offsetTop;
-
-					// Determine end element
 					if (currentIndex + 1 < previewHeadings.length) {
 						endElTop = (previewHeadings[currentIndex + 1] as HTMLElement).offsetTop;
 					} else {
-						// Last header to end of doc
 						endElTop = previewEl.scrollHeight - previewEl.clientHeight;
 					}
 				}
 
-				// Apply scroll
-				// Using requestAnimationFrame for high performance and smoothness
-				// The target position is calculated by interpolating between two heading anchors
 				requestAnimationFrame(() => {
 					previewEl.scrollTop = startElTop + ratio * (endElTop - startElTop);
 				});
@@ -898,6 +857,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 	getMarkdownView(): MarkdownView | null {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
+	}
+
+	refreshScrollSyncButton() {
+		if (this.scrollSyncButton) {
+			const isSync = this.plugin.settings.scrollSync ?? true;
+			this.scrollSyncButton.setIcon(isSync ? "arrow-up-down" : "lock");
+			this.scrollSyncButton.setTooltip(isSync ? (isSync ? "滚动同步: 开启" : "滚动同步: 关闭") : "滚动同步: 关闭");
+		}
 	}
 
 	onEditorChange(editor: Editor, info: MarkdownView) {
@@ -960,74 +927,4 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		};
 		await loadChildren(this as unknown as InternalComponent);
 	}
-	refreshScrollSyncButton() {
-		if (this.scrollSyncButton) {
-			const isSync = this.plugin.settings.scrollSync ?? true;
-			this.scrollSyncButton.setIcon(isSync ? "arrow-up-down" : "lock");
-			this.scrollSyncButton.setTooltip(isSync ? "滚动同步: 开启" : "滚动同步: 关闭");
-		}
-	}
-
-	// Public methods for hotkey commands
-	toggleMobileView() {
-		if (!this.renderDiv) return; // Guard against early invocation
-		this.isMobileView = !this.isMobileView;
-		if (this.isMobileView) {
-			this.renderDiv.addClass("is-mobile-view");
-		} else {
-			this.renderDiv.removeClass("is-mobile-view");
-		}
-		new Notice(this.isMobileView ? "手机预览模式" : "桌面视图模式");
-	}
-
-	async copyToClipboard() {
-		if (!this.articleDiv || !this.articleDiv.innerHTML) {
-			new Notice("No content to copy");
-			return;
-		}
-
-		// Charts are already converted during render by the post-processor
-		// skip conversion here to avoid errors with blob URLs
-
-		const data = this.getArticleContent();
-		await navigator.clipboard.write([
-			new ClipboardItem({
-				"text/html": new Blob([data], { type: "text/html" }),
-			}),
-		]);
-		new Notice($t("views.previewer.article-copied-to-clipboard"));
-	}
-
-	async sendToDraft() {
-		if (await this.checkCoverImage()) {
-			await this.sendArticleToDraftBox();
-		} else {
-			new Notice($t("views.previewer.please-set-cover-image"));
-		}
-	}
-
-	updateArticleStats() {
-		if (!this.articleStats) return; // Guard against early invocation
-		const content = this.lastRenderedContent;
-		if (!content) {
-			this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
-			return;
-		}
-
-		// Count Chinese characters
-		const chineseChars = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
-		// Count English words (approximate)
-		const englishWords = (content.match(/[a-zA-Z]+/g) || []).length;
-
-		// Total "words" (Chinese chars are words, English words are counted as-is)
-		const totalWords = chineseChars + englishWords;
-
-		// Reading time: ~200 Chinese chars OR ~150 English words per minute
-		// Using a blended rate of ~200 "units" per minute
-		const readingTimeMinutes = Math.max(1, Math.ceil(totalWords / 200));
-
-		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTimeMinutes} 分钟`);
-	}
-
-
 }

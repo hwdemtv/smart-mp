@@ -19,8 +19,8 @@ import WeWritePlugin from "src/main";
 // type TokenizerInline =  'escape'| 'tag'| 'link'| 'reflink'| 'emStrong'| 'codespan'| 'br'| 'del'| 'autolink'| 'url'| 'inlineText'
 
 export interface PreviewRender {
-    updateElementByID(id: string, html: string): void;
-    addElementByID(id: string, node: HTMLElement | string): void;
+    updateElementByID(id:string, html:string):void;
+    addElementByID(id:string, node:HTMLElement | string):void;
     articleProperties: Map<string, string>;
 
 }
@@ -29,18 +29,18 @@ export abstract class WeWriteMarkedExtension {
     plugin: WeWritePlugin
     previewRender: PreviewRender
     marked: Marked
-    constructor(plugin: WeWritePlugin, previewRender: PreviewRender, marked: Marked) {
+    constructor(plugin: WeWritePlugin, previewRender: PreviewRender, marked:Marked) {
         this.plugin = plugin;
         this.previewRender = previewRender
         this.marked = marked
     }
     prepare(): Promise<void> { return Promise.resolve(); }
-    postprocess(html: string): Promise<string> { return Promise.resolve(html); }
+    postprocess(html:string): Promise<string> { return Promise.resolve(html); }
     beforePublish(): Promise<void> { return Promise.resolve(); }
     cleanup(): Promise<void> { return Promise.resolve(); }
     abstract markedExtension(): MarkedExtension
-    public isPluginInstalled(pluginId: string) {
-        const plugins = (this.plugin.app as any).plugins.plugins;
+	public isPluginInstlled(pluginId:string) {
+		const plugins = this.plugin.app.plugins.plugins;
         return Object.prototype.hasOwnProperty.call(plugins, pluginId);
-    }
+	}
 }

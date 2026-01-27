@@ -39,17 +39,18 @@ export type AITaskAccountInfo = {
 export type WeWriteSetting = {
     useCenterToken: boolean;
     realTimeRender: boolean;
+    realTimeRenderDelay?: number;
     scrollSync?: boolean;
     previewer_wxname?: string;
     custom_theme?: string;
-    codeTheme?: string; // Code syntax highlighting theme (e.g., 'github', 'monokai', 'atom-one-dark')
+    codeTheme?: "github" | "dracula" | "monokai" | "atom-one-dark" | "vs2015" | "default";
     codeLineNumber: boolean;
-    codeBlockHeader?: boolean; // Show macOS-style header for code blocks
-    fontSize?: string; // Article body font size (e.g. '15px')
-    firstLineIndent?: boolean; // Enable first-line indent for paragraphs (2em)
-    linkFootnotes?: boolean; // Convert links to footnotes for WeChat compatibility
-    showImageCaptions?: boolean; // Show image alt text as caption
-    embedArticleStats?: boolean; // Embed word count and reading time in article content
+    showCodeMacHeader?: boolean;
+    fontSize?: string;
+    firstLineIndent?: boolean;
+    linkFootnotes?: boolean;
+    showImageCaptions?: boolean;
+    embedArticleStats?: boolean;
     css_styles_folder: string;
     _id?: string; // = 'wewrite-setting';
     _rev?: string;
@@ -62,8 +63,8 @@ export type WeWriteSetting = {
     drawAccounts: Array<AITaskAccountInfo>;
     accountDataPath: string;
     chatSetting: ChatSetting;
-    hrStyle?: string; // Horizontal rule style: 'dots', 'lines', 'stars', 'custom', 'none'
-    customHrText?: string; // Custom text for HR when style is 'custom'
+    hrStyle?: string;
+    customHrText?: string;
 }
 
 export type ChatSetting = {

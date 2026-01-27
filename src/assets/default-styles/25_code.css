@@ -74,7 +74,7 @@
 
 .wewrite .code-section code {
 	display: block;
-	padding: 0 5px !important;
+	padding: 10px 5px !important;
 	padding-left: .5em;
 	font-family: Consolas, Monaco, Menlo, monospace;
 	white-space: pre-wrap !important;

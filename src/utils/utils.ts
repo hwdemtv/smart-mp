@@ -24,33 +24,37 @@ export function areObjectsEqual(obj1: unknown, obj2: unknown): boolean {
 }
 
 export async function fetchImageBlob(url: string): Promise<Blob> {
-    if (!url || url === "undefined" || url === "null") {
-        throw new Error(`Invalid URL: ${url}`);
-    }
+    console.log(`[WeWrite Debug] Fetching image: ${url}`);
 
     if (url.startsWith('data:')) {
         return dataUrlToBlob(url);
     }
 
     try {
-        // Obsidian's requestUrl doesn't support local protocols like app:// or blob:app://
-        // Standard fetch works fine for these in the renderer process
-        if (url.startsWith('app://') || url.startsWith('blob:app://')) {
+        // Fix: Obsidian's requestUrl doesn't support local protocols like app://
+        // Use standard fetch for local resources
+        if (url.startsWith('app://') || url.startsWith('file://') || url.startsWith('blob:')) {
+            console.log(`[WeWrite Debug] Detected local protocol, using standard fetch`);
             const res = await fetch(url);
             if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
+                throw new Error(`Local fetch failed: ${res.status} ${res.statusText}`);
             }
-            return await res.blob();
+            const blob = await res.blob();
+            console.log(`[WeWrite Debug] Local fetch success. Size: ${blob.size}, Type: ${blob.type}`);
+            return blob;
         }
 
-        const response = await requestUrl(url);
-        if (!response.arrayBuffer) {
-            throw new Error(`Failed to fetch image from ${url}`);
-        }
-        return new Blob([response.arrayBuffer]);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Error fetching image from ${url}: ${message}`);
+        // Use requestUrl for remote images to bypass CORS
+        const response = await requestUrl({
+            url: url,
+            method: 'GET'
+        });
+        console.log(`[WeWrite Debug] Remote fetch success: ${response.status}, Type: ${response.headers['content-type']}, Size: ${response.arrayBuffer.byteLength}`);
+        const blob = new Blob([response.arrayBuffer], { type: response.headers['content-type'] });
+        return blob;
+    } catch (e) {
+        console.error(`[WeWrite Debug] Fetch failed for ${url}:`, e);
+        throw e;
     }
 }
 
@@ -94,16 +98,13 @@ export function removeThinkTags(content: string): string {
  */
 export function cleanHtmlForWechat(root: HTMLElement): void {
     // 1. Recursive replacement of DIV with SECTION using node movement
-    // Doing it this way ensures nested divs are also processed correctly
     const replaceDivs = (parent: HTMLElement) => {
         const divs = Array.from(parent.querySelectorAll('div'));
         divs.forEach(div => {
             const section = document.createElement('section');
-            // Move all children to the new section (retaining references, handling nested divs)
             while (div.firstChild) {
                 section.appendChild(div.firstChild);
             }
-            // Copy relevant attributes if they exist
             if (div.getAttribute('style')) {
                 section.setAttribute('style', div.getAttribute('style')!);
             }
@@ -111,7 +112,6 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
         });
     };
 
-    // Initial replacement
     replaceDivs(root);
 
     // 2. Remove restricted tags
@@ -125,23 +125,19 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
         root.querySelectorAll(tag).forEach(el => el.remove());
     });
 
-    // 2.1 Remove elements with display: none (like Obsidian's copy button container)
     root.querySelectorAll('*').forEach(el => {
         if ((el as HTMLElement).style?.display === 'none') {
             el.remove();
         }
     });
 
-    // 3. Clean attributes from the root itself
     cleanAttributes(root);
 
-    // 4. Clean attributes from all descendants
     const allDescendants = Array.from(root.querySelectorAll('*'));
     allDescendants.forEach(el => {
         cleanAttributes(el as HTMLElement);
     });
 
-    // 5. Final pass: Remove any empty spans/sections that might trigger "invalid content"
     const empties = Array.from(root.querySelectorAll('span, section, p'));
     empties.forEach(el => {
         if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas')) {
@@ -156,13 +152,11 @@ function cleanAttributes(el: HTMLElement): void {
 
     attrs.forEach(attr => {
         const attrName = attr.name.toLowerCase();
-        // Remove data-*, class, id
         if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || attrName.startsWith('on')) {
             el.removeAttribute(attr.name);
             return;
         }
 
-        // Only keep whitelisted attributes
         if (!whitelist.includes(attrName)) {
             el.removeAttribute(attr.name);
         }

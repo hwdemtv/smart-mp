@@ -78,36 +78,32 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		let body = '';
 		for (let i = 0; i < lines.length; i++) {
 			let text = lines[i];
-			if (text.length === 0) text = '<br>';
-			body += '<code>' + text + '</code>';
+			if (text.length === 0) text = '&nbsp;';
+			// Use a section with fixed height to force absolute compactness
+			body += `<section style="display: block !important; height: 22px !important; line-height: 22px !important; margin: 0 !important; padding: 0 !important; border: none !important; font-size: 13.5px !important; white-space: pre !important; overflow: visible !important; background: transparent !important;">${text}</section>`;
 		}
 
-		// Get code theme from plugin settings
-		const codeTheme = this.plugin.settings.codeTheme || 'github';
-		let codeSection = `<section class="code-section code-snippet__fix hljs hljs-theme-${codeTheme}">`;
+		let codeSection = '';
 
-		// Add Code Block Header (Mac Style)
-		if (this.plugin.settings.codeBlockHeader && lang) {
-			const headerHtml = `
-			<div class="code-header">
-				<div class="code-header-buttons">
-					<span class="code-header-btn btn-red"></span>
-					<span class="code-header-btn btn-yellow"></span>
-					<span class="code-header-btn btn-green"></span>
-				</div>
-				<div class="code-header-title">${lang.toUpperCase()}</div>
-			</div>`;
-			codeSection += headerHtml;
-		}
+		// Add Mac-style Header if enabled
+		if (this.plugin.settings.showCodeMacHeader !== false) {
+			const macHeader = `
+				<section class="code-mac-header" style="display: flex; background: var(--code-header-bg, #eef1f5); padding: 4px 12px; border-top-left-radius: 6px; border-top-right-radius: 6px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--code-border, #ddd); height: 24px !important;">
+					<section style="display: flex; gap: 8px;">
+						<section style="width: 10px; height: 10px; background: #ff5f56; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1);"></section>
+						<section style="width: 10px; height: 10px; background: #ffbd2e; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1);"></section>
+						<section style="width: 10px; height: 10px; background: #27c93f; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1);"></section>
+					</section>
+					<section style="font-family: inherit; font-size: 10px; color: #6a737d; font-weight: bold; text-transform: uppercase;">${lang || ''}</section>
+				</section>
+			`.replace(/\n/g, '').replace(/\s{2,}/g, ' ');
 
-		let html = '';
-		if (lang) {
-			html = codeSection + `<pre style="max-width:1000% !important;" class="hljs language-${lang}">${body}</pre></section>`;
+			codeSection = '<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);">' + macHeader + `<section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 13.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
 		} else {
-			html = codeSection + `<pre>${body}</pre></section>`;
+			codeSection = `<section class="code-container" style="border: 1px solid var(--code-border, #ddd); border-radius: 6px; margin: 0.4em 0; overflow: hidden; background: var(--code-bg, #f6f8fa);"><section class="code-section hljs" style="margin: 0; border: none; border-radius: 0; background: transparent !important; padding: 4px 12px; line-height: 22px !important; font-size: 13.5px !important; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;">${body}</section></section>`;
 		}
-		return html;
 
+		return codeSection;
 	}
 
 	static getMathType(lang: string | null) {
@@ -242,7 +238,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 
 	renderCharts(_token: Tokens.Generic) {
 		//the MarkdownRender doen't work well with it. use the preview instead.
-		if (!this.isPluginInstalled('obsidian-charts')) {
+		if (!this.isPluginInstlled('obsidian-charts')) {
 			console.debug(`charts plugin not installed.`);
 			new Notice($t('rnder.charts-plugin-not-installed'))
 			return false;

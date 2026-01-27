@@ -45,7 +45,7 @@ function getEmbedType(link: string) {
 		return "pdf-crop";
 	}
 	// https://mmbiz.qpic.cn
-	if (link.startsWith("https://mmbiz.qpic.cn/") || link.startsWith("http://mmbiz.qpic.cn/")) {
+	if (link.startsWith("https://mmbiz.qpic.cn/")|| link.startsWith("http://mmbiz.qpic.cn/")) {
 		return "image";
 	}
 	switch (ext.toLocaleLowerCase()) {
@@ -174,64 +174,17 @@ export class Embed extends WeWriteMarkedExtension {
 		return parts.join("/");
 	}
 	getImagePath(path: string) {
-		// Handle HTTP/HTTPS URLs
 		if (path.startsWith("http")) {
 			return path;
 		}
-
-		// Handle file:// protocol
-		if (path.startsWith("file://")) {
-			// Remove file:// prefix and decode URI
-			let filePath = path.replace("file://", "");
-			// On Windows, file:// URLs may have an extra / like file:///D:/...
-			// We need to handle both file:///D:/path and file://D:/path
-			if (filePath.startsWith("/") && filePath.length > 2 && filePath.charAt(2) === ":") {
-				filePath = filePath.substring(1); // Remove leading slash before drive letter
-			}
-			filePath = decodeURIComponent(filePath);
-
-			// Try to convert absolute path to vault relative path
-			const vaultPath = (this.plugin.app.vault.adapter as any).basePath;
-			let relativePath = filePath;
-
-			if (vaultPath && filePath.startsWith(vaultPath)) {
-				// Convert absolute path to relative path
-				relativePath = filePath.substring(vaultPath.length);
-				// Remove leading slash or backslash
-				if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
-					relativePath = relativePath.substring(1);
-				}
-				// Normalize path separators to forward slashes for Obsidian
-				relativePath = relativePath.replace(/\\/g, '/');
-			}
-
-			// Try to find the file in the vault using relative path
-			const file = this.plugin.app.vault.getAbstractFileByPath(relativePath);
-			if (file instanceof TFile) {
-				// Use adapter.getResourcePath like mp-preview does
-				return this.plugin.app.vault.adapter.getResourcePath(file.path);
-			}
-
-			// If not found by path, try using metadataCache with just the filename
-			const filename = relativePath.split('/').pop() || relativePath;
-			const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(filename, '');
-			if (metaFile && metaFile instanceof TFile) {
-				return this.plugin.app.vault.adapter.getResourcePath(metaFile.path);
-			}
-
-			// If not in vault, return the original path (browser will handle it)
-			return path;
-		}
-
-		// Handle vault-relative paths
 		const file = this.searchFile(path);
 
 		if (file == null) {
-			console.error("File not found: " + path);
+			console.error("File not found" + path);
 			return "";
 		}
 		if (file instanceof TFile) {
-			const resPath = this.plugin.app.vault.adapter.getResourcePath(file.path);
+			const resPath = this.plugin.app.vault.getResourcePath(file);
 			const info = {
 				resUrl: resPath,
 				filePath: file.path,
@@ -461,7 +414,7 @@ export class Embed extends WeWriteMarkedExtension {
 					level: "inline",
 					start: (src: string) => {
 						let index = src.indexOf("![[");
-
+						
 						// if (index === -1) {
 						// 	const match = regexImage.exec(src);
 						// 	if (match) {
@@ -482,7 +435,7 @@ export class Embed extends WeWriteMarkedExtension {
 							// const match = regexImage.exec(src);
 							// if (match) {
 							// 	console.log("tokenizer: match image", match);
-
+								
 							// 	return {
 							// 		type: "Embed",
 							// 		raw: match[0],
@@ -503,6 +456,7 @@ export class Embed extends WeWriteMarkedExtension {
 					},
 					renderer: (token: Tokens.Generic) => {
 						const embedType = getEmbedType(token.href);
+						console.debug("render embed type:", token, embedType);
 
 						if (embedType == "image" || embedType == "webp") {
 							// images
@@ -548,12 +502,8 @@ export class Embed extends WeWriteMarkedExtension {
 			],
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
-				if (token.type !== "Embed") {
-					return;
-				}
-
+				if (token.type !== "Embed") return;
 				const embedType = getEmbedType(token.href);
-
 				if (embedType === "excalidraw") {
 					await this.renderExcalidrawAsync(token);
 				} else if (embedType === "note") {
@@ -564,16 +514,10 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
-		console.log(`[Excalidraw] Starting renderExcalidrawAsync for token:`, token);
+		if (!this.isPluginInstlled("obsidian-excalidraw-plugin")) {
 
-		if (!this.isPluginInstalled("obsidian-excalidraw-plugin")) {
-			console.warn("[Excalidraw] Plugin not installed");
-			token.html = $t("render.excalidraw-plugin-not-installed");
-			return;
+			return false;
 		}
-
-		console.log("[Excalidraw] Plugin is installed");
-
 		// define default failed
 		token.html = $t("render.excalidraw-failed");
 
@@ -581,124 +525,24 @@ export class Embed extends WeWriteMarkedExtension {
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-
-		console.log(`[Excalidraw] Index: ${index}, href: ${href}`);
-
-		// Find by specific path if possible, or fallback to general selectors
-		const cleanPath = href.split("|")[0];
-		const escapedPath = cleanPath.replace(/"/g, '\\"');
-		const selector = `.internal-embed[src*="${escapedPath}"], .excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw`;
-
-		console.log(`[Excalidraw] Using selector: ${selector}`);
-		console.log(`[Excalidraw] previewEl HTML:`, renderer.previewEl?.innerHTML.substring(0, 500));
-		console.log(`[Excalidraw] All internal-embeds:`, renderer.previewEl?.querySelectorAll('.internal-embed'));
-
-		let root = renderer.queryElement(index, selector);
-
-		console.log(`[Excalidraw] Found root element:`, root);
-
+		const root = renderer.queryElement(index, "div.excalidraw-svg");
 		if (!root) {
-			console.error(`[Excalidraw] ERROR: root is null for index ${index}, path: ${cleanPath}`);
-			console.log(`[Excalidraw] All elements with .internal-embed class:`);
-			renderer.previewEl?.querySelectorAll('.internal-embed').forEach((el, i) => {
-				console.log(`  [${i}] src="${el.getAttribute('src')}" classes="${el.className}"`);
-			});
+			console.error(`renderExcalidrawAsync error:`, "root is null");
 			return;
 		}
-
-		console.log(`[Excalidraw] Root element found, removing style attribute`);
 		root.removeAttribute("style");
-
 		try {
-			const image = root.querySelector("img") as HTMLImageElement;
-			console.log(`[Excalidraw] Found image element:`, image);
-
+			const image = root.querySelector("img");
 			if (image) {
-				// Get original dimensions from the w attribute if available
-				const originalWidth = image.getAttribute("w") || "800";
-				console.log(`[Excalidraw] Original width: ${originalWidth}`);
-
-				// If the image uses a blob URL, fetch it and convert to data URL
-				if (image.src.startsWith('blob:')) {
-					console.log(`[Excalidraw] Fetching blob URL and converting to data URL...`);
-					try {
-						const response = await fetch(image.src);
-						const blob = await response.blob();
-
-						// Convert blob to data URL
-						const dataUrl = await new Promise<string>((resolve, reject) => {
-							const reader = new FileReader();
-							reader.onloadend = () => resolve(reader.result as string);
-							reader.onerror = reject;
-							reader.readAsDataURL(blob);
-						});
-
-						image.src = dataUrl;
-						console.log(`[Excalidraw] Blob URL converted to data URL, length: ${dataUrl.length}`);
-
-						// Wait a bit for the image to update
-						await new Promise(resolve => setTimeout(resolve, 100));
-					} catch (blobError) {
-						console.error(`[Excalidraw] Failed to fetch blob URL:`, blobError);
-					}
-				}
-
-				// Wait for image to fully load
-				if (!image.complete) {
-					console.log(`[Excalidraw] Waiting for image to load...`);
-					await new Promise((resolve, reject) => {
-						image.onload = resolve;
-						image.onerror = reject;
-						setTimeout(() => reject(new Error('Image load timeout')), 5000);
-					});
-				}
-
-				console.log(`[Excalidraw] Image natural size: ${image.naturalWidth}x${image.naturalHeight}`);
-
-				// 检测图片尺寸是否过小（Excalidraw不完整渲染）
-				if (image.naturalWidth < 200 && image.naturalHeight < 200) {
-					console.warn(`[Excalidraw] Image too small, showing placeholder`);
-					const cleanPath = href.split("|")[0];
-					token.html = `<div style="padding: 2em; background: #fff3cd; border-left: 4px solid #ffc107; margin: 1em 0; border-radius: 4px;">
-						<div style="font-size: 1.1em; font-weight: bold; color: #856404; margin-bottom: 0.5em;">📊 Excalidraw 绘图</div>
-						<div style="font-size: 0.9em; color: #856404;">${cleanPath}</div>
-						<div style="font-size: 0.85em; color: #664d03; margin-top: 1em; padding: 0.8em; background: rgba(255,255,255,0.5); border-radius: 3px;">
-							⚠️ <strong>预览限制：</strong>当前仅显示缩略图 (${image.naturalWidth}×${image.naturalHeight}px)<br>
-							💡 <strong>建议操作：</strong>在 Obsidian 中打开此绘图 → 截取完整图片 → 粘贴到文章中
-						</div>
-					</div>`;
-					return;
-				}
-
-				// Set container to use natural image dimensions
-				// Set container to use natural image dimensions
-				if (image.naturalWidth > 0) {
-					root.style.width = `${image.naturalWidth}px`;
-					root.style.height = `${image.naturalHeight}px`;
-				} else {
-					root.style.width = `${originalWidth}px`;
-					root.style.height = 'auto';
-				}
-				root.style.display = 'block';
-
-				// Let image use its full natural size
-				image.removeAttribute("width");
-				image.removeAttribute("height");
-				image.style.width = `${image.naturalWidth}px`;
-				image.style.height = `${image.naturalHeight}px`;
-				image.style.maxWidth = 'none';
-				image.style.display = 'block';
+				image.setAttr("width", "100%");
+				image.setAttr("height", "100%");
+				image.setAttr("style", "width:100%;height:100%");
 			}
-
-			console.log(`[Excalidraw] Converting to image...`);
 			const dataUrl = await renderer.domToImage(root);
-			console.log(`[Excalidraw] Conversion successful, dataUrl length: ${dataUrl.length}`);
 
-			token.html = `<section class="excalidraw"><img src="${dataUrl}" class="exclaidraw-image" style="width: 100%; height: auto; display: block; margin: 0 auto;"></section>`;
-			console.log(`[Excalidraw] token.html set successfully`);
+			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" ></section>`;
 		} catch (e) {
-			console.error(`[Excalidraw] ERROR during conversion:`, e);
-			console.error(`[Excalidraw] Stack trace:`, (e as Error).stack);
+			console.error(`renderExcalidrawAsync error:`, e);
 		}
 	}
 	async renderMarkdownEmbedAsync(token: Tokens.Generic) {
@@ -708,7 +552,7 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	renderPdfCrop(href: string): string | false | undefined {
-		if (!this.isPluginInstalled("pdf-plus")) {
+		if (!this.isPluginInstlled("pdf-plus")) {
 			return false;
 		}
 		const root = ObsidianMarkdownRenderer.getInstance(
