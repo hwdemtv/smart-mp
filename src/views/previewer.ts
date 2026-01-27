@@ -401,14 +401,18 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
+
+		// Render directly into articleDiv to preserve live DOM and avoid serialization issues
+		// This also fixes the blank preview issue by avoiding intermediate buffer divs
 		let html = await WechatRender.getInstance(this.plugin, this).parseNoteNative(
 			activeFile.path,
-			this.renderPreviewer,
+			this.articleDiv,
 			this
 		);
 
-		// Set the HTML directly to bypass sanitization which might strip SVGs or complex styles
-		this.articleDiv.innerHTML = html;
+
+		// We skipped sanitization and innerHTML assignment because we rendered directly to articleDiv
+		// This preserves Mermaid/Excalidraw DOM structure
 
 		for (const [id, node] of this.elementMap.entries()) {
 			const item = this.articleDiv.querySelector(
