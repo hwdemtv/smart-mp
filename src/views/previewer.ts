@@ -100,6 +100,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	mpModal: WebViewModal;
 	isActive: boolean = false;
 	isMobileView: boolean = false;
+	articleStats: HTMLElement;
 	renderPreviewer!: HTMLElement;
 	getViewType(): string {
 		return VIEW_TYPE_WEWRITE_PREVIEW;
@@ -283,6 +284,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		this.draftHeader = new MPArticleHeader(this.plugin, mainDiv);
 
+		// Article Stats Display (Word Count / Reading Time)
+		this.articleStats = mainDiv.createDiv({ cls: "wewrite-article-stats" });
+		this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
+
 		this.renderDiv = mainDiv.createDiv({ cls: "render-container" });
 		this.renderDiv.id = "render-div";
 		this.renderPreviewer = mainDiv.createDiv({
@@ -450,6 +455,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 			void ThemeManager.getInstance(this.plugin)
 				.applyTheme(element)
+				.then(() => {
+					this.updateArticleStats();
+				})
 				.catch((error) => {
 					console.error("应用主题失败:", error);
 				});
@@ -730,5 +738,56 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.scrollSyncButton.setIcon(isSync ? "arrow-up-down" : "lock");
 			this.scrollSyncButton.setTooltip(isSync ? "Scroll Sync: ON" : "Scroll Sync: OFF");
 		}
+	}
+
+	// Public methods for hotkey commands
+	toggleMobileView() {
+		this.isMobileView = !this.isMobileView;
+		if (this.isMobileView) {
+			this.renderDiv.addClass("is-mobile-view");
+		} else {
+			this.renderDiv.removeClass("is-mobile-view");
+		}
+		new Notice(this.isMobileView ? "Mobile Preview Mode" : "Desktop View Mode");
+	}
+
+	async copyToClipboard() {
+		const data = this.getArticleContent();
+		await navigator.clipboard.write([
+			new ClipboardItem({
+				"text/html": new Blob([data], { type: "text/html" }),
+			}),
+		]);
+		new Notice($t("views.previewer.article-copied-to-clipboard"));
+	}
+
+	async sendToDraft() {
+		if (await this.checkCoverImage()) {
+			await this.sendArticleToDraftBox();
+		} else {
+			new Notice($t("views.previewer.please-set-cover-image"));
+		}
+	}
+
+	updateArticleStats() {
+		const content = this.lastRenderedContent;
+		if (!content) {
+			this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
+			return;
+		}
+
+		// Count Chinese characters
+		const chineseChars = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
+		// Count English words (approximate)
+		const englishWords = (content.match(/[a-zA-Z]+/g) || []).length;
+
+		// Total "words" (Chinese chars are words, English words are counted as-is)
+		const totalWords = chineseChars + englishWords;
+
+		// Reading time: ~200 Chinese chars OR ~150 English words per minute
+		// Using a blended rate of ~200 "units" per minute
+		const readingTimeMinutes = Math.max(1, Math.ceil(totalWords / 200));
+
+		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTimeMinutes} 分钟`);
 	}
 }

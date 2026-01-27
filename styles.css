@@ -271,6 +271,16 @@ left side view
 	width: 100%;
 }
 
+/* Article Stats (Word Count / Reading Time) */
+.wewrite-article-stats {
+	text-align: center;
+	font-size: 0.85em;
+	color: var(--text-muted);
+	padding: 6px 0;
+	margin-bottom: 8px;
+	border-bottom: 1px dashed var(--background-modifier-border);
+}
+
 /* Obsidian Callout Styles */
 .wewrite-callout {
 	border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.1));

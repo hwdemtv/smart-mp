@@ -911,6 +911,45 @@ export default class WeWritePlugin extends Plugin {
 				void this.activateMaterialView();
 			},
 		});
+		this.addCommand({
+			id: "toggle-mobile-view",
+			name: "Toggle Mobile Preview",
+			callback: () => {
+				this.app.workspace
+					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
+					.forEach((leaf) => {
+						if (leaf.view instanceof PreviewPanel) {
+							leaf.view.toggleMobileView();
+						}
+					});
+			},
+		});
+		this.addCommand({
+			id: "copy-article-to-clipboard",
+			name: "Copy Article to Clipboard",
+			callback: () => {
+				this.app.workspace
+					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
+					.forEach((leaf) => {
+						if (leaf.view instanceof PreviewPanel) {
+							leaf.view.copyToClipboard();
+						}
+					});
+			},
+		});
+		this.addCommand({
+			id: "send-article-to-draft",
+			name: "Send Article to Draft Box",
+			callback: () => {
+				this.app.workspace
+					.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
+					.forEach((leaf) => {
+						if (leaf.view instanceof PreviewPanel) {
+							leaf.view.sendToDraft();
+						}
+					});
+			},
+		});
 
 		this.addRibbonIcon("pen-tool", "Wewrite", () => {
 			void this.activateView();
