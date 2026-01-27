@@ -190,8 +190,6 @@ export class Embed extends WeWriteMarkedExtension {
 			}
 			filePath = decodeURIComponent(filePath);
 
-			console.log(`[WeWrite] Processing file:// URL: ${path} -> ${filePath}`);
-
 			// Try to convert absolute path to vault relative path
 			const vaultPath = (this.plugin.app.vault.adapter as any).basePath;
 			let relativePath = filePath;
@@ -205,29 +203,23 @@ export class Embed extends WeWriteMarkedExtension {
 				}
 				// Normalize path separators to forward slashes for Obsidian
 				relativePath = relativePath.replace(/\\/g, '/');
-				console.log(`[WeWrite] Converted to vault relative path: ${relativePath}`);
 			}
 
 			// Try to find the file in the vault using relative path
 			const file = this.plugin.app.vault.getAbstractFileByPath(relativePath);
 			if (file instanceof TFile) {
 				// Use adapter.getResourcePath like mp-preview does
-				const resPath = this.plugin.app.vault.adapter.getResourcePath(file.path);
-				console.log(`[WeWrite] File found in vault, resource path: ${resPath}`);
-				return resPath;
+				return this.plugin.app.vault.adapter.getResourcePath(file.path);
 			}
 
 			// If not found by path, try using metadataCache with just the filename
 			const filename = relativePath.split('/').pop() || relativePath;
 			const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(filename, '');
 			if (metaFile && metaFile instanceof TFile) {
-				const resPath = this.plugin.app.vault.adapter.getResourcePath(metaFile.path);
-				console.log(`[WeWrite] File found via metadata cache, resource path: ${resPath}`);
-				return resPath;
+				return this.plugin.app.vault.adapter.getResourcePath(metaFile.path);
 			}
 
 			// If not in vault, return the original path (browser will handle it)
-			console.log(`[WeWrite] File not in vault, returning original path`);
 			return path;
 		}
 

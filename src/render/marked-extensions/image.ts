@@ -29,8 +29,6 @@ export class Image extends WeWriteMarkedExtension {
 			// Handle file:// protocol images - convert src to proper resource path
 			const src = currentImg.getAttribute('src');
 			if (src && src.startsWith('file://')) {
-				console.log(`[WeWrite Image] Processing file:// src: ${src}`);
-
 				// Remove file:// prefix and decode URI
 				let filePath = src.replace('file://', '');
 				// On Windows, file:// URLs may have an extra /
@@ -38,8 +36,6 @@ export class Image extends WeWriteMarkedExtension {
 					filePath = filePath.substring(1);
 				}
 				filePath = decodeURIComponent(filePath);
-
-				console.log(`[WeWrite Image] Decoded file path: ${filePath}`);
 
 				try {
 					// Try to convert absolute path to vault relative path
@@ -55,7 +51,6 @@ export class Image extends WeWriteMarkedExtension {
 						}
 						// Normalize path separators to forward slashes for Obsidian
 						relativePath = relativePath.replace(/\\/g, '/');
-						console.log(`[WeWrite Image] Converted to vault relative path: ${relativePath}`);
 					}
 
 					// Try to find the file in the vault using relative path
@@ -64,7 +59,6 @@ export class Image extends WeWriteMarkedExtension {
 						// Use adapter.getResourcePath like mp-preview does
 						const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(file.path);
 						currentImg.setAttribute('src', resPath);
-						console.log(`[WeWrite Image] Converted to resource path: ${resPath}`);
 					} else {
 						// Try using metadataCache with just the filename
 						const filename = relativePath.split('/').pop() || relativePath;
@@ -72,7 +66,6 @@ export class Image extends WeWriteMarkedExtension {
 						if (metaFile) {
 							const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(metaFile.path);
 							currentImg.setAttribute('src', resPath);
-							console.log(`[WeWrite Image] Converted via metadata cache to: ${resPath}`);
 						}
 					}
 				} catch (error) {
