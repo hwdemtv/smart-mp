@@ -50,6 +50,8 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	css_styles_folder: "wewrite-css-styles",
 	codeLineNumber: true,
 	codeTheme: "github", // Default code highlighting theme
+	firstLineIndent: false, // First-line indent disabled by default
+	linkFootnotes: true, // Link footnotes enabled by default for WeChat
 	accountDataPath: "wewrite-accounts",
 	useCenterToken: false,
 	chatAccounts: [],
@@ -64,6 +66,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 		presence_penalty: 0,
 	},
 };
+
 
 export default class WeWritePlugin extends Plugin {
 	settings: WeWriteSetting;

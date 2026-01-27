@@ -151,6 +151,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				void this.renderDraft();
 			}
 		);
+		this.plugin.messageService.registerListener(
+			"layout-changed",
+			() => {
+				// Re-render on layout settings change
+				this.lastRenderedContent = ""; // Force re-render
+				void this.renderDraft();
+			}
+		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);
 		void this.loadComponents();
 		return Promise.resolve();
@@ -458,6 +466,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 		const element = this.articleDiv.firstChild as HTMLElement;
+
+		// Apply layout enhancements
+		this.applyLayoutEnhancements(element);
+
 		const apply = () => {
 			// Double check connectivity and task ID before heavy theme application
 			if (!element.isConnected || taskId !== this.lastRenderTaskId) return;
@@ -481,6 +493,70 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			setTimeout(apply, 0);
 		}
 	}
+
+	// Apply layout enhancements based on settings
+	applyLayoutEnhancements(element: HTMLElement) {
+		// First-line indent
+		if (this.plugin.settings.firstLineIndent) {
+			this.containerDiv.addClass("wewrite-indent-enabled");
+		} else {
+			this.containerDiv.removeClass("wewrite-indent-enabled");
+		}
+
+		// Link footnotes conversion
+		if (this.plugin.settings.linkFootnotes) {
+			this.convertLinksToFootnotes(element);
+		}
+	}
+
+	// Convert hyperlinks to footnote references for WeChat compatibility
+	convertLinksToFootnotes(element: HTMLElement) {
+		const links = element.querySelectorAll("a[href]");
+		const footnotes: { text: string; url: string }[] = [];
+		let index = 1;
+
+		links.forEach((link) => {
+			const anchor = link as HTMLAnchorElement;
+			const href = anchor.getAttribute("href");
+			const text = anchor.textContent || "";
+
+			// Skip internal links and anchors
+			if (!href || href.startsWith("#") || href.startsWith("obsidian://")) {
+				return;
+			}
+
+			// Add footnote reference
+			const footnoteRef = document.createElement("sup");
+			footnoteRef.className = "wewrite-footnote-ref";
+			footnoteRef.textContent = `[${index}]`;
+			anchor.after(footnoteRef);
+
+			// Store footnote data
+			footnotes.push({ text, url: href });
+			index++;
+		});
+
+		// Add footnotes section at the end if there are any
+		if (footnotes.length > 0) {
+			const footnotesSection = document.createElement("section");
+			footnotesSection.className = "wewrite-footnotes";
+
+			const title = document.createElement("p");
+			title.className = "wewrite-footnotes-title";
+			title.textContent = "🔗 参考链接";
+			footnotesSection.appendChild(title);
+
+			footnotes.forEach((fn, i) => {
+				const item = document.createElement("p");
+				item.className = "wewrite-footnote-item";
+				item.innerHTML = `[${i + 1}] ${fn.text}: <a href="${fn.url}">${fn.url}</a>`;
+				footnotesSection.appendChild(item);
+			});
+
+			element.appendChild(footnotesSection);
+		}
+	}
+
 	isViewActive(): boolean {
 		return this.isActive && !this.app.workspace.rightSplit.collapsed
 	}

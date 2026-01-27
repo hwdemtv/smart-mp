@@ -261,6 +261,37 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						this.plugin.messageService.sendMessage("code-theme-changed", value);
 					});
 			});
+
+		// Layout Enhancement Settings
+		new Setting(frame).setName("Layout Enhancements").setHeading();
+
+		// First-line Indent Toggle
+		new Setting(frame)
+			.setName("First-line Indent")
+			.setDesc("Enable 2em indent for paragraphs (Chinese style)")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.firstLineIndent ?? false)
+					.onChange((value) => {
+						this.plugin.settings.firstLineIndent = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
+
+		// Link Footnotes Toggle
+		new Setting(frame)
+			.setName("Convert Links to Footnotes")
+			.setDesc("Automatically convert hyperlinks to footnote references for WeChat compatibility")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.linkFootnotes ?? true)
+					.onChange((value) => {
+						this.plugin.settings.linkFootnotes = value;
+						void this.plugin.saveSettings();
+						this.plugin.messageService.sendMessage("layout-changed", null);
+					});
+			});
 	}
 	newMPAccountInfo() {
 		let n = 0;

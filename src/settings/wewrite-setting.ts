@@ -44,6 +44,8 @@ export type WeWriteSetting = {
     custom_theme?: string;
     codeTheme?: string; // Code syntax highlighting theme (e.g., 'github', 'monokai', 'atom-one-dark')
     codeLineNumber: boolean;
+    firstLineIndent?: boolean; // Enable first-line indent for paragraphs (2em)
+    linkFootnotes?: boolean; // Convert links to footnotes for WeChat compatibility
     css_styles_folder: string;
     _id?: string; // = 'wewrite-setting';
     _rev?: string;

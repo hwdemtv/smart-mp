@@ -30,6 +30,7 @@ export type MSG_TYPE =
   'thumb-item-deleted' |
   'custom-theme-changed' |
   'code-theme-changed' |
+  'layout-changed' |
   'set-draft-cover-image' |
   'set-image-as-cover' |
   'delete-media-item' |
@@ -39,6 +40,7 @@ export type MSG_TYPE =
   'image-generated' |
   'show-spinner' |
   'hide-spinner'
+
 
 
 

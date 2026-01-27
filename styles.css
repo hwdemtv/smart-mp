@@ -1390,3 +1390,85 @@ proofreed
 .wewrite-article .markdown-rendered {
 	all: unset !important;
 }
+
+/* ================================
+   WeChat Layout Enhancements
+   ================================ */
+
+/* First-line Indent (enabled via class) */
+.wewrite-article.wewrite-indent-enabled p {
+	text-indent: 2em !important;
+}
+
+/* Image Beautification - Border Radius + Shadow */
+.wewrite-article img {
+	border-radius: 8px !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+	transition: box-shadow 0.3s ease !important;
+}
+
+.wewrite-article img:hover {
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Table Zebra Stripes */
+.wewrite-article table tbody tr:nth-child(odd) {
+	background-color: #f9f9f9 !important;
+}
+
+.wewrite-article table tbody tr:nth-child(even) {
+	background-color: #ffffff !important;
+}
+
+.wewrite-article table tbody tr:hover {
+	background-color: #f0f7ff !important;
+}
+
+/* Blockquote Beautification */
+.wewrite-article blockquote {
+	border-left: 4px solid #1e88e5 !important;
+	background: linear-gradient(to right, #e3f2fd, transparent) !important;
+	padding: 12px 16px !important;
+	margin: 16px 0 !important;
+	border-radius: 0 8px 8px 0 !important;
+	color: #37474f !important;
+}
+
+.wewrite-article blockquote p {
+	margin: 0 !important;
+	text-indent: 0 !important;
+}
+
+/* Link Footnotes Styles */
+.wewrite-article .wewrite-footnote-ref {
+	color: #1e88e5 !important;
+	font-size: 0.8em !important;
+	vertical-align: super !important;
+	text-decoration: none !important;
+	font-weight: bold !important;
+}
+
+.wewrite-article .wewrite-footnotes {
+	margin-top: 2em !important;
+	padding-top: 1em !important;
+	border-top: 1px solid #ddd !important;
+}
+
+.wewrite-article .wewrite-footnotes-title {
+	font-size: 1.1em !important;
+	font-weight: bold !important;
+	color: #666 !important;
+	margin-bottom: 0.5em !important;
+}
+
+.wewrite-article .wewrite-footnote-item {
+	font-size: 0.9em !important;
+	color: #666 !important;
+	margin: 0.3em 0 !important;
+	word-break: break-all !important;
+}
+
+.wewrite-article .wewrite-footnote-item a {
+	color: #1e88e5 !important;
+	text-decoration: underline !important;
+}
