@@ -1202,3 +1202,191 @@ proofreed
 .hljs-theme-vs2015 .hljs-type {
 	color: #4ec9b0 !important;
 }
+
+/* ================================
+   CSS Namespace Isolation
+   Prevent Obsidian theme pollution
+   ================================ */
+
+/* Base Reset for WeWrite Article Content */
+.wewrite-article,
+.wewrite-article * {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+	box-sizing: border-box !important;
+}
+
+/* Paragraph Styles */
+.wewrite-article p {
+	margin: 0 0 1em 0 !important;
+	padding: 0 !important;
+	line-height: 1.75 !important;
+	color: inherit !important;
+}
+
+/* Heading Styles */
+.wewrite-article h1,
+.wewrite-article h2,
+.wewrite-article h3,
+.wewrite-article h4,
+.wewrite-article h5,
+.wewrite-article h6 {
+	margin: 1.5em 0 0.5em 0 !important;
+	padding: 0 !important;
+	font-weight: bold !important;
+	line-height: 1.4 !important;
+	color: inherit !important;
+}
+
+.wewrite-article h1 {
+	font-size: 1.8em !important;
+}
+
+.wewrite-article h2 {
+	font-size: 1.5em !important;
+}
+
+.wewrite-article h3 {
+	font-size: 1.25em !important;
+}
+
+.wewrite-article h4 {
+	font-size: 1.1em !important;
+}
+
+.wewrite-article h5 {
+	font-size: 1em !important;
+}
+
+.wewrite-article h6 {
+	font-size: 0.9em !important;
+}
+
+/* List Styles */
+.wewrite-article ul,
+.wewrite-article ol {
+	margin: 0 0 1em 0 !important;
+	padding-left: 2em !important;
+}
+
+.wewrite-article li {
+	margin: 0.25em 0 !important;
+	padding: 0 !important;
+	line-height: 1.75 !important;
+}
+
+.wewrite-article ul li {
+	list-style-type: disc !important;
+}
+
+.wewrite-article ol li {
+	list-style-type: decimal !important;
+}
+
+/* Blockquote Styles */
+.wewrite-article blockquote {
+	margin: 1em 0 !important;
+	padding: 0.5em 1em !important;
+	border-left: 4px solid #ddd !important;
+	background: transparent !important;
+	color: inherit !important;
+	font-style: normal !important;
+}
+
+/* Link Styles */
+.wewrite-article a {
+	color: #576b95 !important;
+	text-decoration: none !important;
+}
+
+.wewrite-article a:hover {
+	text-decoration: underline !important;
+}
+
+/* Inline Code */
+.wewrite-article code:not(pre code) {
+	background-color: rgba(27, 31, 35, 0.05) !important;
+	padding: 0.2em 0.4em !important;
+	border-radius: 3px !important;
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
+	font-size: 0.9em !important;
+}
+
+/* Code Block */
+.wewrite-article pre {
+	margin: 1em 0 !important;
+	padding: 1em !important;
+	overflow-x: auto !important;
+	border-radius: 6px !important;
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
+	font-size: 0.875em !important;
+	line-height: 1.5 !important;
+}
+
+.wewrite-article pre code {
+	background: transparent !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+}
+
+/* Table Styles */
+.wewrite-article table {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 1em 0 !important;
+}
+
+.wewrite-article th,
+.wewrite-article td {
+	border: 1px solid #ddd !important;
+	padding: 8px 12px !important;
+	text-align: left !important;
+}
+
+.wewrite-article th {
+	background-color: #f6f8fa !important;
+	font-weight: bold !important;
+}
+
+/* Image Styles */
+.wewrite-article img {
+	max-width: 100% !important;
+	height: auto !important;
+	display: block !important;
+	margin: 1em auto !important;
+}
+
+/* Horizontal Rule */
+.wewrite-article hr {
+	border: none !important;
+	border-top: 1px solid #ddd !important;
+	margin: 2em 0 !important;
+}
+
+/* Strong and Emphasis */
+.wewrite-article strong,
+.wewrite-article b {
+	font-weight: bold !important;
+}
+
+.wewrite-article em,
+.wewrite-article i {
+	font-style: italic !important;
+}
+
+/* Strikethrough */
+.wewrite-article del,
+.wewrite-article s {
+	text-decoration: line-through !important;
+}
+
+/* Task List Checkboxes */
+.wewrite-article input[type="checkbox"] {
+	margin-right: 0.5em !important;
+}
+
+/* Prevent Obsidian-specific styles */
+.wewrite-article .markdown-preview-view,
+.wewrite-article .cm-content,
+.wewrite-article .markdown-rendered {
+	all: unset !important;
+}
