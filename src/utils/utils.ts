@@ -117,12 +117,19 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
     // 2. Remove restricted tags
     const restrictedTags = [
         'script', 'style', 'noscript', 'object', 'embed',
-        'button', 'input', 'textarea', 'select', 'forms',
+        'button', 'input', 'textarea', 'select', 'form',
         'canvas', 'svg', 'audio', 'video:not(.video_iframe)',
         'header', 'footer', 'nav', 'aside'
     ];
     restrictedTags.forEach(tag => {
         root.querySelectorAll(tag).forEach(el => el.remove());
+    });
+
+    // 2.1 Remove elements with display: none (like Obsidian's copy button container)
+    root.querySelectorAll('*').forEach(el => {
+        if ((el as HTMLElement).style?.display === 'none') {
+            el.remove();
+        }
     });
 
     // 3. Clean attributes from the root itself

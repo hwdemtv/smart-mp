@@ -50,25 +50,25 @@ export class WeWritePostProcessor {
         // Even though we wait in markdown-render.ts, some complex charts take longer
         await new Promise(resolve => setTimeout(resolve, 500));
 
+        // Pre-cleaning: Remove any dead blob images in the entire container to prevent dom-to-image crashes
+        const allBlobs = container.querySelectorAll('img[src^="blob:"]');
+        for (const img of Array.from(allBlobs)) {
+            const src = img.getAttribute('src')!;
+            try {
+                const res = await fetch(src);
+                if (!res.ok) {
+                    img.remove();
+                }
+            } catch (e) {
+                img.remove();
+            }
+        }
+
         // Select Mermaid SVGs and Excalidraw elements
         const chartNodes = container.querySelectorAll('.mermaid svg, [class*="mermaid"] svg, .excalidraw-svg, .excalidraw-plugin-view img[src^="blob:"]');
 
         for (const node of Array.from(chartNodes)) {
             try {
-                if (node.tagName === 'IMG' && node.getAttribute('src')?.startsWith('blob:')) {
-                    const src = node.getAttribute('src')!;
-                    try {
-                        const res = await fetch(src, { method: 'HEAD' });
-                        if (!res.ok) {
-                            node.remove();
-                            continue;
-                        }
-                    } catch (e) {
-                        node.remove();
-                        continue;
-                    }
-                }
-
                 let captureEl: HTMLElement | null = null;
 
                 if (node.classList.contains('excalidraw-svg') || (node.tagName === 'IMG' && node.getAttribute('src')?.startsWith('blob:'))) {
