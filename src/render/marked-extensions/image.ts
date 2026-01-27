@@ -42,17 +42,33 @@ export class Image extends WeWriteMarkedExtension {
 				console.log(`[WeWrite Image] Decoded file path: ${filePath}`);
 
 				try {
-					// Try to find the file in the vault
-					const file = (this.plugin.app.vault as any).getAbstractFileByPath(filePath);
+					// Try to convert absolute path to vault relative path
+					const vaultPath = (this.plugin.app.vault.adapter as any).basePath;
+					let relativePath = filePath;
+
+					if (vaultPath && filePath.startsWith(vaultPath)) {
+						// Convert absolute path to relative path
+						relativePath = filePath.substring(vaultPath.length);
+						// Remove leading slash or backslash
+						if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+							relativePath = relativePath.substring(1);
+						}
+						// Normalize path separators to forward slashes for Obsidian
+						relativePath = relativePath.replace(/\\/g, '/');
+						console.log(`[WeWrite Image] Converted to vault relative path: ${relativePath}`);
+					}
+
+					// Try to find the file in the vault using relative path
+					const file = this.plugin.app.vault.getAbstractFileByPath(relativePath);
 					if (file) {
 						// Use adapter.getResourcePath like mp-preview does
 						const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(file.path);
 						currentImg.setAttribute('src', resPath);
 						console.log(`[WeWrite Image] Converted to resource path: ${resPath}`);
 					} else {
-						// Try using metadataCache
-						const linktext = filePath.split('|')[0];
-						const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linktext, '');
+						// Try using metadataCache with just the filename
+						const filename = relativePath.split('/').pop() || relativePath;
+						const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(filename, '');
 						if (metaFile) {
 							const resPath = (this.plugin.app.vault.adapter as any).getResourcePath(metaFile.path);
 							currentImg.setAttribute('src', resPath);

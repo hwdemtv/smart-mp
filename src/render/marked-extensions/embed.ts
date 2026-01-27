@@ -192,8 +192,24 @@ export class Embed extends WeWriteMarkedExtension {
 
 			console.log(`[WeWrite] Processing file:// URL: ${path} -> ${filePath}`);
 
-			// Try to find the file in the vault using getAbstractFileByPath
-			const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+			// Try to convert absolute path to vault relative path
+			const vaultPath = (this.plugin.app.vault.adapter as any).basePath;
+			let relativePath = filePath;
+
+			if (vaultPath && filePath.startsWith(vaultPath)) {
+				// Convert absolute path to relative path
+				relativePath = filePath.substring(vaultPath.length);
+				// Remove leading slash or backslash
+				if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+					relativePath = relativePath.substring(1);
+				}
+				// Normalize path separators to forward slashes for Obsidian
+				relativePath = relativePath.replace(/\\/g, '/');
+				console.log(`[WeWrite] Converted to vault relative path: ${relativePath}`);
+			}
+
+			// Try to find the file in the vault using relative path
+			const file = this.plugin.app.vault.getAbstractFileByPath(relativePath);
 			if (file instanceof TFile) {
 				// Use adapter.getResourcePath like mp-preview does
 				const resPath = this.plugin.app.vault.adapter.getResourcePath(file.path);
@@ -201,9 +217,9 @@ export class Embed extends WeWriteMarkedExtension {
 				return resPath;
 			}
 
-			// If not found by absolute path, try using metadataCache like mp-preview
-			const linktext = filePath.split('|')[0];
-			const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linktext, '');
+			// If not found by path, try using metadataCache with just the filename
+			const filename = relativePath.split('/').pop() || relativePath;
+			const metaFile = this.plugin.app.metadataCache.getFirstLinkpathDest(filename, '');
 			if (metaFile && metaFile instanceof TFile) {
 				const resPath = this.plugin.app.vault.adapter.getResourcePath(metaFile.path);
 				console.log(`[WeWrite] File found via metadata cache, resource path: ${resPath}`);
