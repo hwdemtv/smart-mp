@@ -411,38 +411,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		);
 
 
-		// We skipped sanitization and innerHTML assignment because we rendered directly to articleDiv
-		// This preserves Mermaid/Excalidraw DOM structure
+		// Native rendering handles transclusions automatically
+		this.elementMap.clear();
 
-		for (const [id, node] of this.elementMap.entries()) {
-			const item = this.articleDiv.querySelector(
-				"#" + id
-			) as HTMLElement;
-
-			if (!item) {
-				continue;
-			}
-			if (typeof node === "string") {
-				const tf = ResourceManager.getInstance(
-					this.plugin
-				).getFileOfLink(node);
-				if (tf) {
-					const file = this.plugin.app.vault.getFileByPath(
-						tf.path
-					);
-					if (file) {
-						const body = await WechatRender.getInstance(
-							this.plugin,
-							this
-						).parseNoteNative(file.path, this.articleDiv, this);
-						item.empty();
-						item.appendChild(sanitizeHTMLToDom(body));
-					}
-				}
-			} else {
-				item.appendChild(node);
-			}
-		}
+		// return this.articleDiv.innerHTML;
 		// return this.articleDiv.innerHTML;
 	}
 	async renderDraft() {

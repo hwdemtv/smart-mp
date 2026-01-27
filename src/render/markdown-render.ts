@@ -80,7 +80,8 @@ export class ObsidianMarkdownRenderer {
             console.warn("[WeWrite] Optional plugin rendering wait timed out or failed:", err);
         }
 
-        this.rendering = false
+        this.rendering = false;
+        return this.markdownBody;
     }
     public queryElement(index: number, query: string) {
         if (this.previewEl === undefined || !this.previewEl) {

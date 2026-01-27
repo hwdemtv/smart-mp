@@ -214,10 +214,7 @@ export class WechatRender {
 
 		// Use ObsidianMarkdownRenderer to render with native Obsidian
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		await renderer.render(path, container, view);
-
-		// Get the rendered HTML element
-		const renderedElement = renderer.markdownBody;
+		const renderedElement = await renderer.render(path, container, view);
 
 		if (renderedElement) {
 			// Apply post-processing (Mermaid to image, file:// conversion, etc.)

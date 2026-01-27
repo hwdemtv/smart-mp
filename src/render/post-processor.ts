@@ -35,7 +35,7 @@ export class WeWritePostProcessor {
         // Process elements
         await this.processMermaidCharts(section);
         await this.processFileProtocolImages(section, sourcePath);
-        this.processWikilinks(section);
+        this.processWikilinks(section, sourcePath);
         this.processCodeBlocks(section);
         this.processFrontmatter(section);
         this.processListItems(section);
@@ -99,11 +99,14 @@ export class WeWritePostProcessor {
             if (!src) continue;
 
             try {
-                // Remove file:// prefix
-                let filePath = src.replace(/^file:\/\/\//, '');
+                // Remove file:// prefix (handling both file:/// and file://)
+                let filePath = src.replace(/^file:\/\/\/?/, '');
+
+                // Decode URI components (e.g. %20 -> space)
+                filePath = decodeURIComponent(filePath);
 
                 // Normalize path separators
-                filePath = filePath.replace(/\\\\/g, '/');
+                filePath = filePath.replace(/\\/g, '/');
 
                 // Convert to vault-relative path
                 const vaultPath = this.app.vault.adapter.basePath.replace(/\\\\/g, '/');
@@ -141,7 +144,7 @@ export class WeWritePostProcessor {
     /**
      * Process internal embeds and convert to resource paths
      */
-    private static processWikilinks(container: HTMLElement): void {
+    private static processWikilinks(container: HTMLElement, sourcePath: string): void {
         container.querySelectorAll('span.internal-embed[alt][src]').forEach(el => {
             const originalSpan = el as HTMLElement;
             const src = originalSpan.getAttribute('src');
@@ -151,7 +154,7 @@ export class WeWritePostProcessor {
 
             try {
                 const linktext = src.split('|')[0];
-                const file = this.app.metadataCache.getFirstLinkpathDest(linktext, '');
+                const file = this.app.metadataCache.getFirstLinkpathDest(linktext, sourcePath);
                 if (file) {
                     const absolutePath = this.app.vault.adapter.getResourcePath(file.path);
                     const newImg = document.createElement('img');
