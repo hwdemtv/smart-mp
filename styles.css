@@ -1262,10 +1262,20 @@ proofreed
 }
 
 /* List Styles */
+/* List Styles */
 .wewrite-article ul,
 .wewrite-article ol {
 	margin: 0 0 1em 0 !important;
 	padding-left: 2em !important;
+}
+
+/* Nested Lists */
+.wewrite-article ul ul,
+.wewrite-article ul ol,
+.wewrite-article ol ul,
+.wewrite-article ol ol {
+	margin: 0 !important;
+	padding-left: 1.5em !important;
 }
 
 .wewrite-article li {
@@ -1274,12 +1284,30 @@ proofreed
 	line-height: 1.75 !important;
 }
 
+/* Unordered List Markers */
 .wewrite-article ul li {
 	list-style-type: disc !important;
 }
 
+.wewrite-article ul ul li {
+	list-style-type: circle !important;
+}
+
+.wewrite-article ul ul ul li {
+	list-style-type: square !important;
+}
+
+/* Ordered List Markers */
 .wewrite-article ol li {
 	list-style-type: decimal !important;
+}
+
+.wewrite-article ol ol li {
+	list-style-type: lower-alpha !important;
+}
+
+.wewrite-article ol ol ol li {
+	list-style-type: lower-roman !important;
 }
 
 /* Blockquote Styles */
