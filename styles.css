@@ -411,6 +411,15 @@ left side view
 	margin-left: 0.5em;
 }
 
+.wewrite-hr-replacement,
+.wewrite-article hr {
+	margin: 1em 0;
+	padding: 0;
+	height: 1px;
+	border: none;
+	flex-shrink: 0;
+}
+
 .wewrite-previewer-container .wewrite-article {
 	margin: 0;
 	padding: 0;
