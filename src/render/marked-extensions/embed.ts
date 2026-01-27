@@ -655,6 +655,22 @@ export class Embed extends WeWriteMarkedExtension {
 
 				console.log(`[Excalidraw] Image natural size: ${image.naturalWidth}x${image.naturalHeight}`);
 
+				// 检测图片尺寸是否过小（Excalidraw不完整渲染）
+				if (image.naturalWidth < 200 && image.naturalHeight < 200) {
+					console.warn(`[Excalidraw] Image too small, showing placeholder`);
+					const cleanPath = href.split("|")[0];
+					token.html = `<div style="padding: 2em; background: #fff3cd; border-left: 4px solid #ffc107; margin: 1em 0; border-radius: 4px;">
+						<div style="font-size: 1.1em; font-weight: bold; color: #856404; margin-bottom: 0.5em;">📊 Excalidraw 绘图</div>
+						<div style="font-size: 0.9em; color: #856404;">${cleanPath}</div>
+						<div style="font-size: 0.85em; color: #664d03; margin-top: 1em; padding: 0.8em; background: rgba(255,255,255,0.5); border-radius: 3px;">
+							⚠️ <strong>预览限制：</strong>当前仅显示缩略图 (${image.naturalWidth}×${image.naturalHeight}px)<br>
+							💡 <strong>建议操作：</strong>在 Obsidian 中打开此绘图 → 截取完整图片 → 粘贴到文章中
+						</div>
+					</div>`;
+					return;
+				}
+
+				// Set container to use natural image dimensions
 				// Set container to use natural image dimensions
 				if (image.naturalWidth > 0) {
 					root.style.width = `${image.naturalWidth}px`;
