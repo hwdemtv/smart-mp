@@ -1657,8 +1657,10 @@ proofreed
 
 /* Specific Title Field Styling */
 .wewrite-title-setting .setting-item-control input {
-	font-size: 1.1em !important;
-	padding: 6px 12px !important;
+	width: 600px !important;
+	font-size: 1.4em !important;
+	font-weight: bold !important;
+	padding: 10px 15px !important;
 }
 
 /* Mobile View Simulation */
