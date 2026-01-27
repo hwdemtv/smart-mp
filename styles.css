@@ -1657,7 +1657,26 @@ proofreed
 
 /* Specific Title Field Styling */
 .wewrite-title-setting .setting-item-control input {
-	width: 450px !important;
 	font-size: 1.1em !important;
 	padding: 6px 12px !important;
+}
+
+/* Mobile View Simulation */
+.render-container.is-mobile-view {
+	width: 375px !important;
+	margin: 20px auto !important;
+	border: 1px solid #ddd !important;
+	border-radius: 20px !important;
+	padding: 20px !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+	background-color: #fff !important;
+	min-height: 667px !important;
+	overflow-y: hidden !important;
+	/* Let content scroll naturally */
+}
+
+.render-container.is-mobile-view .wewrite-article {
+	padding: 0 !important;
+	font-size: 15px !important;
+	/* Standard WeChat font size */
 }
