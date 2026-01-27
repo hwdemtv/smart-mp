@@ -239,8 +239,5 @@ function renderListItem(parser: RendererThis["parser"], token: Tokens.ListItem) 
 }
 
 function serializeChildren(wrapper: HTMLElement): string {
-	const serializer = new XMLSerializer();
-	return Array.from(wrapper.childNodes)
-		.map((node) => serializer.serializeToString(node))
-		.join('');
+	return wrapper.innerHTML || "";
 }

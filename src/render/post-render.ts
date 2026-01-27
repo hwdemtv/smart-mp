@@ -86,10 +86,8 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
 
     const uploadPromises = svgs.map(async (svg) => {
         try {
+            // WeChat MP does NOT support SVGs. We must convert even small ones or remove them.
             const svgString = serializeElement(svg);
-            if (svgString.length < 10000) {
-                return
-            }
 
             const hash = simpleHash(svgString);
             if (imageCache.has(hash)) {
@@ -114,9 +112,8 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
             })
         } catch (error) {
             console.error('Failed to process SVG', error);
-            const img = document.createElement('img');
-            img.src = ERROR_IMAGE_SRC;
-            svg.replaceWith(img);
+            // Remove failing SVGs as they cause "invalid content" errors on WeChat
+            svg.remove();
         }
     })
 
@@ -155,9 +152,8 @@ export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient
             })
         } catch (error) {
             console.error('Failed to process Canvas', error);
-            const img = document.createElement('img');
-            img.src = ERROR_IMAGE_SRC;
-            canvas.replaceWith(img);
+            // Remove failing canvas as it would be serialized to nothing or problematic HTML
+            canvas.remove();
         }
     })
     await Promise.all(uploadPromises)
@@ -217,7 +213,9 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
             }
         } catch (error) {
             console.error('Failed to process Image', img.src, error);
-            img.src = ERROR_IMAGE_SRC;
+            // If it's a local app:// URL that failed to upload, we MUST remove it or WeChat will reject the article.
+            // Data URLs are also risky.
+            img.remove();
         }
     })
     await Promise.all(uploadPromises)

@@ -33,9 +33,9 @@ export async function fetchImageBlob(url: string): Promise<Blob> {
     }
 
     try {
-        // Obsidian's requestUrl doesn't support app:// protocol in some contexts
-        // Standard fetch works fine for app:// in the renderer process
-        if (url.startsWith('app://')) {
+        // Obsidian's requestUrl doesn't support local protocols like app:// or blob:app://
+        // Standard fetch works fine for these in the renderer process
+        if (url.startsWith('app://') || url.startsWith('blob:app://')) {
             const res = await fetch(url);
             return await res.blob();
         }
@@ -64,16 +64,11 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export function serializeElement(element: Element): string {
-    return new XMLSerializer().serializeToString(element);
+    return element.outerHTML;
 }
 
 export function serializeChildren(element: Element): string {
-    const serializer = new XMLSerializer();
-    let result = "";
-    element.childNodes.forEach((child) => {
-        result += serializer.serializeToString(child);
-    });
-    return result;
+    return (element as HTMLElement).innerHTML || "";
 }
 
 export function replaceDivWithSection(root: HTMLElement) {
