@@ -174,13 +174,42 @@ export class Embed extends WeWriteMarkedExtension {
 		return parts.join("/");
 	}
 	getImagePath(path: string) {
+		// Handle HTTP/HTTPS URLs
 		if (path.startsWith("http")) {
 			return path;
 		}
+
+		// Handle file:// protocol
+		if (path.startsWith("file://")) {
+			// Remove file:// prefix and decode URI
+			let filePath = path.replace("file://", "");
+			// On Windows, file:// URLs may have an extra / like file:///D:/...
+			// We need to handle both file:///D:/path and file://D:/path
+			if (filePath.startsWith("/") && filePath.length > 2 && filePath.charAt(2) === ":") {
+				filePath = filePath.substring(1); // Remove leading slash before drive letter
+			}
+			filePath = decodeURIComponent(filePath);
+
+			console.log(`[WeWrite] Processing file:// URL: ${path} -> ${filePath}`);
+
+			// Try to find the file in the vault
+			const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+			if (file instanceof TFile) {
+				const resPath = this.plugin.app.vault.getResourcePath(file);
+				console.log(`[WeWrite] File found in vault, resource path: ${resPath}`);
+				return resPath;
+			}
+
+			// If not in vault, return the original path (browser will handle it)
+			console.log(`[WeWrite] File not in vault, returning original path`);
+			return path;
+		}
+
+		// Handle vault-relative paths
 		const file = this.searchFile(path);
 
 		if (file == null) {
-			console.error("File not found" + path);
+			console.error("File not found: " + path);
 			return "";
 		}
 		if (file instanceof TFile) {
@@ -502,21 +531,38 @@ export class Embed extends WeWriteMarkedExtension {
 			],
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
-				if (token.type !== "Embed") return;
+				console.log("[Embed walkTokens] Processing token:", token.type, token);
+
+				if (token.type !== "Embed") {
+					console.log("[Embed walkTokens] Skipping non-Embed token:", token.type);
+					return;
+				}
+
 				const embedType = getEmbedType(token.href);
+				console.log(`[Embed walkTokens] Embed type detected: "${embedType}" for href: "${token.href}"`);
+
 				if (embedType === "excalidraw") {
+					console.log("[Embed walkTokens] Calling renderExcalidrawAsync...");
 					await this.renderExcalidrawAsync(token);
 				} else if (embedType === "note") {
+					console.log("[Embed walkTokens] Calling renderMarkdownEmbedAsync...");
 					await this.renderMarkdownEmbedAsync(token);
+				} else {
+					console.log(`[Embed walkTokens] Unhandled embed type: "${embedType}"`);
 				}
 			},
 		};
 	}
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
+		console.log("[Excalidraw] Starting renderExcalidrawAsync for token:", token);
+
 		if (!this.isPluginInstalled("obsidian-excalidraw-plugin")) {
+			console.warn("[Excalidraw] Plugin not installed");
 			return false;
 		}
+		console.log("[Excalidraw] Plugin is installed");
+
 		// define default failed
 		token.html = $t("render.excalidraw-failed");
 
@@ -525,33 +571,54 @@ export class Embed extends WeWriteMarkedExtension {
 		this.excalidrawIndex++;
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
 
+		console.log(`[Excalidraw] Index: ${index}, href: ${href}`);
+
 		// Find by specific path if possible, or fallback to general selectors
 		const cleanPath = href.split("|")[0];
 		const escapedPath = cleanPath.replace(/"/g, '\\"');
 		const selector = `.internal-embed[src*="${escapedPath}"], .excalidraw-svg, .excalidraw-plugin-view, .excalidraw-embed, .excalidraw-instance, .internal-embed.is-excalidraw`;
 
+		console.log(`[Excalidraw] Using selector: ${selector}`);
+
 		let root = renderer.queryElement(index, selector);
 
+		console.log(`[Excalidraw] Found root element:`, root);
+
 		if (!root) {
-			console.error(`renderExcalidrawAsync error:`, `root is null for index ${index}, path: ${cleanPath}`);
+			console.error(`[Excalidraw] ERROR: root is null for index ${index}, path: ${cleanPath}`);
+			console.log(`[Excalidraw] Available elements in previewEl:`, renderer.previewEl?.innerHTML);
 			return;
 		}
+
+		console.log(`[Excalidraw] Root element found, removing style attribute`);
 		root.removeAttribute("style");
+
 		try {
 			// Ensure it's not hidden
-			if (root.style.display === 'none') root.style.display = 'block';
+			if (root.style.display === 'none') {
+				console.log(`[Excalidraw] Root was hidden, setting to block`);
+				root.style.display = 'block';
+			}
 
 			const image = root.querySelector("img");
+			console.log(`[Excalidraw] Found image element:`, image);
+
 			if (image) {
 				image.setAttr("width", "100%");
 				image.setAttr("height", "100%");
 				image.setAttr("style", "width:100%;height:100%");
+				console.log(`[Excalidraw] Image attributes set`);
 			}
+
+			console.log(`[Excalidraw] Converting to image...`);
 			const dataUrl = await renderer.domToImage(root);
+			console.log(`[Excalidraw] Conversion successful, dataUrl length: ${dataUrl.length}`);
 
 			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" style="width: 100%; height: auto; display: block; margin: 0 auto;"></section>`;
+			console.log(`[Excalidraw] token.html set successfully`);
 		} catch (e) {
-			console.error(`renderExcalidrawAsync error:`, e);
+			console.error(`[Excalidraw] ERROR during conversion:`, e);
+			console.error(`[Excalidraw] Stack trace:`, (e as Error).stack);
 		}
 	}
 	async renderMarkdownEmbedAsync(token: Tokens.Generic) {
