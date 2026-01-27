@@ -33,6 +33,13 @@ export async function fetchImageBlob(url: string): Promise<Blob> {
     }
 
     try {
+        // Obsidian's requestUrl doesn't support app:// protocol in some contexts
+        // Standard fetch works fine for app:// in the renderer process
+        if (url.startsWith('app://')) {
+            const res = await fetch(url);
+            return await res.blob();
+        }
+
         const response = await requestUrl(url);
         if (!response.arrayBuffer) {
             throw new Error(`Failed to fetch image from ${url}`);
@@ -77,7 +84,7 @@ export function replaceDivWithSection(root: HTMLElement) {
 }
 
 export function removeThinkTags(content: string): string {
-	// 使用正则表达式匹配 <think> 和 </think> 标签及其内容，并替换为空字符串
-	const regex = /<think>[\s\S]*<\/think>/g;
-	return content.replace(regex, "");
+    // 使用正则表达式匹配 <think> 和 </think> 标签及其内容，并替换为空字符串
+    const regex = /<think>[\s\S]*<\/think>/g;
+    return content.replace(regex, "");
 }
