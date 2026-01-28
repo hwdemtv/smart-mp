@@ -146,9 +146,7 @@ export class WechatRender {
 	}
 	async parse(md: string) {
 		const { data, content } = matter(md);
-		for (const extension of this.extensions) {
-			await extension.prepare();
-		}
+		await Promise.all(this.extensions.map(ext => ext.prepare()));
 		return await this.marked.parse(content);
 	}
 	public async postprocess(html: string): Promise<HTMLElement> {

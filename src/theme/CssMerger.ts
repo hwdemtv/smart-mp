@@ -99,6 +99,47 @@ export class CSSMerger {
 	vars: Map<string, string> = new Map()
 	rules: Rules = new Map()
 
+	// Indexing for performance
+	private keyedRules: Map<string, string[]> = new Map();
+	private universalRules: string[] = [];
+
+	private buildRuleIndex() {
+		this.keyedRules.clear();
+		this.universalRules = [];
+
+		this.rules.forEach((_, selector) => {
+			const { baseSelector } = this.normalizeSelector(selector);
+			const parts = baseSelector.split(/[\s>+~]+/);
+			const subject = parts[parts.length - 1];
+
+			const ids = subject.match(/#[a-zA-Z0-9_\-]+/g) || [];
+			const classes = subject.match(/\.[a-zA-Z0-9_\-]+/g) || [];
+			const tags = subject.match(/^[a-zA-Z0-9_\-]+/);
+
+			let indexed = false;
+			if (ids.length > 0) {
+				ids.forEach(id => this.addIndex(id, selector));
+				indexed = true;
+			} else if (classes.length > 0) {
+				classes.forEach(c => this.addIndex(c, selector));
+				indexed = true;
+			} else if (tags) {
+				this.addIndex(tags[0].toUpperCase(), selector);
+				indexed = true;
+			}
+
+			if (!indexed) {
+				this.universalRules.push(selector);
+			}
+		});
+		console.debug(`[CssMerger] Index rebuilt. Keyed: ${this.keyedRules.size}, Universal: ${this.universalRules.length}`);
+	}
+
+	private addIndex(key: string, selector: string) {
+		if (!this.keyedRules.has(key)) this.keyedRules.set(key, []);
+		this.keyedRules.get(key)!.push(selector);
+	}
+
 	private static AST_CACHE: Map<string, postcss.Root> = new Map();
 	private static cacheHits = 0;
 	private static cacheMisses = 0;
@@ -109,6 +150,7 @@ export class CSSMerger {
 			const ast = (await postcss().process(customCSS, { from: undefined })).root;
 			this.pickVariables(ast, this.vars);
 			this.pickRules(ast, this.rules);
+			this.buildRuleIndex();
 		} catch (e) {
 			new Notice($t('render.failed-to-parse-custom-css', [e]));
 			console.error(e);
@@ -135,6 +177,7 @@ export class CSSMerger {
 			this.pickVariables(ast, this.vars);
 			this.pickRules(ast, this.rules);
 		}
+		this.buildRuleIndex();
 		console.debug(`[CssMerger] Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
@@ -223,71 +266,108 @@ export class CSSMerger {
 		return pseudoEl;
 	}
 
-	applyStyleToElement(currentNode: HTMLElement) {
-		// Resolve variables in existing inline styles first
-		const existingStyle = currentNode.getAttribute('style');
-		if (existingStyle && existingStyle.includes('var(')) {
-			const resolvedStyle = this.resolveCssVars(existingStyle, this.vars);
-			currentNode.setAttribute('style', resolvedStyle);
-		}
+	applyStyleToElement(root: HTMLElement) {
+		const stack: HTMLElement[] = [root];
 
-		this.rules.forEach((rule, selector) => {
-			const { baseSelector, pseudo } = this.normalizeSelector(selector);
-			try {
-				if (currentNode.matches(baseSelector)) {
-					let target = currentNode;
-					if (pseudo) {
-						const contentDecl = rule.get('content');
-						target = this.ensurePseudoElement(currentNode, pseudo, contentDecl?.value);
-					}
-					rule.forEach((decl, prop) => {
-						if (prop === 'content') {
-							return;
-						}
-						let value = this.resolveCssVars(decl.value, this.vars);
+		while (stack.length > 0) {
+			const currentNode = stack.pop()!;
 
-						// [Security] Prevent XSS in CSS values
-						const lowerValue = value.toLowerCase();
-						if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
-							return;
-						}
-
-						const fullValue = decl.important ? `${value} !important` : value;
-						this.appendStyleText(target, prop, fullValue);
-					})
-				}
-			} catch (error) {
-				console.debug(
-					'error selector=>',
-					selector,
-					' | Error=>',
-					(error as Error).message
-				);
+			// Resolve variables in existing inline styles first
+			const existingStyle = currentNode.getAttribute('style');
+			if (existingStyle && existingStyle.includes('var(')) {
+				const resolvedStyle = this.resolveCssVars(existingStyle, this.vars);
+				currentNode.setAttribute('style', resolvedStyle);
 			}
-		})
-		let element = currentNode.firstElementChild;
-		while (element) {
-			this.applyStyleToElement(element as HTMLElement);
-			element = element.nextElementSibling;
+
+			// Collect Candidate Rules
+			const candidates = new Set<string>(this.universalRules);
+
+			// Tag
+			const tagRules = this.keyedRules.get(currentNode.tagName);
+			if (tagRules) tagRules.forEach(s => candidates.add(s));
+
+			// Classes
+			if (currentNode.classList && currentNode.classList.length > 0) {
+				currentNode.classList.forEach(c => {
+					const classRules = this.keyedRules.get(`.${c}`);
+					if (classRules) classRules.forEach(s => candidates.add(s));
+				});
+			}
+
+			// IDs
+			if (currentNode.id) {
+				const idRules = this.keyedRules.get(`#${currentNode.id}`);
+				if (idRules) idRules.forEach(s => candidates.add(s));
+			}
+
+			candidates.forEach((selector) => {
+				const rule = this.rules.get(selector);
+				if (!rule) return;
+
+				const { baseSelector, pseudo } = this.normalizeSelector(selector);
+				try {
+					if (currentNode.matches(baseSelector)) {
+						let target = currentNode;
+						if (pseudo) {
+							const contentDecl = rule.get('content');
+							target = this.ensurePseudoElement(currentNode, pseudo, contentDecl?.value);
+						}
+						rule.forEach((decl, prop) => {
+							if (prop === 'content') {
+								return;
+							}
+							let value = this.resolveCssVars(decl.value, this.vars);
+
+							// [Security] Prevent XSS in CSS values
+							const lowerValue = value.toLowerCase();
+							if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
+								return;
+							}
+
+							const fullValue = decl.important ? `${value} !important` : value;
+							this.appendStyleText(target, prop, fullValue);
+						})
+					}
+				} catch (error) {
+					// safe ignore
+				}
+			})
+
+			// Add children to stack
+			// Iterate backwards so they are popped in order
+			let child = currentNode.lastElementChild;
+			while (child) {
+				stack.push(child as HTMLElement);
+				child = child.previousElementSibling;
+			}
 		}
-		return currentNode;
+		return root;
 	}
 	removeClassName(root: HTMLElement) {
-		const className = root.getAttribute('class');
-		if (className) {
-			const classes = className.split(' ');
-			for (const c of classes) {
-				if (isClassReserved(c)) {
-					continue;
+		const stack: HTMLElement[] = [root];
+		while (stack.length > 0) {
+			const node = stack.pop()!;
+			const className = node.getAttribute('class');
+			if (className) {
+				const classes = className.split(' ');
+				const validClasses: string[] = [];
+				for (const c of classes) {
+					if (isClassReserved(c)) {
+						validClasses.push(c);
+					}
 				}
-				root.classList.remove(c);
+				if (validClasses.length > 0) {
+					node.setAttribute('class', validClasses.join(' '));
+				} else {
+					node.removeAttribute('class');
+				}
 			}
-		}
-		root.removeAttribute('class');
-		let element = root.firstElementChild;
-		while (element) {
-			this.removeClassName(element as HTMLElement);
-			element = element.nextElementSibling;
+
+			let element = node.lastElementChild;
+			while (element) {
+				stack.push(element as HTMLElement);
+				element = element.previousElementSibling;
+			}
 		}
 	}
 

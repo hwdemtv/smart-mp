@@ -69,8 +69,14 @@ export class ObsidianMarkdownRenderer {
                 waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
             }
 
-            // General buffer wait to ensure complex plugins are stable
-            waiters.push(new Promise(resolve => setTimeout(resolve, 1000)));
+            // General buffer wait only if we waited on dynamic content
+            if (waiters.length > 0) {
+                // Slight buffer for rendering stability if we had complex elements
+                waiters.push(new Promise(resolve => setTimeout(resolve, 300)));
+            } else {
+                // No complex elements - minimal buffer
+                waiters.push(new Promise(resolve => setTimeout(resolve, 50)));
+            }
 
             if (waiters.length) {
                 await Promise.all(waiters);

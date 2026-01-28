@@ -45,10 +45,22 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 	static readonly MAX_CACHE_SIZE = 100;
 	static readonly CACHE_VERSION = "v11"; // Restored highlighting with better inline styles
 
+	private simpleHash(str: string): string {
+		let hash = 0;
+		// Limit hash calculation to first 1000 chars for speed, usually enough for cache collision avoidance in this context
+		for (let i = 0; i < Math.min(str.length, 1000); i++) {
+			const char = str.charCodeAt(i);
+			hash = ((hash << 5) - hash) + char;
+			hash = hash & hash; // Convert to 32bit integer
+		}
+		return hash.toString(36);
+	}
+
 	codeRenderer(code: string, infostring: string | undefined): string {
 		const lang = (infostring || '').match(/^\S*/)?.[0];
 		const theme = this.plugin.settings.codeTheme || 'github';
-		const cacheKey = `${CodeRenderer.CACHE_VERSION}:${theme}:${lang || 'auto'}:${code}`;
+		const codeHash = this.simpleHash(code);
+		const cacheKey = `${CodeRenderer.CACHE_VERSION}:${theme}:${lang || 'auto'}:${codeHash}`;
 
 		if (CodeRenderer.HighlightCache.has(cacheKey)) {
 			return CodeRenderer.HighlightCache.get(cacheKey)!;
