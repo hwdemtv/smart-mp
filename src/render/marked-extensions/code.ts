@@ -220,8 +220,59 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		return Promise.resolve(replaceDivWithSection(root))//root.outerHTML
 	}
 
+	// Font Awesome to Unicode/Emoji mapping for WeChat compatibility
+	private static readonly iconMap: { [key: string]: string } = {
+		'book': '📚',
+		'gear': '⚙️',
+		'cog': '⚙️',
+		'user': '👤',
+		'home': '🏠',
+		'file': '📄',
+		'folder': '📁',
+		'link': '🔗',
+		'check': '✅',
+		'x': '❌',
+		'times': '❌',
+		'arrow-right': '➡️',
+		'arrow-left': '⬅️',
+		'arrow-up': '⬆️',
+		'arrow-down': '⬇️',
+		'plus': '➕',
+		'minus': '➖',
+		'edit': '✏️',
+		'pen': '✏️',
+		'trash': '🗑️',
+		'search': '🔍',
+		'star': '⭐',
+		'heart': '❤️',
+		'info': 'ℹ️',
+		'warning': '⚠️',
+		'exclamation-triangle': '⚠️',
+		'error': '❗',
+		'exclamation-circle': '❗',
+		'success': '✅',
+		'check-circle': '✅',
+		'calendar': '📅',
+		'clock': '🕒',
+		'envelope': '✉️',
+		'thumbs-up': '👍',
+		'thumbs-down': '👎'
+	};
+
+	private processMermaidIcons(text: string): string {
+		// Replace [fa:fa-iconName] or fa:fa-iconName with Emoji
+		return text.replace(/\[?fa:fa-([a-z0-9-]+)\]?/gi, (match, iconName) => {
+			const normalized = iconName.toLowerCase();
+			return CodeRenderer.iconMap[normalized] || match;
+		});
+	}
+
 	async renderMermaidAsync(token: Tokens.Generic) {
 		console.debug(`[Mermaid] Starting render for diagram #${this.mermaidIndex}`);
+
+		// [Enhancement] Pre-process icons for WeChat compatibility
+		token.text = this.processMermaidIcons(token.text);
+
 		// define default failed
 		token.html = $t('render.mermaid-failed');
 
