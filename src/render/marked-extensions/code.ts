@@ -229,7 +229,8 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			}
 
 		}
-		return Promise.resolve(replaceDivWithSection(root))//root.outerHTML
+		const newRoot = replaceDivWithSection(root);
+		return Promise.resolve(newRoot.outerHTML)
 	}
 
 	// Font Awesome to Unicode/Emoji mapping for WeChat compatibility

@@ -75,7 +75,7 @@ export function serializeChildren(element: Element): string {
     return (element as HTMLElement).innerHTML.replace(/\s?xmlns="[^"]*"/g, "") || "";
 }
 
-export function replaceDivWithSection(root: HTMLElement) {
+export function replaceDivWithSection(root: HTMLElement): HTMLElement {
     const divs = Array.from(root.querySelectorAll('div'));
     divs.reverse().forEach(div => {
         const section = document.createElement('section');
@@ -85,6 +85,20 @@ export function replaceDivWithSection(root: HTMLElement) {
         }
         div.replaceWith(section);
     });
+
+    if (root.tagName.toLowerCase() === 'div') {
+        const section = document.createElement('section');
+        Array.from(root.attributes).forEach(attr => section.setAttribute(attr.name, attr.value));
+        while (root.firstChild) {
+            section.appendChild(root.firstChild);
+        }
+        if (root.parentNode) {
+            root.replaceWith(section);
+        }
+        return section;
+    }
+
+    return root;
 }
 
 export function removeThinkTags(content: string): string {
