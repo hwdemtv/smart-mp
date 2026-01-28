@@ -221,23 +221,59 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 	}
 
 	async renderMermaidAsync(token: Tokens.Generic) {
+		console.debug(`[Mermaid] Starting render for diagram #${this.mermaidIndex}`);
 		// define default failed
 		token.html = $t('render.mermaid-failed');
 
-		// const href = token.href;
 		const index = this.mermaidIndex;
 		this.mermaidIndex++;
 
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
 
-		const root = renderer.queryElement(index, '.mermaid')
-		if (!root) {
-			return
+		// 1. Wait for preview container availability
+		if (!renderer.previewEl) {
+			console.debug(`[Mermaid] Preview element not ready, waiting...`);
+			await new Promise(resolve => setTimeout(resolve, 100));
 		}
 
-		await renderer.waitForSelector(root, "svg", 5000);
-		const svg = root.querySelector<SVGElement>("svg");
+		// 2. Try to find root with multiple selectors
+		let root = renderer.queryElement(index, '.mermaid') ||
+			renderer.queryElement(index, 'div.mermaid');
+
+		if (!root) {
+			console.debug(`[Mermaid] Root not found immediately, retrying...`);
+			// Retry loop for root element
+			for (let i = 0; i < 3; i++) {
+				await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // Incremental backoff
+				root = renderer.queryElement(index, '.mermaid') ||
+					renderer.queryElement(index, 'div.mermaid');
+				if (root) break;
+			}
+		}
+
+		if (!root) {
+			console.error(`[Mermaid] Failed to find root element for diagram #${index}`);
+			// Fallback: show raw code block
+			token.html = `<pre class="mermaid-block-fallback"><code>${token.text}</code></pre>`;
+			return;
+		}
+
+		console.debug(`[Mermaid] Found root element, waiting for SVG...`);
+
+		// 3. Wait for SVG generation (Mermaid rendering is async)
+		let svg = root.querySelector<SVGElement>("svg");
 		if (!svg) {
+			try {
+				await renderer.waitForSelector(root, "svg", 5000);
+				svg = root.querySelector<SVGElement>("svg");
+			} catch (e) {
+				console.warn(`[Mermaid] Timeout waiting for SVG:`, e);
+			}
+		}
+
+		if (!svg) {
+			console.error(`[Mermaid] SVG not found after wait.`);
+			token.html = `<pre class="mermaid-block-fallback"><code>${token.text}</code></pre>`;
 			return;
 		}
 
