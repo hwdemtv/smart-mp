@@ -12,7 +12,7 @@ import { WeWriteMarkedExtension } from "./extension";
 
 
 export class Image extends WeWriteMarkedExtension {
-	processImage(dom: HTMLDivElement) {
+	processImage(dom: HTMLElement) {
 
 		const imgEls = dom.querySelectorAll('img')
 
@@ -38,19 +38,10 @@ export class Image extends WeWriteMarkedExtension {
 				captionRow.createEl('figcaption', { cls: 'image-caption', text: caption })
 			}
 		}
-		return dom
 	}
-	postprocess(html: string): Promise<string> {
-
-		const dom = sanitizeHTMLToDom(html)
-		const tempDiv = createEl('div');
-		tempDiv.appendChild(dom);
-		this.processImage(tempDiv)
-		const serializer = new XMLSerializer();
-		const result = Array.from(tempDiv.childNodes)
-			.map((node) => serializer.serializeToString(node))
-			.join('');
-		return Promise.resolve(result);
+	postprocess(dom: HTMLElement): Promise<HTMLElement> {
+		this.processImage(dom);
+		return Promise.resolve(dom);
 	}
 
 	markedExtension(): MarkedExtension {

@@ -16,18 +16,22 @@ export class Links extends WeWriteMarkedExtension {
         return Promise.resolve();
     }
 
-    postprocess(html: string): Promise<string> {
+    postprocess(dom: HTMLElement): Promise<HTMLElement> {
         if (!this.allLinks.length) {
-            return Promise.resolve(html);
+            return Promise.resolve(dom);
         }
         // 去重但保持顺序
         const uniqueLinks = [...new Set(this.allLinks)];
-        const links = uniqueLinks.map((href, i) => {
+        const linksHtml = uniqueLinks.map((href, i) => {
             return `<li>${href}&nbsp;↩</li>`;
-        });
-        return Promise.resolve(
-            `${html}<section class="foot-links"><hr class="foot-links-separator"><ol>${links.join('')}</ol></section>`
-        );
+        }).join('');
+
+        const footLinks = dom.createEl('section', { cls: 'foot-links' });
+        footLinks.createEl('hr', { cls: 'foot-links-separator' });
+        const ol = footLinks.createEl('ol');
+        ol.innerHTML = linksHtml;
+
+        return Promise.resolve(dom);
     }
 
     markedExtension(): MarkedExtension {

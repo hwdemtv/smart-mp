@@ -152,19 +152,19 @@ export class WechatRender {
 		return await this.marked.parse(content);
 	}
 	public async postprocess(html: string): Promise<HTMLElement> {
-		let result = html;
+		const dom = sanitizeHTMLToDom(html);
+		const wrapper = document.createElement('div');
+		wrapper.appendChild(dom);
+
 		for (let ext of this.extensions) {
-			result = await ext.postprocess(result);
+			await ext.postprocess(wrapper);
 		}
-		// Return DOM element directly to avoid re-parsing
-		return this.removeEmptyListItems(result);
+		// Return DOM element directly
+		return this.removeEmptyListItems(wrapper);
 	}
 
-	private removeEmptyListItems(html: string): HTMLElement {
+	private removeEmptyListItems(wrapper: HTMLElement): HTMLElement {
 		// WeChat 编辑器会保留空的 <li>，导致空序号，这里统一清理掉仅含换行/空白的条目。
-		const wrapper = document.createElement('div');
-		const dom = sanitizeHTMLToDom(html);
-		wrapper.appendChild(dom);
 		wrapper.querySelectorAll('ol li, ul li').forEach((li) => {
 			const hasMedia = li.querySelector('img, video, figure');
 			const clone = li.cloneNode(true) as HTMLElement;

@@ -10,11 +10,8 @@ import { sanitizeHTMLToDom } from "obsidian";
 import { serializeChildren } from "src/utils/utils";
 
 export class Heading extends WeWriteMarkedExtension {
-	postprocess(html: string): Promise<string> {
-		const dom = sanitizeHTMLToDom(html)
-		const tempDiv = createEl('div');
-		tempDiv.appendChild(dom);
-		const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+	postprocess(dom: HTMLElement): Promise<HTMLElement> {
+		const headings = dom.querySelectorAll('h1, h2, h3, h4, h5, h6');
 		for (const heading of headings) {
 			const contentHtml = heading.innerHTML;
 			heading.empty();
@@ -31,7 +28,7 @@ export class Heading extends WeWriteMarkedExtension {
 
 			heading.createSpan({ cls: 'wewrite-heading-tail' });
 		}
-		return Promise.resolve(serializeChildren(tempDiv))
+		return Promise.resolve(dom);
 
 	}
 

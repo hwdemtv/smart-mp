@@ -23,36 +23,32 @@ export function areObjectsEqual(obj1: unknown, obj2: unknown): boolean {
     return true;
 }
 
-export async function fetchImageBlob(url: string): Promise<Blob> {
+export async function fetchImageBlob(url: string, timeout = 10000): Promise<Blob> {
     console.log(`[WeWrite Debug] Fetching image: ${url}`);
 
     if (url.startsWith('data:')) {
         return dataUrlToBlob(url);
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     try {
-        // Fix: Obsidian's requestUrl doesn't support local protocols like app://
-        // Use standard fetch for local resources
         if (url.startsWith('app://') || url.startsWith('file://') || url.startsWith('blob:')) {
-            console.log(`[WeWrite Debug] Detected local protocol, using standard fetch`);
-            const res = await fetch(url);
-            if (!res.ok) {
-                throw new Error(`Local fetch failed: ${res.status} ${res.statusText}`);
-            }
-            const blob = await res.blob();
-            console.log(`[WeWrite Debug] Local fetch success. Size: ${blob.size}, Type: ${blob.type}`);
-            return blob;
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (!res.ok) throw new Error(`Local fetch failed: ${res.status}`);
+            return await res.blob();
         }
 
-        // Use requestUrl for remote images to bypass CORS
         const response = await requestUrl({
             url: url,
             method: 'GET'
         });
-        console.log(`[WeWrite Debug] Remote fetch success: ${response.status}, Type: ${response.headers['content-type']}, Size: ${response.arrayBuffer.byteLength}`);
-        const blob = new Blob([response.arrayBuffer], { type: response.headers['content-type'] });
-        return blob;
+        clearTimeout(timeoutId);
+        return new Blob([response.arrayBuffer], { type: response.headers['content-type'] });
     } catch (e) {
+        clearTimeout(timeoutId);
         console.error(`[WeWrite Debug] Fetch failed for ${url}:`, e);
         throw e;
     }
@@ -80,10 +76,15 @@ export function serializeChildren(element: Element): string {
 }
 
 export function replaceDivWithSection(root: HTMLElement) {
-    const html = serializeElement(root)
-        .replaceAll(/<div /g, "<section ")
-        .replaceAll(/<\/div>/g, "</section>");
-    return html;
+    const divs = Array.from(root.querySelectorAll('div'));
+    divs.reverse().forEach(div => {
+        const section = document.createElement('section');
+        Array.from(div.attributes).forEach(attr => section.setAttribute(attr.name, attr.value));
+        while (div.firstChild) {
+            section.appendChild(div.firstChild);
+        }
+        div.replaceWith(section);
+    });
 }
 
 export function removeThinkTags(content: string): string {
@@ -92,13 +93,7 @@ export function removeThinkTags(content: string): string {
     return content.replace(regex, "");
 }
 
-/**
- * Deeply cleans an HTMLElement to satisfy WeChat MP API's strict content rules.
- * Removes all data-* attributes, classes, ids, and restricted tags.
- */
 export function cleanHtmlForWechat(root: HTMLElement): void {
-    // 1. Recursive replacement of DIV with SECTION using node movement
-    // 1. Remove restricted tags
     const restrictedTags = [
         'script', 'style', 'noscript', 'object', 'embed',
         'button', 'input', 'textarea', 'select', 'form',
@@ -110,19 +105,19 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
     });
 
     root.querySelectorAll('*').forEach(el => {
-        if ((el as HTMLElement).style?.display === 'none') {
+        const htmlEl = el as HTMLElement;
+        if (htmlEl.style?.display === 'none' || htmlEl.hasAttribute('hidden')) {
             el.remove();
         }
     });
 
     cleanAttributes(root);
 
-    const allDescendants = Array.from(root.querySelectorAll('*'));
-    allDescendants.forEach(el => {
+    root.querySelectorAll('*').forEach(el => {
         cleanAttributes(el as HTMLElement);
     });
 
-    const empties = Array.from(root.querySelectorAll('span, section, p'));
+    const empties = Array.from(root.querySelectorAll('span, section, p, div'));
     empties.forEach(el => {
         const style = el.getAttribute('style') || '';
         const hasVisibleStyle = style.includes('background') || (style.includes('width') && style.includes('height'));
@@ -130,6 +125,8 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
             el.remove();
         }
     });
+
+    replaceDivWithSection(root);
 }
 
 function cleanAttributes(el: HTMLElement): void {
