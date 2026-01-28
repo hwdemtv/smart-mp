@@ -135,7 +135,13 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
     empties.forEach(el => {
         const style = el.getAttribute('style') || '';
         const hasVisibleStyle = style.includes('background') || (style.includes('width') && style.includes('height'));
-        if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas') && !hasVisibleStyle) {
+        // Relaxed check: keep if contains text, specific media tags, HR, or WeChat specific tags (mp-*)
+        // Also keep if it has visible styling
+        const hasContent = el.textContent?.trim().length! > 0 ||
+            el.querySelector('img, video, iframe, canvas, svg, hr, audio') !== null ||
+            el.innerHTML.includes('<mp-');
+
+        if (!hasContent && !hasVisibleStyle) {
             el.remove();
         }
     });

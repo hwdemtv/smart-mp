@@ -344,7 +344,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		await uploadURLVideo(finalArticleEl, this.plugin.wechatClient);
 
 		// 4. 最后清理 HTML
+		console.log('[sendArticleToDraftBox] Length before clean:', finalArticleEl.innerHTML.length);
 		cleanHtmlForWechat(finalArticleEl);
+		console.log('[sendArticleToDraftBox] Length after clean:', finalArticleEl.innerHTML.length);
 
 		// Debug: print code block HTML to see if styles are preserved
 		const codeBlocks = finalArticleEl.querySelectorAll('.code-container, .code-section');
@@ -353,6 +355,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		});
 
 		const data = serializeChildren(finalArticleEl);
+
+		if (!data || data.trim().length === 0) {
+			new Notice('生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
+			console.error('[sendArticleToDraftBox] Content is empty after processing!');
+			return;
+		}
 
 		const media_id = await this.wechatClient.sendArticleToDraftBox(
 			this.draftHeader.getActiveLocalDraft()!,
