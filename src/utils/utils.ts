@@ -24,8 +24,6 @@ export function areObjectsEqual(obj1: unknown, obj2: unknown): boolean {
 }
 
 export async function fetchImageBlob(url: string, timeout = 10000): Promise<Blob> {
-    console.log(`[WeWrite Debug] Fetching image: ${url}`);
-
     if (url.startsWith('data:')) {
         return dataUrlToBlob(url);
     }
@@ -49,7 +47,6 @@ export async function fetchImageBlob(url: string, timeout = 10000): Promise<Blob
         return new Blob([response.arrayBuffer], { type: response.headers['content-type'] });
     } catch (e) {
         clearTimeout(timeoutId);
-        console.error(`[WeWrite Debug] Fetch failed for ${url}:`, e);
         throw e;
     }
 }
