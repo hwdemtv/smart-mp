@@ -459,7 +459,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			extensions: [{
 				name: 'code',
 				level: 'block',
-				level: 'block',
+
 				renderer: (token: Tokens.Generic) => {
 					// if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
 					// 	return token.html
