@@ -131,22 +131,34 @@ export function cleanHtmlForWechat(root: HTMLElement): HTMLElement {
         cleanAttributes(el as HTMLElement);
     });
 
+    // Check original length
+    const originalLength = root.innerHTML.length;
+
+    // ... cleanup logic ...
     const empties = Array.from(root.querySelectorAll('span, section, p, div'));
     empties.forEach(el => {
         const style = el.getAttribute('style') || '';
         const hasVisibleStyle = style.includes('background') || (style.includes('width') && style.includes('height'));
-        // Relaxed check: keep if contains text, specific media tags, HR, or WeChat specific tags (mp-*)
-        // Also keep if it has visible styling
-        const hasContent = el.textContent?.trim().length! > 0 ||
-            el.querySelector('img, video, iframe, canvas, svg, hr, audio') !== null ||
-            el.innerHTML.includes('<mp-');
 
-        if (!hasContent && !hasVisibleStyle) {
+        // Robust content check
+        const hasText = el.textContent?.trim().length! > 0;
+        const hasMedia = el.querySelector('img, video, iframe, canvas, svg, hr, audio') !== null;
+        const hasWeChatTags = el.innerHTML.includes('<mp-');
+
+        if (!hasText && !hasMedia && !hasWeChatTags && !hasVisibleStyle) {
             el.remove();
         }
     });
 
-    return replaceDivWithSection(root);
+    const result = replaceDivWithSection(root);
+
+    // Fail-safe: if content is completely gone but originally wasn't empty, restore something
+    if (result.innerHTML.trim().length === 0 && originalLength > 0) {
+        console.warn('[cleanHtmlForWechat] Content over-cleaned! Restoring backup.');
+        result.innerHTML = '<section><p>（内容可能包含不支持的格式，已重置）</p></section>';
+        // Or could we return to original logic? For now, at least don't send empty.
+    }
+    return result;
 }
 
 function cleanAttributes(el: HTMLElement): void {

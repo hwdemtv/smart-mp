@@ -141,6 +141,7 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         let blob: Blob | undefined
         if (img.src.includes('://mmbiz.qpic.cn/')) {
             console.log('[uploadURLImage] Skip WeChat CDN');
+            img.setAttribute('data-uploaded', 'true');
             return;
         }
         else if (img.src.startsWith('data:image/')) {
@@ -167,6 +168,7 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
                     console.log('[uploadURLImage] Uploaded! New URL:', res.url);
                     img.src = res.url;
                     img.setAttribute('data-upload-processed', 'true');
+                    img.setAttribute('data-uploaded', 'true');
                     img.setAttribute('data-uploaded', 'true');
                 } else {
                     console.error(`[uploadURLImage] Upload failed for:`, img.src);
