@@ -292,11 +292,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 								});
 
 								// 写入剪贴板
-								console.log('[Clipboard Debug] Writing to clipboard...');
 								await navigator.clipboard.write([clipboardItem]);
-								console.log('[Clipboard Debug] Write success!');
-
-								notice.hide();
 								new Notice(
 									$t("views.previewer.article-copied-to-clipboard")
 								);
@@ -364,7 +360,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				new Notice("图片/媒体处理失败，部分图片可能无法显示");
 			}
 		} else {
-			console.log("Skipping image upload for clipboard copy. Converting to Base64...");
 			if (progressNotice) progressNotice.setMessage("正在转换图片为 Base64 (这可能需要一点时间)...");
 			try {
 				await convertAssetsToDataURLs(finalArticleEl);
@@ -375,16 +370,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		}
 
 		if (progressNotice) progressNotice.setMessage("正在优化 HTML 结构...");
-		console.log('[processArticleForExport] Length before clean:', finalArticleEl.innerHTML.length);
 		const cleanedArticleEl = cleanHtmlForWechat(finalArticleEl);
-		console.log('[processArticleForExport] Length after clean:', cleanedArticleEl.innerHTML.length);
+
 
 		const html = serializeChildren(cleanedArticleEl);
 		const text = cleanedArticleEl.textContent || '';
 
 		if (!html || html.trim().length === 0) {
 			new Notice('生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
-			console.error('[processArticleForExport] Content is empty after processing!');
 			return null;
 		}
 		return { html, text };
@@ -402,8 +395,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		}
 
 		notice.setMessage("正在发送到草稿箱...");
+
+		const activeDraft = this.draftHeader.getActiveLocalDraft();
+		if (!activeDraft) {
+			new Notice('无法获取当前草稿信息', 5000);
+			return;
+		}
+
 		const media_id = await this.wechatClient.sendArticleToDraftBox(
-			this.draftHeader.getActiveLocalDraft()!,
+			activeDraft,
 			result.html
 		);
 
@@ -412,10 +412,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
-		if (media_id) {
+		if (media_id && this.plugin.settings.selectedMPAccount) {
 			this.draftHeader.updateDraftDraftId(media_id);
 			const news_item = await this.wechatClient.getDraftById(
-				this.plugin.settings.selectedMPAccount!,
+				this.plugin.settings.selectedMPAccount,
 				media_id
 			);
 			if (news_item) {
