@@ -172,7 +172,7 @@ export default class WeWritePlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("editor-menu", (menu, editor) => {
 				// @ts-ignore: Obsidian 类型定义不完整
-				let file = editor.editorComponent.file;
+				let file = (editor as any).editorComponent?.file;
 				file =
 					file instanceof TFile
 						? file

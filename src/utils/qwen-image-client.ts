@@ -22,7 +22,7 @@ export class QwenImageClient {
 		return QwenImageClient.instance;
 	}
 
-	
+
 	private prepareImageGenerateRequestHeader() {
 		const account = this.plugin.getDrawAIAccount();
 		if (!account) {
@@ -72,17 +72,20 @@ export class QwenImageClient {
 		};
 		return header;
 	}
-	
+
 	private pollImageTask(taskId: string): Promise<string> {
 		const intervalMs = 2000;
 		const timeoutMs = 30000;
 
 		return new Promise((resolve) => {
+			let timeoutId: number | undefined;
+
 			const intervalId = window.setInterval(() => {
 				void this.checkImageGenerationStatus(taskId)
 					.then((json) => {
 						if (json.output.task_status === "SUCCEEDED") {
 							clearInterval(intervalId);
+							if (timeoutId) clearTimeout(timeoutId);
 							this.plugin.hideSpinner();
 							resolve(json.output.results?.[0]?.url ?? "");
 						}
@@ -91,6 +94,7 @@ export class QwenImageClient {
 							json.output.task_status === "UNKNOWN"
 						) {
 							clearInterval(intervalId);
+							if (timeoutId) clearTimeout(timeoutId);
 							this.plugin.hideSpinner();
 							resolve("");
 						}
@@ -98,12 +102,13 @@ export class QwenImageClient {
 					.catch((error) => {
 						console.error("检查图片生成状态失败:", error);
 						clearInterval(intervalId);
+						if (timeoutId) clearTimeout(timeoutId);
 						this.plugin.hideSpinner();
 						resolve("");
 					});
 			}, intervalMs);
 
-			window.setTimeout(() => {
+			timeoutId = window.setTimeout(() => {
 				clearInterval(intervalId);
 				this.plugin.hideSpinner();
 				resolve("");
@@ -166,7 +171,7 @@ export class QwenImageClient {
 		return result;
 	}
 
-	
+
 }
 
 type QwenImageTaskResponse = {

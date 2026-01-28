@@ -62,7 +62,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	markdownView: MarkdownView | null = null;
 	private articleDiv: HTMLDivElement;
 	private listeners: EventRef[] = [];
-	currentView: EditorView;
+	currentView!: EditorView;
 	observer: MutationObserver | null = null;
 	private wechatClient: WechatClient;
 	private plugin: WeWritePlugin;
@@ -905,11 +905,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 
 	stopListen() {
-		const editor = this.getMarkdownView()?.editor;
-		// @ts-ignore
-		const scrollDom = editor?.cm?.scrollDOM;
-		if (scrollDom && this.editorScrollListener) {
-			scrollDom.removeEventListener("scroll", this.editorScrollListener);
+		// Clean up the specifically attached scroll listener if it exists
+		if (this.editorScrollListener && this.renderDiv) {
+			// Try to remove from the current editor's scrollDom
+			const editor = this.getMarkdownView()?.editor;
+			// @ts-ignore
+			const scrollDom = editor?.cm?.scrollDOM;
+			if (scrollDom) {
+				scrollDom.removeEventListener("scroll", this.editorScrollListener);
+			}
 		}
 		this.listeners.forEach((e) => this.app.workspace.offref(e));
 	}
