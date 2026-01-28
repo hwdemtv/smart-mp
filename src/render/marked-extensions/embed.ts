@@ -517,7 +517,6 @@ export class Embed extends WeWriteMarkedExtension {
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
 		if (!this.isPluginInstlled("obsidian-excalidraw-plugin")) {
-
 			return false;
 		}
 		// define default failed
@@ -526,12 +525,39 @@ export class Embed extends WeWriteMarkedExtension {
 		const href = token.href;
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
+
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
-		const root = renderer.queryElement(index, "div.excalidraw-svg");
+
+		// 1. Try to find with default selector
+		let root = renderer.queryElement(index, "div.excalidraw-svg") ||
+			renderer.queryElement(index, ".excalidraw-svg") ||
+			renderer.queryElement(index, ".excalidraw");
+
+		// 2. If not found, retry for a few times (Obsidian rendering might be async)
 		if (!root) {
-			console.error(`renderExcalidrawAsync error:`, "root is null");
+			console.debug(`[Excalidraw] Element at index ${index} not found immediately, retrying...`);
+			for (let i = 0; i < 5; i++) {
+				await new Promise(resolve => setTimeout(resolve, 200));
+				root = renderer.queryElement(index, "div.excalidraw-svg") ||
+					renderer.queryElement(index, ".excalidraw-svg") ||
+					renderer.queryElement(index, ".excalidraw");
+				if (root) {
+					console.debug(`[Excalidraw] Element found after ${i + 1} retries.`);
+					break;
+				}
+			}
+		}
+
+		if (!root) {
+			console.error(`[Excalidraw] render error: root is null after retries`, {
+				index,
+				href,
+				previewExists: !!renderer.previewEl,
+				elementCount: renderer.previewEl?.querySelectorAll(".excalidraw-svg, .excalidraw").length
+			});
 			return;
 		}
+
 		root.removeAttribute("style");
 		try {
 			const image = root.querySelector("img");
@@ -543,8 +569,9 @@ export class Embed extends WeWriteMarkedExtension {
 			const dataUrl = await renderer.domToImage(root);
 
 			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" ></section>`;
+			console.debug(`[Excalidraw] Success:`, href);
 		} catch (e) {
-			console.error(`renderExcalidrawAsync error:`, e);
+			console.error(`[Excalidraw] render error:`, e);
 		}
 	}
 	async renderMarkdownEmbedAsync(token: Tokens.Generic) {
