@@ -266,12 +266,26 @@ export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClie
     await Promise.all(uploadPromises)
 }
 
-export async function convertAssetsToDataURLs(root: HTMLElement) {
-    // 1. Convert SVGs to PNG Base64
+export async function convertAssetsToDataURLs(
+    root: HTMLElement,
+    onProgress?: (current: number, total: number) => void
+) {
     const svgs = Array.from(root.querySelectorAll('svg'));
+    const canvases = Array.from(root.querySelectorAll('canvas'));
+    const images = Array.from(root.querySelectorAll('img'));
+
+    const total = svgs.length + canvases.length + images.length;
+    let current = 0;
+
+    const updateProgress = () => {
+        current++;
+        onProgress?.(current, total);
+    };
+
+    // 1. Convert SVGs to PNG Base64
     await Promise.all(svgs.map(async (svg) => {
-        const svgString = serializeElement(svg);
         try {
+            const svgString = serializeElement(svg);
             const blob = await svgToPng(svgString);
             const reader = new FileReader();
             await new Promise<void>((resolve, reject) => {
@@ -286,11 +300,12 @@ export async function convertAssetsToDataURLs(root: HTMLElement) {
             });
         } catch (error) {
             console.error('[convertAssetsToDataURLs] SVG conversion failed:', error);
+        } finally {
+            updateProgress();
         }
     }));
 
     // 2. Convert Canvas to PNG Base64
-    const canvases = Array.from(root.querySelectorAll('canvas'));
     canvases.forEach(canvas => {
         try {
             const dataURL = canvas.toDataURL('image/png');
@@ -299,14 +314,18 @@ export async function convertAssetsToDataURLs(root: HTMLElement) {
             canvas.replaceWith(img);
         } catch (e) {
             console.error('[convertAssetsToDataURLs] Canvas conversion failed:', e);
+        } finally {
+            updateProgress();
         }
     });
 
     // 3. Convert Local Images to Base64
-    const images = Array.from(root.querySelectorAll('img'));
     await Promise.all(images.map(async (img) => {
         // Skip already Base64
-        if (img.src.startsWith('data:')) return;
+        if (img.src.startsWith('data:')) {
+            updateProgress();
+            return;
+        }
 
         try {
             const blob = await fetchImageBlob(img.src);
@@ -321,6 +340,8 @@ export async function convertAssetsToDataURLs(root: HTMLElement) {
             });
         } catch (error) {
             console.error(`[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
+        } finally {
+            updateProgress();
         }
     }));
 }

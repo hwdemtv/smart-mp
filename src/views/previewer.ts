@@ -362,7 +362,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		} else {
 			if (progressNotice) progressNotice.setMessage("正在转换图片为 Base64 (这可能需要一点时间)...");
 			try {
-				await convertAssetsToDataURLs(finalArticleEl);
+				await convertAssetsToDataURLs(finalArticleEl, (current, total) => {
+					if (progressNotice) {
+						progressNotice.setMessage(`正在转换图片为 Base64 (${current}/${total})...`);
+					}
+				});
 			} catch (e) {
 				console.error("Error converting images to Base64:", e);
 				new Notice("图片处理失败，部分图片可能无法显示");
