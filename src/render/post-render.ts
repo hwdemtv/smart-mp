@@ -74,20 +74,24 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
 
     const uploadPromises = svgs.map(async (svg) => {
         const svgString = serializeElement(svg);
-        if (svgString.length < 10000) {
-            return
+        if (svgString.length < 1000) {
+            console.warn('[uploadSVGs] SVG too small, skipping:', svgString.length);
+            return Promise.resolve();
         }
-        await svgToPng(svgString).then(async blob => {
-            await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                if (res) {
-                    const img = document.createElement('img');
-                    img.src = res.url;
-                    svg.replaceWith(img);
-                } else {
-                    console.error(`upload svg failed.`);
-                }
-            })
-        })
+        try {
+            const blob = await svgToPng(svgString);
+            const res = await wechatClient.uploadMaterial(blob, imageFileName(blob.type));
+            if (res && res.url) {
+                const img = document.createElement('img');
+                img.src = res.url;
+                img.setAttribute('data-upload-processed', 'true'); // Mark as processed
+                svg.replaceWith(img);
+            } else {
+                console.error(`[uploadSVGs] uploadMaterial failed for SVG.`);
+            }
+        } catch (error) {
+            console.error('[uploadSVGs] Error converting/uploading SVG:', error);
+        }
     })
 
     await Promise.all(uploadPromises)
@@ -100,14 +104,21 @@ export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient
     })
 
     const uploadPromises = canvases.map(async (canvas) => {
-        const blob = getCanvasBlob(canvas);
-        await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-            if (res) {
+        try {
+            const blob = getCanvasBlob(canvas);
+            const res = await wechatClient.uploadMaterial(blob, imageFileName(blob.type));
+            if (res && res.url) {
                 const img = document.createElement('img');
                 img.src = res.url;
+                img.setAttribute('data-upload-processed', 'true'); // Mark as processed
                 canvas.replaceWith(img);
+            } else {
+                console.error(`[uploadCanvas] uploadMaterial failed.`);
             }
-        })
+
+        } catch (error) {
+            console.error('[uploadCanvas] Error helper:', error)
+        }
     })
     await Promise.all(uploadPromises)
 }
@@ -116,10 +127,14 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
     const images: HTMLImageElement[] = []
 
     root.querySelectorAll('img').forEach(img => {
+        // Skip already processed images (from SVG/Canvas conversion or previous runs)
+        if (img.getAttribute('data-upload-processed') === 'true' || img.getAttribute('data-uploaded') === 'true') {
+            return;
+        }
         images.push(img)
     })
 
-    console.log('[uploadURLImage] Found', images.length, 'images');
+    console.log('[uploadURLImage] Found', images.length, 'images to upload');
 
     const uploadPromises = images.map(async (img) => {
         console.log('[uploadURLImage] Processing:', img.src);
@@ -133,19 +148,12 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
             blob = dataURLtoBlob(img.src);
         } else {
             console.log('[uploadURLImage] Fetching blob...');
-            // blob = await fetch(img.src).then(res => res.blob());
-            blob = await fetchImageBlob(img.src)
-            // try {
-            //     const response = await requestUrl(img.src);
-            //     if (!response.arrayBuffer) {
-            //         console.error(`Failed to fetch image from ${img.src}`);
-            //         return;
-            //     }
-            //     blob = new Blob([response.arrayBuffer]);
-            // } catch (error) {
-            //     console.error(`Error fetching image from ${img.src}:`, error);
-            //     return;
-            // }
+            try {
+                blob = await fetchImageBlob(img.src)
+            } catch (error) {
+                console.error(`[uploadURLImage] Failed to fetch image: ${img.src}`, error);
+                return;
+            }
         }
 
         if (blob === undefined) {
@@ -155,13 +163,16 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         } else {
 
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                if (res) {
+                if (res && res.url) {
                     console.log('[uploadURLImage] Uploaded! New URL:', res.url);
-                    img.src = res.url
+                    img.src = res.url;
+                    img.setAttribute('data-upload-processed', 'true');
+                    img.setAttribute('data-uploaded', 'true');
                 } else {
                     console.error(`[uploadURLImage] Upload failed for:`, img.src);
-
                 }
+            }).catch(err => {
+                console.error(`[uploadURLImage] Upload exception for: ${img.src}`, err);
             })
         }
     })

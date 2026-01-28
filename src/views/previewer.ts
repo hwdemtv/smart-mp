@@ -359,6 +359,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			data
 		);
 
+		if (!media_id) {
+			new Notice('发送草稿失败，请检查控制台错误日志', 5000);
+			return;
+		}
+
 		if (media_id) {
 			this.draftHeader.updateDraftDraftId(media_id);
 			const news_item = await this.wechatClient.getDraftById(

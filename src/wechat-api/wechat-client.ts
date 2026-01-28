@@ -209,12 +209,18 @@ export class WechatClient {
 			body: JSON.stringify(body),
 		});
 
-		const { errcode, media_id } = res.json;
+		const { errcode, media_id, errmsg } = res.json;
 		if (errcode !== undefined && errcode !== 0) {
-			new Notice(getErrorMessage(errcode), 0);
+			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
+			console.error(`[sendArticleToDraftBox] Failed: ${errcode} - ${errmsg}`);
 			return false;
 		} else {
 			new Notice($t("wechat-api.send-article-to-draft-box-successfully"));
+		}
+
+		if (!media_id) {
+			console.error('[sendArticleToDraftBox] Success but no media_id returned', res.json);
+			return false;
 		}
 
 		return media_id;
