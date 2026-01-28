@@ -265,3 +265,62 @@ export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClie
     })
     await Promise.all(uploadPromises)
 }
+
+export async function convertAssetsToDataURLs(root: HTMLElement) {
+    // 1. Convert SVGs to PNG Base64
+    const svgs = Array.from(root.querySelectorAll('svg'));
+    await Promise.all(svgs.map(async (svg) => {
+        const svgString = serializeElement(svg);
+        try {
+            const blob = await svgToPng(svgString);
+            const reader = new FileReader();
+            await new Promise<void>((resolve, reject) => {
+                reader.onloadend = () => {
+                    const img = document.createElement('img');
+                    img.src = reader.result as string;
+                    svg.replaceWith(img);
+                    resolve();
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('[convertAssetsToDataURLs] SVG conversion failed:', error);
+        }
+    }));
+
+    // 2. Convert Canvas to PNG Base64
+    const canvases = Array.from(root.querySelectorAll('canvas'));
+    canvases.forEach(canvas => {
+        try {
+            const dataURL = canvas.toDataURL('image/png');
+            const img = document.createElement('img');
+            img.src = dataURL;
+            canvas.replaceWith(img);
+        } catch (e) {
+            console.error('[convertAssetsToDataURLs] Canvas conversion failed:', e);
+        }
+    });
+
+    // 3. Convert Local Images to Base64
+    const images = Array.from(root.querySelectorAll('img'));
+    await Promise.all(images.map(async (img) => {
+        // Skip already Base64
+        if (img.src.startsWith('data:')) return;
+
+        try {
+            const blob = await fetchImageBlob(img.src);
+            const reader = new FileReader();
+            await new Promise<void>((resolve, reject) => {
+                reader.onloadend = () => {
+                    img.src = reader.result as string;
+                    resolve();
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error(`[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
+        }
+    }));
+}

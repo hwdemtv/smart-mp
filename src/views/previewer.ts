@@ -18,6 +18,7 @@ import {
 	WorkspaceLeaf,
 	ExtraButtonComponent,
 	EditorPosition,
+	Platform,
 } from "obsidian";
 import { $t } from "src/lang/i18n";
 import WeWritePlugin from "src/main";
@@ -27,6 +28,7 @@ import {
 	uploadSVGs,
 	uploadURLImage,
 	uploadURLVideo,
+	convertAssetsToDataURLs
 } from "src/render/post-render";
 import { serializeChildren, cleanHtmlForWechat } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
@@ -274,19 +276,35 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					.setTooltip($t("views.previewer.copy-article-to-clipboard"))
 					.onClick(() => {
 						void (async () => {
-							const articleEl = this.articleDiv.cloneNode(true) as HTMLElement;
-							cleanHtmlForWechat(articleEl);
-							const data = serializeChildren(articleEl);
-							await navigator.clipboard.write([
-								new ClipboardItem({
-									"text/html": new Blob([data], {
-										type: "text/html",
-									}),
-								}),
-							]);
-							new Notice(
-								$t("views.previewer.article-copied-to-clipboard")
-							);
+							const notice = new Notice("正在准备剪贴板内容...", 0);
+							try {
+								// User requested to skip image upload for clipboard copy
+								const result = await this.processArticleForExport(notice, false);
+								if (!result) {
+									notice.hide();
+									return;
+								}
+
+								// 创建剪贴板项目
+								const clipboardItem = new ClipboardItem({
+									'text/html': new Blob([result.html], { type: 'text/html' }),
+									'text/plain': new Blob([result.text], { type: 'text/plain' }),
+								});
+
+								// 写入剪贴板
+								console.log('[Clipboard Debug] Writing to clipboard...');
+								await navigator.clipboard.write([clipboardItem]);
+								console.log('[Clipboard Debug] Write success!');
+
+								notice.hide();
+								new Notice(
+									$t("views.previewer.article-copied-to-clipboard")
+								);
+							} catch (error) {
+								notice.hide();
+								console.error('复制到剪贴板失败:', error);
+								new Notice(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
+							}
 						})();
 					});
 			})
@@ -324,47 +342,69 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.containerDiv = this.renderPreviewer.createDiv({ cls: "wewrite-article" });
 		this.articleDiv = this.containerDiv.createDiv({ cls: "article-div" });
 	}
-	async checkCoverImage() {
-		return await this.draftHeader.checkCoverImage();
-	}
-	async sendArticleToDraftBox() {
-		// 1. 先克隆 DOM,避免污染实时预览
+	async processArticleForExport(progressNotice?: Notice, uploadImages: boolean = true): Promise<{ html: string; text: string } | null> {
+		if (progressNotice) progressNotice.setMessage("正在准备文章内容...");
 		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
 
-		// 2. 在克隆上应用主题
+		if (progressNotice) progressNotice.setMessage("正在应用排版主题...");
 		const root = finalArticleEl.firstElementChild as HTMLElement | null;
 		if (root) {
 			await ThemeManager.getInstance(this.plugin).applyTheme(root);
 		}
 
-		// 3. 在克隆上执行所有上传和替换操作
-		await uploadSVGs(finalArticleEl, this.plugin.wechatClient);
-		await uploadCanvas(finalArticleEl, this.plugin.wechatClient);
-		await uploadURLImage(finalArticleEl, this.plugin.wechatClient);
-		await uploadURLVideo(finalArticleEl, this.plugin.wechatClient);
+		if (uploadImages) {
+			if (progressNotice) progressNotice.setMessage("正在上传/处理图片 (这可能需要一点时间)...");
+			try {
+				await uploadSVGs(finalArticleEl, this.plugin.wechatClient);
+				await uploadCanvas(finalArticleEl, this.plugin.wechatClient);
+				await uploadURLImage(finalArticleEl, this.plugin.wechatClient);
+				await uploadURLVideo(finalArticleEl, this.plugin.wechatClient);
+			} catch (e) {
+				console.error("Error processing media:", e);
+				new Notice("图片/媒体处理失败，部分图片可能无法显示");
+			}
+		} else {
+			console.log("Skipping image upload for clipboard copy. Converting to Base64...");
+			if (progressNotice) progressNotice.setMessage("正在转换图片为 Base64 (这可能需要一点时间)...");
+			try {
+				await convertAssetsToDataURLs(finalArticleEl);
+			} catch (e) {
+				console.error("Error converting images to Base64:", e);
+				new Notice("图片处理失败，部分图片可能无法显示");
+			}
+		}
 
-		// 4. 最后清理 HTML
-		console.log('[sendArticleToDraftBox] Length before clean:', finalArticleEl.innerHTML.length);
+		if (progressNotice) progressNotice.setMessage("正在优化 HTML 结构...");
+		console.log('[processArticleForExport] Length before clean:', finalArticleEl.innerHTML.length);
 		const cleanedArticleEl = cleanHtmlForWechat(finalArticleEl);
-		console.log('[sendArticleToDraftBox] Length after clean:', cleanedArticleEl.innerHTML.length);
+		console.log('[processArticleForExport] Length after clean:', cleanedArticleEl.innerHTML.length);
 
-		// Debug: print code block HTML to see if styles are preserved
-		const codeBlocks = cleanedArticleEl.querySelectorAll('.code-container, .code-section');
-		codeBlocks.forEach((el, i) => {
-			console.log(`[Debug] Code block ${i}:`, el.getAttribute('style'));
-		});
+		const html = serializeChildren(cleanedArticleEl);
+		const text = cleanedArticleEl.textContent || '';
 
-		const data = serializeChildren(cleanedArticleEl);
-
-		if (!data || data.trim().length === 0) {
+		if (!html || html.trim().length === 0) {
 			new Notice('生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
-			console.error('[sendArticleToDraftBox] Content is empty after processing!');
+			console.error('[processArticleForExport] Content is empty after processing!');
+			return null;
+		}
+		return { html, text };
+	}
+
+	async checkCoverImage() {
+		return await this.draftHeader.checkCoverImage();
+	}
+	async sendArticleToDraftBox() {
+		const notice = new Notice("开始处理文章...", 0);
+		const result = await this.processArticleForExport(notice);
+		if (!result) {
+			notice.hide();
 			return;
 		}
 
+		notice.setMessage("正在发送到草稿箱...");
 		const media_id = await this.wechatClient.sendArticleToDraftBox(
 			this.draftHeader.getActiveLocalDraft()!,
-			data
+			result.html
 		);
 
 		if (!media_id) {
