@@ -138,13 +138,28 @@ function cleanAttributes(el: HTMLElement): void {
 
     attrs.forEach(attr => {
         const attrName = attr.name.toLowerCase();
+
+        // 1. Remove obvious risky attributes
         if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || attrName.startsWith('on')) {
+            // keep internal data attributes
+            if (!attrName.startsWith('data-wewrite-')) {
+                el.removeAttribute(attr.name);
+                return;
+            }
+        }
+
+        // 2. Filter logic based on whitelist
+        if (!whitelist.includes(attrName) && !attrName.startsWith('data-wewrite-')) {
             el.removeAttribute(attr.name);
             return;
         }
 
-        if (!whitelist.includes(attrName)) {
-            el.removeAttribute(attr.name);
+        // 3. [Security] XSS protection for URL attributes
+        if ((attrName === 'href' || attrName === 'src')) {
+            const value = attr.value.trim().toLowerCase();
+            if (value.startsWith('javascript:') || value.startsWith('vbscript:') || (value.startsWith('data:') && !value.startsWith('data:image/'))) {
+                el.removeAttribute(attr.name);
+            }
         }
     });
 }

@@ -245,6 +245,13 @@ export class CSSMerger {
 							return;
 						}
 						let value = this.resolveCssVars(decl.value, this.vars);
+
+						// [Security] Prevent XSS in CSS values
+						const lowerValue = value.toLowerCase();
+						if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
+							return;
+						}
+
 						const fullValue = decl.important ? `${value} !important` : value;
 						this.appendStyleText(target, prop, fullValue);
 					})

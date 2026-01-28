@@ -78,7 +78,18 @@ function getEmbedType(link: string) {
 }
 
 export class Embed extends WeWriteMarkedExtension {
+	// Simple LRU Cache implementation
+	private static readonly MAX_CACHE_SIZE = 50;
 	public static fileCache: Map<string, string> = new Map<string, string>();
+
+	static addCache(key: string, value: string) {
+		if (this.fileCache.size >= this.MAX_CACHE_SIZE) {
+			const firstKey = this.fileCache.keys().next().value;
+			if (firstKey) this.fileCache.delete(firstKey);
+		}
+		this.fileCache.set(key, value);
+	}
+
 	index: number = 0;
 	videoIndex: number = 0;
 	voiceIndex: number = 0;
@@ -401,7 +412,7 @@ export class Embed extends WeWriteMarkedExtension {
 			return;
 		}
 		const content = await this.getFileContent(file, null, null);
-		Embed.fileCache.set(filename, content);
+		Embed.addCache(filename, content);
 		this.previewRender.updateElementByID(id, content);
 	}
 
