@@ -293,6 +293,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 								// 写入剪贴板
 								await navigator.clipboard.write([clipboardItem]);
+								notice.hide(); // ✅ Hide the progress notice on success
 								new Notice(
 									$t("views.previewer.article-copied-to-clipboard")
 								);

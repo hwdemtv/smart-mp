@@ -13,6 +13,8 @@ function imageFileName(mime: string) {
 export function svgToPng(svgData: string): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        let objectUrl = '';
+
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const dpr = window.devicePixelRatio || 1;
@@ -20,11 +22,13 @@ export function svgToPng(svgData: string): Promise<Blob> {
             canvas.height = img.height * dpr;
             const ctx = canvas.getContext('2d');
             if (!ctx) {
+                URL.revokeObjectURL(objectUrl);
                 reject(new Error($t('render.faild-canvas-context')));
                 return;
             }
             ctx.drawImage(img, 0, 0);
             canvas.toBlob((blob) => {
+                URL.revokeObjectURL(objectUrl);
                 if (blob) {
                     resolve(blob);
                 } else {
@@ -33,17 +37,16 @@ export function svgToPng(svgData: string): Promise<Blob> {
             }, 'image/png');
         };
 
-        img.onerror = () => {
+        img.onerror = (e) => {
+            console.warn('[svgToPng] Image load error:', e);
+            URL.revokeObjectURL(objectUrl);
             reject(new Error($t('render.failed-to-load-image')));
         };
 
-        const encoder = new TextEncoder();
-        const uint8Array = encoder.encode(svgData);
-        let latin1String = '';
-        for (const byte of uint8Array) {
-            latin1String += String.fromCharCode(byte);
-        }
-        img.src = `data:image/svg+xml;base64,${btoa(latin1String)}`;
+        // Use Blob for safety with Unicode/Content
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        objectUrl = URL.createObjectURL(blob);
+        img.src = objectUrl;
     });
 }
 
