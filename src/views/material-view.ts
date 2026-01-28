@@ -25,6 +25,8 @@ export const MediaTypeNames = new Map([
 
 export class MaterialView extends ItemView {
   private readonly plugin: WeWritePlugin;
+  private panels: MaterialPanel[] = [];
+
   constructor(leaf: WorkspaceLeaf, plugin: WeWritePlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -52,7 +54,17 @@ export class MaterialView extends ItemView {
     return Promise.resolve();
   }
 
+  async onClose() {
+    this.panels.forEach(panel => panel.destroy());
+    this.panels = [];
+  }
+
   public readonly redraw = (): void => {
+    // Clean up existing panels first
+    this.panels.forEach(panel => panel.destroy());
+    this.panels = [];
+
+    this.contentEl.empty();
     const rootEl = createDiv({ cls: 'nav-folder mod-root' });
     const accountEl = new WeChatMPAccountSwitcher(this.plugin, rootEl)
     accountEl.setName($t('views.materials.account-prefix'))
@@ -63,7 +75,7 @@ export class MaterialView extends ItemView {
     const tabContent = tabContainer.createDiv({ cls: 'wewrite-material-view-tab-content' });
 
     // Get material panels from plugin and sort newest first
-    const panels = this.plugin.assetsManager.getMaterialPanels()
+    this.panels = this.plugin.assetsManager.getMaterialPanels()
       .map(material => new MaterialPanel(
         this.plugin,
         tabContent,
@@ -72,21 +84,23 @@ export class MaterialView extends ItemView {
       ))
 
     // Create tabs
-    panels.forEach(panel => {
+    this.panels.forEach(panel => {
       new ButtonComponent(tabHeader)
         .setIcon(MediaTypeIcon.get(panel.type) ?? 'package')
         .setTooltip(panel.name)
         .onClick(() => {
-          panels.forEach(p => p.containerEl.toggle(p === panel));
+          this.panels.forEach(p => p.containerEl.toggle(p === panel));
         })
         .setClass("wewrite-material-view-tab");
     });
 
-    panels.forEach(panel => {
+    this.panels.forEach(panel => {
       panel.containerEl.hide();
     });
     // Show first panel by default
-    panels[0].containerEl.show();
+    if (this.panels.length > 0) {
+      this.panels[0].containerEl.show();
+    }
 
     this.contentEl.setChildrenInPlace([rootEl]);
     this.contentEl.setCssProps({

@@ -54,6 +54,17 @@ export class MessageService {
     } else {
       listeners.push(listener as (data: MessagePayload) => void);
     }
+
+    // Return cleanup function
+    return () => {
+      const currentListeners = this.listeners.get(msg);
+      if (currentListeners) {
+        const index = currentListeners.indexOf(listener as (data: MessagePayload) => void);
+        if (index > -1) {
+          currentListeners.splice(index, 1);
+        }
+      }
+    };
   }
 
   sendMessage<T extends MessagePayload>(msg: MSG_TYPE, data: T) {

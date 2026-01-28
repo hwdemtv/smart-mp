@@ -31,8 +31,12 @@ export class WechatClient {
 		return WechatClient.instance;
 	}
 
-	public async requestToken(): Promise<string | null> {
+	public async requestToken(retryCount = 0): Promise<string | null> {
 		const url = "https://wewrite.3thinking.cn/mp_token";
+		if (retryCount > 3) {
+			console.error("Failed to refresh token after 3 attempts");
+			return null;
+		}
 		const account = this.plugin.getSelectedMPAccount();
 		if (account === undefined) {
 			new Notice($t("wechat-api.select-an-wechat-mp-account-first"));
@@ -69,7 +73,7 @@ export class WechatClient {
 				if (code == -2) {
 					account.doc_id = undefined;
 					void this.plugin.saveSettings();
-					return await this.requestToken();
+					return await this.requestToken(retryCount + 1);
 				}
 				if (code == -10) {
 					//white list

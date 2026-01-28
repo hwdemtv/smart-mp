@@ -31,6 +31,7 @@ export class MaterialPanel {
 	private plugin: WeWritePlugin;
 	public type: MediaType;
 	private items: REROUCE_ITEM[] = [];
+	private cleanupFns: (() => void)[] = [];
 
 	constructor(plugin: WeWritePlugin, parent: HTMLElement, title: string, type: MediaType) {
 		this.plugin = plugin;
@@ -59,20 +60,27 @@ export class MaterialPanel {
 		});
 		this.initContent()
 
-		this.plugin.messageService.registerListener(`clear-${this.type}-list`, () => {
+		this.cleanupFns.push(this.plugin.messageService.registerListener(`clear-${this.type}-list`, () => {
 			this.clearContent()
-		})
-		this.plugin.messageService.registerListener(`${this.type}-item-updated`, (item: MaterialItem) => {
+		}));
+		this.cleanupFns.push(this.plugin.messageService.registerListener(`${this.type}-item-updated`, (item: MaterialItem) => {
 			this.addItem(item)
-		})
-		this.plugin.messageService.registerListener(`${this.type}-item-deleted`, (item: MaterialItem) => {
+		}));
+		this.cleanupFns.push(this.plugin.messageService.registerListener(`${this.type}-item-deleted`, (item: MaterialItem) => {
 			this.removeItem(item)
-		})
+		}));
 		if (this.type === 'image') {
-			this.plugin.messageService.registerListener(`image-used-updated`, (item: MaterialMeidaItem) => {
+			this.cleanupFns.push(this.plugin.messageService.registerListener(`image-used-updated`, (item: MaterialMeidaItem) => {
 				this.updateItemUsed(item)
-			})
+			}));
 		}
+	}
+
+	destroy() {
+		this.cleanupFns.forEach(fn => fn());
+		this.cleanupFns = [];
+		this.container.empty();
+		this.container.remove();
 	}
 
 	private isMediaItem(item: MaterialItem): item is MaterialMeidaItem {
