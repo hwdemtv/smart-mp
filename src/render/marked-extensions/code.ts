@@ -117,7 +117,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			'hljs-class': '#e6c07b',
 			'hljs-function': '#61aeee',
 			'hljs-property': '#d19a66',
-			'hljs-punctuation': '#abb2bf' // Standard text color often
+			'hljs-subst': '#abb2bf' // Standard text color for variable substitution
 		};
 
 		// TODO: Implement dynamic theme loading if needed, for now using One Dark as base for high contrast
