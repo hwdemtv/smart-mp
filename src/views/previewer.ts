@@ -422,7 +422,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		}
 
 		// Render directly into articleDiv to preserve live DOM
-		let html = await WechatRender.getInstance(this.plugin, this).parseNote(
+		const renderedDom = await WechatRender.getInstance(this.plugin, this).parseNote(
 			activeFile.path,
 			this.articleDiv,
 			this
@@ -432,8 +432,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const articleSection = createEl("section", {
 			cls: "wewrite-article-content wewrite",
 		});
-		const dom = sanitizeHTMLToDom(html);
-		articleSection.appendChild(dom);
+		articleSection.appendChild(renderedDom);
 
 		this.articleDiv.empty();
 		this.articleDiv.appendChild(articleSection);

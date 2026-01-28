@@ -47,13 +47,13 @@ export class WechatRender {
 	marked: Marked;
 	previewRender: PreviewRender;
 	delayParse = (path: string) => {
-		return new Promise<string>((resolve, reject) => {
+		return new Promise<HTMLElement>((resolve, reject) => {
 			setTimeout(() => {
 				void (async () => {
 					const md = await this.plugin.app.vault.adapter.read(path);
 					let html = await this.parse(md);
-					html = await this.postprocess(html);
-					resolve(html);
+					const dom = await this.postprocess(html);
+					resolve(dom);
 				})().catch((error) => {
 					const reason =
 						error instanceof Error ? error : new Error(String(error));
@@ -62,6 +62,8 @@ export class WechatRender {
 			}, 100);
 		});
 	}
+
+
 	private constructor(plugin: WeWritePlugin, previewRender: PreviewRender) {
 		this.plugin = plugin;
 		this.previewRender = previewRender;
@@ -149,16 +151,16 @@ export class WechatRender {
 		}
 		return await this.marked.parse(content);
 	}
-	async postprocess(html: string) {
+	public async postprocess(html: string): Promise<HTMLElement> {
 		let result = html;
 		for (let ext of this.extensions) {
 			result = await ext.postprocess(result);
 		}
-		result = this.removeEmptyListItems(result);
-		return result;
+		// Return DOM element directly to avoid re-parsing
+		return this.removeEmptyListItems(result);
 	}
 
-	private removeEmptyListItems(html: string) {
+	private removeEmptyListItems(html: string): HTMLElement {
 		// WeChat 编辑器会保留空的 <li>，导致空序号，这里统一清理掉仅含换行/空白的条目。
 		const wrapper = document.createElement('div');
 		const dom = sanitizeHTMLToDom(html);
@@ -180,14 +182,14 @@ export class WechatRender {
 				li.remove();
 			}
 		});
-		return serializeChildren(wrapper);
+		return wrapper;
 	}
 
 	public async parseNote(
 		path: string,
 		container: HTMLElement,
 		view: Component
-	) {
+	): Promise<HTMLElement> {
 		// [Fixed] Initialize ObsidianMarkdownRenderer to create previewEl
 		// This is required for extensions (Excalidraw, Table, RemixIcon) that need to query the DOM
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app as any);
@@ -262,9 +264,9 @@ export class WechatRender {
 		// Directly read file content and parse with marked for performance
 		const md = await this.plugin.app.vault.adapter.read(path);
 		// Reset extension states before parsing
-		let html = await this.parse(md);
-		html = await this.postprocess(html);
-		return html;
+		let htmlString = await this.parse(md);
+		const domElement = await this.postprocess(htmlString);
+		return domElement;
 	}
 }
 
