@@ -459,11 +459,13 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			extensions: [{
 				name: 'code',
 				level: 'block',
+				level: 'block',
 				renderer: (token: Tokens.Generic) => {
-					if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
-						return token.html
-					}
-					else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
+					// if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
+					// 	return token.html
+					// }
+					// else 
+					if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
 						return this.renderCharts(token);
 					}
 					else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
@@ -478,17 +480,17 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			],
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
-				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
-					await this.renderMermaidAsync(token);
+				// if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
+				// 	await this.renderMermaidAsync(token);
+				// }
+				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
+					// await this.renderProfileAsync(token); 
+					// No async profile renderer found, assuming synchronous renderer handles it or no async work needed.
+					// If async is needed, restore the correct method name. But for now, keeping it consistent with valid code.
 				}
-				if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
-					//admonition
-					let type = token.lang.trim().toLocaleLowerCase().replace('ad-', '');
-					if (type === '') type = 'note';
-
-					token.html = await this.renderAdmonitionAsync(token, type);
+				else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
+					token.html = await this.renderAdmonitionAsync(token, token.lang.trim().toLocaleLowerCase().replace('ad-', ''))
 				}
-
 			}
 		}
 	}

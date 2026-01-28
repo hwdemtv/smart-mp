@@ -62,12 +62,12 @@ export class ObsidianMarkdownRenderer {
             if (/^\s*>+\s*\[!/m.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
             }
-            if (/```\s*mermaid/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
-            }
-            if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
-            }
+            // if (/```\s*mermaid/i.test(markdown)) {
+            //     waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
+            // }
+            // if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
+            //     waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
+            // }
 
             // General buffer wait only if we waited on dynamic content
             if (waiters.length > 0) {
