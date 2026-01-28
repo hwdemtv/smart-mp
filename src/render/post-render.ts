@@ -288,7 +288,8 @@ export async function convertAssetsToDataURLs(
     // 1. Convert SVGs to PNG Base64
     await Promise.all(svgs.map(async (svg) => {
         try {
-            const svgString = serializeElement(svg);
+            // Keep xmlns for valid SVG image source
+            const svgString = serializeElement(svg, true);
             const blob = await svgToPng(svgString);
             const reader = new FileReader();
             await new Promise<void>((resolve, reject) => {

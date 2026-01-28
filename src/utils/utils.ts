@@ -63,7 +63,8 @@ function dataUrlToBlob(dataUrl: string): Blob {
     return new Blob([bytes], { type: mime });
 }
 
-export function serializeElement(element: Element): string {
+export function serializeElement(element: Element, preserveXmlns = false): string {
+    if (preserveXmlns) return element.outerHTML;
     // WeChat API doesn't like XML namespaces (xmlns)
     return element.outerHTML.replace(/\s?xmlns="[^"]*"/g, "");
 }
