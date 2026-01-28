@@ -119,6 +119,11 @@ export class CSSMerger {
 		for (const css of baseCSS) {
 			let ast = CSSMerger.AST_CACHE.get(css);
 			if (!ast) {
+				// 限制缓存大小以防止内存溢出
+				if (CSSMerger.AST_CACHE.size >= 100) {
+					const firstKey = CSSMerger.AST_CACHE.keys().next().value;
+					if (firstKey) CSSMerger.AST_CACHE.delete(firstKey);
+				}
 				ast = (await postcss().process(css, { from: undefined })).root;
 				CSSMerger.AST_CACHE.set(css, ast);
 			}

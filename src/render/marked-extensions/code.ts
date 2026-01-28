@@ -129,7 +129,9 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			}
 
 			if (styles.length > 0) {
-				return `<span style="${styles.join('; ')};">`;
+				const mergedStyle = styles.join('; ');
+				console.debug(`[Code Highlight] Classes: ${classString} → Styles: ${mergedStyle}`);
+				return `<span style="${mergedStyle};">`;
 			}
 
 			console.warn(`[Code Highlight] Unmapped classes: ${classString}`);
