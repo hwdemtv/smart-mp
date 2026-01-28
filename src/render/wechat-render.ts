@@ -18,6 +18,7 @@ import { BlockquoteRenderer } from "./marked-extensions/blockquote";
 import { CodeRenderer } from "./marked-extensions/code";
 import { CodespanRenderer } from "./marked-extensions/codespan";
 import { Embed } from "./marked-extensions/embed";
+import { ObsidianMarkdownRenderer } from "./markdown-render";
 import {
 	PreviewRender,
 	WeWriteMarkedExtension,
@@ -187,9 +188,39 @@ export class WechatRender {
 		container: HTMLElement,
 		view: Component
 	) {
-		// 直接读取 Markdown 并走 marked 解析，减少双重渲染的开销
+		// [Fixed] Initialize ObsidianMarkdownRenderer to create previewEl
+		// This is required for extensions (Excalidraw, Table, RemixIcon) that need to query the DOM
+		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app as any);
+
+		if (!renderer.previewEl) {
+			console.debug(`[WechatRender] Initializing ObsidianMarkdownRenderer for ${path}`);
+
+			// Create a hidden temporary container
+			const tempContainer = createDiv();
+			tempContainer.style.display = 'none';
+			document.body.appendChild(tempContainer);
+
+			try {
+				// Render to temp container to initialize previewEl and markdownBody
+				await renderer.render(path, tempContainer, view);
+
+				// Short wait to ensure major elements are rendered
+				await new Promise(resolve => setTimeout(resolve, 100));
+
+				console.debug(`[WechatRender] ObsidianMarkdownRenderer initialized, previewEl exists:`, !!renderer.previewEl);
+			} catch (error) {
+				console.error(`[WechatRender] Failed to initialize ObsidianMarkdownRenderer:`, error);
+			} finally {
+				// Clean up temp container
+				if (tempContainer.parentNode) {
+					tempContainer.parentNode.removeChild(tempContainer);
+				}
+			}
+		}
+
+		// Directly read file content and parse with marked for performance
 		const md = await this.plugin.app.vault.adapter.read(path);
-		// 每次解析前重置扩展内部状态（links、mermaid 索引等）
+		// Reset extension states before parsing
 		let html = await this.parse(md);
 		html = await this.postprocess(html);
 		return html;

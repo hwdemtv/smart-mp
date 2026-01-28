@@ -528,6 +528,16 @@ export class Embed extends WeWriteMarkedExtension {
 
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
 
+		// [Critical Fix] Ensure previewEl exists
+		if (!renderer.previewEl) {
+			console.error(`[Excalidraw] Fatal error: previewEl is null. Make sure ObsidianMarkdownRenderer.render() is called.`);
+			token.html = `<section class="excalidraw-fallback" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+				<p style="margin: 0 0 5px 0;">⚠️ Excalidraw 渲染需要预览功能支持</p>
+				<a href="${href}" class="internal-link" style="color: #0366d6;">点击查看: ${href}</a>
+			</section>`;
+			return;
+		}
+
 		// 1. Try to find with default selector
 		let root = renderer.queryElement(index, "div.excalidraw-svg") ||
 			renderer.queryElement(index, ".excalidraw-svg") ||
