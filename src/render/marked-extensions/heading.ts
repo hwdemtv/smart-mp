@@ -16,12 +16,12 @@ export class Heading extends WeWriteMarkedExtension {
 		tempDiv.appendChild(dom);
 		const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
 		for (const heading of headings) {
-			const contentHtml = heading.innerHTML; // 使用 innerHTML 替换 textContent
+			const contentHtml = heading.innerHTML;
 			heading.empty();
 			heading.createSpan({ text: " ", cls: 'wewrite-heading-prefix' });
 			const outbox = heading.createSpan({ cls: 'wewrite-heading-outbox' });
 			const leaf = outbox.createSpan({ cls: 'wewrite-heading-leaf' });
-			leaf.innerHTML = contentHtml; // 还原 HTML 内容
+			leaf.appendChild(sanitizeHTMLToDom(contentHtml)); // 安全地添加 HTML 内容
 			heading.createSpan({ cls: 'wewrite-heading-tail' });
 		}
 		return Promise.resolve(serializeChildren(tempDiv))

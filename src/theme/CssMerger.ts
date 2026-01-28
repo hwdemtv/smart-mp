@@ -99,6 +99,7 @@ export class CSSMerger {
 	vars: Map<string, string> = new Map()
 	rules: Rules = new Map()
 
+	private static AST_CACHE: Map<string, postcss.Root> = new Map();
 
 	async init(customCSS: string) {
 		await this.buildBaseCSS();
@@ -116,7 +117,11 @@ export class CSSMerger {
 		this.vars.clear();
 		this.rules.clear();
 		for (const css of baseCSS) {
-			const ast = (await postcss().process(css, { from: undefined })).root;
+			let ast = CSSMerger.AST_CACHE.get(css);
+			if (!ast) {
+				ast = (await postcss().process(css, { from: undefined })).root;
+				CSSMerger.AST_CACHE.set(css, ast);
+			}
 			this.pickVariables(ast, this.vars);
 			this.pickRules(ast, this.rules);
 		}

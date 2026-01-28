@@ -113,24 +113,27 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		// Convert hljs classes to inline styles with !important
 		highlighted = highlighted.replace(/<span class="([^"]+)">/g, (match, classString) => {
 			const classes = classString.split(/\s+/);
-			let color: string | undefined;
+			const styles: string[] = [];
 
-			// Find first matching color from classes
+			// Find matching styles from classes
 			for (const className of classes) {
 				if (themeColorMap[className]) {
-					color = themeColorMap[className];
-					break;
+					styles.push(`color:${themeColorMap[className]} !important`);
+				}
+				if (className === 'hljs-strong') {
+					styles.push(`font-weight:bold !important`);
+				}
+				if (className === 'hljs-emphasis') {
+					styles.push(`font-style:italic !important`);
 				}
 			}
 
-			if (color) {
-				return `<span style="color:${color} !important;">`;
+			if (styles.length > 0) {
+				return `<span style="${styles.join('; ')};">`;
 			}
-			// If class not found in map, try to keep it or fallback? 
-			// Better to strip class and leave as default text color to avoid 'black on black' invisible text in dark modes
-			// unless we are sure. But let's try to map common prefixes.
+
 			console.warn(`[Code Highlight] Unmapped classes: ${classString}`);
-			return `<span>`; // Strip class so no weird CSS issues
+			return `<span>`; // Strip class to prevent WeChat filtering issues
 		});
 
 		// Basic Code Block Styles
