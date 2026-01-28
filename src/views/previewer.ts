@@ -345,16 +345,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		// 4. 最后清理 HTML
 		console.log('[sendArticleToDraftBox] Length before clean:', finalArticleEl.innerHTML.length);
-		cleanHtmlForWechat(finalArticleEl);
-		console.log('[sendArticleToDraftBox] Length after clean:', finalArticleEl.innerHTML.length);
+		const cleanedArticleEl = cleanHtmlForWechat(finalArticleEl);
+		console.log('[sendArticleToDraftBox] Length after clean:', cleanedArticleEl.innerHTML.length);
 
 		// Debug: print code block HTML to see if styles are preserved
-		const codeBlocks = finalArticleEl.querySelectorAll('.code-container, .code-section');
+		const codeBlocks = cleanedArticleEl.querySelectorAll('.code-container, .code-section');
 		codeBlocks.forEach((el, i) => {
 			console.log(`[Debug] Code block ${i}:`, el.getAttribute('style'));
 		});
 
-		const data = serializeChildren(finalArticleEl);
+		const data = serializeChildren(cleanedArticleEl);
 
 		if (!data || data.trim().length === 0) {
 			new Notice('生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);

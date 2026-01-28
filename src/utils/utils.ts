@@ -107,7 +107,7 @@ export function removeThinkTags(content: string): string {
     return content.replace(regex, "");
 }
 
-export function cleanHtmlForWechat(root: HTMLElement): void {
+export function cleanHtmlForWechat(root: HTMLElement): HTMLElement {
     const restrictedTags = [
         'script', 'style', 'noscript', 'object', 'embed',
         'button', 'input', 'textarea', 'select', 'form',
@@ -146,7 +146,7 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
         }
     });
 
-    replaceDivWithSection(root);
+    return replaceDivWithSection(root);
 }
 
 function cleanAttributes(el: HTMLElement): void {
