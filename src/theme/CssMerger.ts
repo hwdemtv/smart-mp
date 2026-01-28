@@ -38,6 +38,7 @@ import $34 from '../assets/default-styles/34_chart.css';
 import $35 from '../assets/default-styles/35_icon.css';
 import $40 from '../assets/default-styles/40_summary.css';
 import $50 from '../assets/default-styles/50_profile.css';
+import $100 from '../assets/default-styles/100_article.css';
 import { Notice } from 'obsidian';
 import { $t } from 'src/lang/i18n';
 
@@ -72,9 +73,9 @@ const baseCSS = [
 	$33,
 	$34,
 	$35,
-	$09,
 	$40,
-	$50
+	$50,
+	$100
 ]
 
 const RESERVED_CLASS_PREFIX = [

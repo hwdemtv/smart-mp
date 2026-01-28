@@ -101,8 +101,12 @@ export class Image extends WeWriteMarkedExtension {
 			}
 
 			if (file instanceof TFile) {
-				return plugin.app.vault.getResourcePath(file);
+				const resolved = plugin.app.vault.getResourcePath(file);
+				console.log('[Image Extension] Vault File:', decodedPath, '→', resolved);
+				return resolved;
 			}
+
+			console.warn('[Image Extension] Fallback to original path:', path);
 			return path; // Fallback to original
 		};
 

@@ -16,12 +16,13 @@ export class Heading extends WeWriteMarkedExtension {
 		tempDiv.appendChild(dom);
 		const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
 		for (const heading of headings) {
-			const text = heading.textContent
-			heading.empty()
-			heading.createSpan({ text: " ", cls: 'wewrite-heading-prefix' })
-			const outbox = heading.createSpan({ cls: 'wewrite-heading-outbox' })
-			const leaf = outbox.createSpan({ text: text ? text : "", cls: 'wewrite-heading-leaf' })
-			heading.createSpan({ cls: 'wewrite-heading-tail' })
+			const contentHtml = heading.innerHTML; // 使用 innerHTML 替换 textContent
+			heading.empty();
+			heading.createSpan({ text: " ", cls: 'wewrite-heading-prefix' });
+			const outbox = heading.createSpan({ cls: 'wewrite-heading-outbox' });
+			const leaf = outbox.createSpan({ cls: 'wewrite-heading-leaf' });
+			leaf.innerHTML = contentHtml; // 还原 HTML 内容
+			heading.createSpan({ cls: 'wewrite-heading-tail' });
 		}
 		return Promise.resolve(serializeChildren(tempDiv))
 
@@ -31,18 +32,18 @@ export class Heading extends WeWriteMarkedExtension {
 	// 	console.log('heading=>', text);
 
 	// 	return `
-    //         <h${depth}>
+	//         <h${depth}>
 	// 		<span class="wewrite-heading-prefix">
 	// 		${depth}
 	// 		  </span>
 	// 		<span class="wewrite-heading-outbox">
 	// 		<span class="wewrite-heading-leaf">
-    //           ${text}
+	//           ${text}
 	// 		  </span>
 	// 		  </span>
 	// 		  <span class="wewrite-heading-tail">
 	// 		  </span>
-    //         </h${depth}>`;
+	//         </h${depth}>`;
 
 	// }
 
