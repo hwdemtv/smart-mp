@@ -207,6 +207,13 @@ export class CSSMerger {
 	}
 
 	applyStyleToElement(currentNode: HTMLElement) {
+		// Resolve variables in existing inline styles first
+		const existingStyle = currentNode.getAttribute('style');
+		if (existingStyle && existingStyle.includes('var(')) {
+			const resolvedStyle = this.resolveCssVars(existingStyle, this.vars);
+			currentNode.setAttribute('style', resolvedStyle);
+		}
+
 		this.rules.forEach((rule, selector) => {
 			const { baseSelector, pseudo } = this.normalizeSelector(selector);
 			try {
@@ -261,6 +268,13 @@ export class CSSMerger {
 	}
 
 	private appendStyleText(target: HTMLElement, prop: string, value: string) {
+		// If the element already has this property set as !important in style attribute, don't override it
+		const currentStyle = target.getAttribute('style') || '';
+		const regex = new RegExp(`${prop}\\s*:\\s*[^;]*!important`, 'i');
+		if (regex.test(currentStyle)) {
+			return;
+		}
+
 		const prefix =
 			target.style.cssText && !target.style.cssText.trim().endsWith(";")
 				? "; "

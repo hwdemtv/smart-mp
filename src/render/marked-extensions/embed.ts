@@ -45,7 +45,7 @@ function getEmbedType(link: string) {
 		return "pdf-crop";
 	}
 	// https://mmbiz.qpic.cn
-	if (link.startsWith("https://mmbiz.qpic.cn/")|| link.startsWith("http://mmbiz.qpic.cn/")) {
+	if (link.startsWith("https://mmbiz.qpic.cn/") || link.startsWith("http://mmbiz.qpic.cn/")) {
 		return "image";
 	}
 	switch (ext.toLocaleLowerCase()) {
@@ -414,7 +414,7 @@ export class Embed extends WeWriteMarkedExtension {
 					level: "inline",
 					start: (src: string) => {
 						let index = src.indexOf("![[");
-						
+
 						// if (index === -1) {
 						// 	const match = regexImage.exec(src);
 						// 	if (match) {
@@ -435,7 +435,7 @@ export class Embed extends WeWriteMarkedExtension {
 							// const match = regexImage.exec(src);
 							// if (match) {
 							// 	console.log("tokenizer: match image", match);
-								
+
 							// 	return {
 							// 		type: "Embed",
 							// 		raw: match[0],
@@ -461,8 +461,10 @@ export class Embed extends WeWriteMarkedExtension {
 						if (embedType == "image" || embedType == "webp") {
 							// images
 							let item = this.parseImageLink(token.href);
+							console.log('[Embed] Rendering image:', token.href, '→', item);
 							if (item) {
 								const src = this.getImagePath(item.path);
+								console.log('[Embed] Resolved path:', item.path, '→', src);
 
 								const width = item.width
 									? `width="${item.width}"`

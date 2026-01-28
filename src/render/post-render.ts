@@ -6,7 +6,7 @@ import { $t } from 'src/lang/i18n';
 import { fetchImageBlob, serializeElement } from 'src/utils/utils';
 import { WechatClient } from './../wechat-api/wechat-client';
 import WeWritePlugin from 'src/main';
-function imageFileName(mime:string){
+function imageFileName(mime: string) {
     const type = mime.split('/')[1]
     return `image-${new Date().getTime()}.${type}`
 }
@@ -66,7 +66,7 @@ export function getCanvasBlob(canvas: HTMLCanvasElement) {
     return pngBlob;
 }
 
-export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient){
+export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) {
     const svgs: SVGSVGElement[] = []
     root.querySelectorAll('svg').forEach(svg => {
         svgs.push(svg)
@@ -79,30 +79,30 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient){
         }
         await svgToPng(svgString).then(async blob => {
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                if (res){
+                if (res) {
                     const img = document.createElement('img');
                     img.src = res.url;
                     svg.replaceWith(img);
-                }else{
+                } else {
                     console.error(`upload svg failed.`);
                 }
             })
         })
     })
-	
+
     await Promise.all(uploadPromises)
 }
-export async function uploadCanvas(root:HTMLElement, wechatClient:WechatClient):Promise<void>{
+export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient): Promise<void> {
     const canvases: HTMLCanvasElement[] = []
-    
-    root.querySelectorAll('canvas').forEach (canvas => {
+
+    root.querySelectorAll('canvas').forEach(canvas => {
         canvases.push(canvas)
     })
-    
+
     const uploadPromises = canvases.map(async (canvas) => {
         const blob = getCanvasBlob(canvas);
         await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-            if (res){
+            if (res) {
                 const img = document.createElement('img');
                 img.src = res.url;
                 canvas.replaceWith(img);
@@ -112,21 +112,27 @@ export async function uploadCanvas(root:HTMLElement, wechatClient:WechatClient):
     await Promise.all(uploadPromises)
 }
 
-export async function uploadURLImage(root:HTMLElement, wechatClient:WechatClient):Promise<void>{
+export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClient): Promise<void> {
     const images: HTMLImageElement[] = []
-    
-    root.querySelectorAll('img').forEach (img => {
+
+    root.querySelectorAll('img').forEach(img => {
         images.push(img)
     })
-    
+
+    console.log('[uploadURLImage] Found', images.length, 'images');
+
     const uploadPromises = images.map(async (img) => {
-        let blob:Blob|undefined 
-        if (img.src.includes('://mmbiz.qpic.cn/')){
+        console.log('[uploadURLImage] Processing:', img.src);
+        let blob: Blob | undefined
+        if (img.src.includes('://mmbiz.qpic.cn/')) {
+            console.log('[uploadURLImage] Skip WeChat CDN');
             return;
         }
-        else if (img.src.startsWith('data:image/')){
+        else if (img.src.startsWith('data:image/')) {
+            console.log('[uploadURLImage] Data URL');
             blob = dataURLtoBlob(img.src);
-        }else{
+        } else {
+            console.log('[uploadURLImage] Fetching blob...');
             // blob = await fetch(img.src).then(res => res.blob());
             blob = await fetchImageBlob(img.src)
             // try {
@@ -141,23 +147,26 @@ export async function uploadURLImage(root:HTMLElement, wechatClient:WechatClient
             //     return;
             // }
         }
-        
-        if (blob === undefined){
+
+        if (blob === undefined) {
+            console.error('[uploadURLImage] Failed to get blob for:', img.src);
             return
-            
-        }else{
+
+        } else {
 
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                if (res){
+                if (res) {
+                    console.log('[uploadURLImage] Uploaded! New URL:', res.url);
                     img.src = res.url
-                }else{
-                    console.error(`upload image failed.`);
-                    
+                } else {
+                    console.error(`[uploadURLImage] Upload failed for:`, img.src);
+
                 }
             })
         }
     })
     await Promise.all(uploadPromises)
+    console.log('[uploadURLImage] All done');
 }
 // export async function uploadURLBackgroundImage(root:HTMLElement, wechatClient:WechatClient):Promise<void>{
 //     const bgEls: Map<string, HTMLElement>  = new Map()
@@ -171,7 +180,7 @@ export async function uploadURLImage(root:HTMLElement, wechatClient:WechatClient
 // 				bgEls.set(match[1], el as HTMLElement);
 // 			}
 // 		}
-	
+
 // 	});
 //     console.log('-----------------------------------')
 //     const uploadPromises = bgEls.forEach((async (el, src) => {
@@ -182,17 +191,17 @@ export async function uploadURLImage(root:HTMLElement, wechatClient:WechatClient
 //         }
 //         else if (src.startsWith('data:image/')){
 // 			console.log('src=>', src);
-			
+
 //             blob = dataURLtoBlob(src);
 //         }else{
 //             // blob = await fetch(img.src).then(res => res.blob());
 //             blob = await fetchImageBlob(src)
 //         }
-        
+
 //         if (blob === undefined){
 //             console.error(`upload image failed. blob is undefined.`);
 //             return
-            
+
 //         }else{
 // 			log('uploading blob...', blob.size, blob.type)
 //             await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
@@ -200,43 +209,43 @@ export async function uploadURLImage(root:HTMLElement, wechatClient:WechatClient
 //                     el.style.setProperty("background-image", `url("${res.url}")`)
 //                 }else{
 //                     console.error(`upload image failed.`);
-                    
+
 //                 }
 //             })
 //         }
 //     }))
 //     // await Promise.all(uploadPromises)
 // }
-export async function uploadURLVideo(root:HTMLElement, wechatClient:WechatClient):Promise<void>{
+export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClient): Promise<void> {
     const videos: HTMLVideoElement[] = []
-    
-    root.querySelectorAll('video').forEach (video => {
+
+    root.querySelectorAll('video').forEach(video => {
         videos.push(video)
     })
-    
+
     const uploadPromises = videos.map(async (video) => {
-        let blob:Blob|undefined 
-        if (video.src.includes('://mmbiz.qpic.cn/')){
+        let blob: Blob | undefined
+        if (video.src.includes('://mmbiz.qpic.cn/')) {
             return;
         }
-        else if (video.src.startsWith('data:image/')){
+        else if (video.src.startsWith('data:image/')) {
             blob = dataURLtoBlob(video.src);
-        }else{
+        } else {
             blob = await fetchImageBlob(video.src)
         }
-        
-        if (blob === undefined){
+
+        if (blob === undefined) {
             return
-            
-        }else{
-			
+
+        } else {
+
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type), 'video').then(async res => {
-                if (res){
-					const video_info = await wechatClient.getMaterialById(res.media_id)
-					video.src = video_info.url
-                }else{
+                if (res) {
+                    const video_info = await wechatClient.getMaterialById(res.media_id)
+                    video.src = video_info.url
+                } else {
                     console.error(`upload video failed.`);
-                    
+
                 }
             })
         }

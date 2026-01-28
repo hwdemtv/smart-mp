@@ -98,23 +98,7 @@ export function removeThinkTags(content: string): string {
  */
 export function cleanHtmlForWechat(root: HTMLElement): void {
     // 1. Recursive replacement of DIV with SECTION using node movement
-    const replaceDivs = (parent: HTMLElement) => {
-        const divs = Array.from(parent.querySelectorAll('div'));
-        divs.forEach(div => {
-            const section = document.createElement('section');
-            while (div.firstChild) {
-                section.appendChild(div.firstChild);
-            }
-            if (div.getAttribute('style')) {
-                section.setAttribute('style', div.getAttribute('style')!);
-            }
-            div.replaceWith(section);
-        });
-    };
-
-    replaceDivs(root);
-
-    // 2. Remove restricted tags
+    // 1. Remove restricted tags
     const restrictedTags = [
         'script', 'style', 'noscript', 'object', 'embed',
         'button', 'input', 'textarea', 'select', 'form',
@@ -140,7 +124,9 @@ export function cleanHtmlForWechat(root: HTMLElement): void {
 
     const empties = Array.from(root.querySelectorAll('span, section, p'));
     empties.forEach(el => {
-        if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas')) {
+        const style = el.getAttribute('style') || '';
+        const hasVisibleStyle = style.includes('background') || (style.includes('width') && style.includes('height'));
+        if (!el.textContent?.trim() && !el.querySelector('img, video, iframe, canvas') && !hasVisibleStyle) {
             el.remove();
         }
     });

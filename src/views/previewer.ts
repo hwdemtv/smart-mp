@@ -328,23 +328,30 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		return await this.draftHeader.checkCoverImage();
 	}
 	async sendArticleToDraftBox() {
-		const root = this.articleDiv.firstElementChild as HTMLElement | null;
+		// 1. 先克隆 DOM,避免污染实时预览
+		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
+
+		// 2. 在克隆上应用主题
+		const root = finalArticleEl.firstElementChild as HTMLElement | null;
 		if (root) {
 			await ThemeManager.getInstance(this.plugin).applyTheme(root);
 		}
 
+		// 3. 在克隆上执行所有上传和替换操作
+		await uploadSVGs(finalArticleEl, this.plugin.wechatClient);
+		await uploadCanvas(finalArticleEl, this.plugin.wechatClient);
+		await uploadURLImage(finalArticleEl, this.plugin.wechatClient);
+		await uploadURLVideo(finalArticleEl, this.plugin.wechatClient);
 
-		// Charts are now converted to images by WeWritePostProcessor during render
-		// so we skip the redundant (and error-prone) convertChartsToImages call here.
-
-		await uploadSVGs(this.articleDiv, this.plugin.wechatClient);
-		await uploadCanvas(this.articleDiv, this.plugin.wechatClient);
-		await uploadURLImage(this.articleDiv, this.plugin.wechatClient);
-		await uploadURLVideo(this.articleDiv, this.plugin.wechatClient);
-
-		// Final cleanup: remove all data-* attributes, restricted classes, and IDs for WeChat MP compatibility
-		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
+		// 4. 最后清理 HTML
 		cleanHtmlForWechat(finalArticleEl);
+
+		// Debug: print code block HTML to see if styles are preserved
+		const codeBlocks = finalArticleEl.querySelectorAll('.code-container, .code-section');
+		codeBlocks.forEach((el, i) => {
+			console.log(`[Debug] Code block ${i}:`, el.getAttribute('style'));
+		});
+
 		const data = serializeChildren(finalArticleEl);
 
 		const media_id = await this.wechatClient.sendArticleToDraftBox(

@@ -243,37 +243,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(frame)
-			.setName($t("settings.code-theme"))
-			.setDesc($t("settings.choose-syntax-highlighting-theme"))
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("github", "GitHub")
-					.addOption("dracula", "Dracula")
-					.addOption("monokai", "Monokai")
-					.addOption("atom-one-dark", "Atom One Dark")
-					.addOption("vs2015", "VS2015")
-					.addOption("default", "Default")
-					.setValue(this.plugin.settings.codeTheme || "github")
-					.onChange(async (value: any) => {
-						this.plugin.settings.codeTheme = value;
-						await this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("render-active-note", null);
-					});
-			});
 
-		new Setting(frame)
-			.setName($t("settings.show-mac-header"))
-			.setDesc($t("settings.show-mac-style-code-block-header"))
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.showCodeMacHeader !== false)
-					.onChange(async (value) => {
-						this.plugin.settings.showCodeMacHeader = value;
-						await this.plugin.saveSettings();
-						this.plugin.messageService.sendMessage("render-active-note", null);
-					});
-			});
 
 		new Setting(frame)
 			.setName($t("settings.real-time-render-delay"))
