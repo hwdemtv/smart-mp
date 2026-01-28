@@ -100,6 +100,8 @@ export class CSSMerger {
 	rules: Rules = new Map()
 
 	private static AST_CACHE: Map<string, postcss.Root> = new Map();
+	private static cacheHits = 0;
+	private static cacheMisses = 0;
 
 	async init(customCSS: string) {
 		await this.buildBaseCSS();
@@ -119,6 +121,7 @@ export class CSSMerger {
 		for (const css of baseCSS) {
 			let ast = CSSMerger.AST_CACHE.get(css);
 			if (!ast) {
+				CSSMerger.cacheMisses++;
 				// 限制缓存大小以防止内存溢出
 				if (CSSMerger.AST_CACHE.size >= 100) {
 					const firstKey = CSSMerger.AST_CACHE.keys().next().value;
@@ -126,10 +129,13 @@ export class CSSMerger {
 				}
 				ast = (await postcss().process(css, { from: undefined })).root;
 				CSSMerger.AST_CACHE.set(css, ast);
+			} else {
+				CSSMerger.cacheHits++;
 			}
 			this.pickVariables(ast, this.vars);
 			this.pickRules(ast, this.rules);
 		}
+		console.debug(`[CssMerger] Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
 		const MAX_DEPTH = 10; // 防止无限循环

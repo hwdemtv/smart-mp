@@ -21,7 +21,14 @@ export class Heading extends WeWriteMarkedExtension {
 			heading.createSpan({ text: " ", cls: 'wewrite-heading-prefix' });
 			const outbox = heading.createSpan({ cls: 'wewrite-heading-outbox' });
 			const leaf = outbox.createSpan({ cls: 'wewrite-heading-leaf' });
-			leaf.appendChild(sanitizeHTMLToDom(contentHtml)); // 安全地添加 HTML 内容
+
+			// 性能优化：如果只是纯文本，跳过安全过滤
+			if (!/[<>&]/.test(contentHtml)) {
+				leaf.textContent = contentHtml;
+			} else {
+				leaf.appendChild(sanitizeHTMLToDom(contentHtml));
+			}
+
 			heading.createSpan({ cls: 'wewrite-heading-tail' });
 		}
 		return Promise.resolve(serializeChildren(tempDiv))
