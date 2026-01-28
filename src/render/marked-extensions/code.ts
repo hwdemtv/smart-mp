@@ -294,8 +294,11 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		if (!root) {
 			console.debug(`[Mermaid] Root not found immediately, retrying...`);
 			// Retry loop for root element
-			for (let i = 0; i < 3; i++) {
-				await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // Incremental backoff
+			const maxRetries = 15;
+			const retryInterval = 300;
+
+			for (let i = 0; i < maxRetries; i++) {
+				await new Promise(resolve => setTimeout(resolve, retryInterval)); // Incremental backoff removed for consistency
 				root = renderer.queryElement(index, '.mermaid') ||
 					renderer.queryElement(index, 'div.mermaid');
 				if (root) break;

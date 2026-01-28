@@ -60,7 +60,7 @@ export class ObsidianMarkdownRenderer {
         try {
             const waiters: Promise<void>[] = [];
             if (/^\s*>+\s*\[!/m.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".callout", 1000));
+                waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
             }
             if (/```\s*mermaid/i.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
@@ -68,6 +68,10 @@ export class ObsidianMarkdownRenderer {
             if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
             }
+
+            // General buffer wait to ensure complex plugins are stable
+            waiters.push(new Promise(resolve => setTimeout(resolve, 1000)));
+
             if (waiters.length) {
                 await Promise.all(waiters);
             }

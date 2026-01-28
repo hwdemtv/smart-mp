@@ -538,6 +538,7 @@ export class Embed extends WeWriteMarkedExtension {
 			return;
 		}
 
+
 		// 1. Try to find with default selector
 		let root = renderer.queryElement(index, "div.excalidraw-svg") ||
 			renderer.queryElement(index, ".excalidraw-svg") ||
@@ -546,8 +547,12 @@ export class Embed extends WeWriteMarkedExtension {
 		// 2. If not found, retry for a few times (Obsidian rendering might be async)
 		if (!root) {
 			console.debug(`[Excalidraw] Element at index ${index} not found immediately, retrying...`);
-			for (let i = 0; i < 5; i++) {
-				await new Promise(resolve => setTimeout(resolve, 200));
+			// Extended retry logic for slow environments
+			const maxRetries = 15;
+			const retryInterval = 300;
+
+			for (let i = 0; i < maxRetries; i++) {
+				await new Promise(resolve => setTimeout(resolve, retryInterval));
 				root = renderer.queryElement(index, "div.excalidraw-svg") ||
 					renderer.queryElement(index, ".excalidraw-svg") ||
 					renderer.queryElement(index, ".excalidraw");

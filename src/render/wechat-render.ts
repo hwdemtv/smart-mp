@@ -204,8 +204,49 @@ export class WechatRender {
 				// Render to temp container to initialize previewEl and markdownBody
 				await renderer.render(path, tempContainer, view);
 
-				// Short wait to ensure major elements are rendered
-				await new Promise(resolve => setTimeout(resolve, 100));
+				// Enhanced waiting mechanism: check if elements actually appeared
+				let attempts = 0;
+				const maxAttempts = 15;
+				let elementsFound = false;
+
+				// Pattern check to see if we should wait for specific elements
+				const content = await this.plugin.app.vault.adapter.read(path);
+				const needsExcalidraw = /!\[\[.*?\.excalidraw.*?\]\]/i.test(content);
+				const needsMermaid = /```\s*mermaid/i.test(content);
+
+				if (needsExcalidraw || needsMermaid) {
+					console.debug(`[WechatRender] Waiting for dynamic elements (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid})`);
+					while (attempts < maxAttempts && !elementsFound) {
+						attempts++;
+
+						const excalidrawFound = tempContainer.querySelector('.excalidraw') ||
+							tempContainer.querySelector('.excalidraw-svg');
+						const mermaidFound = tempContainer.querySelector('.mermaid');
+
+						// If we found what we need, we can proceed
+						if ((needsExcalidraw && excalidrawFound) || (needsMermaid && mermaidFound)) {
+							elementsFound = true;
+							console.debug(`[WechatRender] Dynamic elements found after ${attempts} attempts`);
+							break;
+						}
+
+						// If user has both, we wait for at least one to appear, assuming renderer handles the rest
+						if (needsExcalidraw && needsMermaid && (excalidrawFound || mermaidFound)) {
+							if (attempts > 5) { // Give a bit more time for the second one
+								elementsFound = true;
+								break;
+							}
+						}
+
+						await new Promise(resolve => setTimeout(resolve, 300));
+					}
+					if (!elementsFound) {
+						console.warn(`[WechatRender] Timeout waiting for dynamic elements after ${attempts} attempts`);
+					}
+				} else {
+					// Check for callouts or just wait a tiny bit
+					await new Promise(resolve => setTimeout(resolve, 200));
+				}
 
 				console.debug(`[WechatRender] ObsidianMarkdownRenderer initialized, previewEl exists:`, !!renderer.previewEl);
 			} catch (error) {
