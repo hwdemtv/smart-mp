@@ -1,4 +1,4 @@
-.wewrite .mermaid {
+.smart-mp .mermaid {
     display: flex;
     flex-direction: column;
     padding: 0;
@@ -8,12 +8,12 @@
     box-shadow: none;
 }
 
-.wewrite .mermaid image {
+.smart-mp .mermaid image {
     width: 100%;
     margin: auto;
 }
 
-.wewrite .mermaid img {
+.smart-mp .mermaid img {
     border: none;
     border-radius: 0;
     box-shadow: none;

@@ -1,24 +1,24 @@
 :root {
-	--table-border-color: var(--wewrite-border-color, #454545);
-	--table-border-width: var(--wewrite-border-width, 1px);
-	--table-border-style: var(--wewrite-border-style, solid);
-	--table-padding: var(--wewrite-padding, 16px);
-	--table-margin: var(--wewrite-margin, 0);
-	--table-background-color: var(--wewrite-bg, #fff);
+	--table-border-color: var(--smart-mp-border-color, #454545);
+	--table-border-width: var(--smart-mp-border-width, 1px);
+	--table-border-style: var(--smart-mp-border-style, solid);
+	--table-padding: var(--smart-mp-padding, 16px);
+	--table-margin: var(--smart-mp-margin, 0);
+	--table-background-color: var(--smart-mp-bg, #fff);
 	--table-background-color-alt: #eaeaea;
-	--table-background-color-hover: var(--wewrite-bg-alt, #0d5c7e);
-	--table-font-size: var(--wewrite-font-size, 16px);
-	--table-font-weight: var(--wewrite-font-weight, 400);
-	--table-line-height: var(--wewrite-line-height, 1.4);
-	--table-text-align: var(--wewrite-text-align, left);
-	--table-text-indent: var(--wewrite-text-indent, 0);
-	--table-text-color: var(--wewrite-text-color, #333);
-	--table-header-color: var(--wewrite-header-color, #333);
+	--table-background-color-hover: var(--smart-mp-bg-alt, #0d5c7e);
+	--table-font-size: var(--smart-mp-font-size, 16px);
+	--table-font-weight: var(--smart-mp-font-weight, 400);
+	--table-line-height: var(--smart-mp-line-height, 1.4);
+	--table-text-align: var(--smart-mp-text-align, left);
+	--table-text-indent: var(--smart-mp-text-indent, 0);
+	--table-text-color: var(--smart-mp-text-color, #333);
+	--table-header-color: var(--smart-mp-header-color, #333);
 	--table-header-background-color: #b9b9b9;
-	--table-header-font-weight: var(--wewrite-header-font-weight, 600);
-	--table-header-line-height: var(--wewrite-header-line-height, 1.5);
-	--table-header-text-align: var(--wewrite-header-text-align, left);
-	--table-min-width: var(--wewrite-min-width, 100px);
+	--table-header-font-weight: var(--smart-mp-header-font-weight, 600);
+	--table-header-line-height: var(--smart-mp-header-line-height, 1.5);
+	--table-header-text-align: var(--smart-mp-header-text-align, left);
+	--table-min-width: var(--smart-mp-min-width, 100px);
 	--table-container-overflow: auto;
 	--tabble-radius: 0;
 	--table-width: max-content;
@@ -32,15 +32,15 @@
 	--table-td-white-space: normal;
 }
 
-.wewrite .table-container {
+.smart-mp .table-container {
 	display: flex;
 	width: 100%;
 	overflow-x: var(--table-container-overflow);
 	padding: 1px;
-	box-shadow: 0 4px 8px var(--wewrite-shadow, (0, 0, 0, 0.1));
+	box-shadow: 0 4px 8px var(--smart-mp-shadow, (0, 0, 0, 0.1));
 }
 
-.wewrite table {
+.smart-mp table {
 	border-collapse: var(--table-collapse);
 	width: var(--table-width);
 	border-color: var(--table-border-color);
@@ -48,7 +48,7 @@
 	table-layout: var(--table-layout);
 }
 
-.wewrite thead tr {
+.smart-mp thead tr {
 	background-color: var(--table-header-background-color);
 	color: var(--table-header-color);
 	text-align: var(--table-header-text-align);
@@ -57,7 +57,7 @@
 }
 
 /* table body text */
-.wewrite tbody tr{
+.smart-mp tbody tr{
 	line-height: var(--table-line-height, 1.5);
 	text-align: var(--table-text-align, left);
 	background-color: var(--table-background-color); 
@@ -66,9 +66,9 @@
 	font-weight: var(--table-font-weight);
 }
 /* border */
-.wewrite th,
-.wewrite tr,
-.wewrite td {
+.smart-mp th,
+.smart-mp tr,
+.smart-mp td {
 	border-color: var(--table-border-color);
 	border-width: var(--table-border-width);
 	border-style: solid;
@@ -79,20 +79,20 @@
 	white-space: var(--table-td-white-space);
 }
 
-.wewrite tr:nth-child(even) {
+.smart-mp tr:nth-child(even) {
 	background-color: var(--table-background-color-alt);
 	/* 偶数行背景色 */;
 }
 
-.wewrite thead tr:first-child th:first-child {
+.smart-mp thead tr:first-child th:first-child {
 	border-top-left-radius: var(--tabble-radius);
 }
-.wewrite thead tr:first-child th:last-child {
+.smart-mp thead tr:first-child th:last-child {
 	border-top-right-radius: var(--tabble-radius);
 }
-.wewrite tbody tr:last-child td:first-child {
+.smart-mp tbody tr:last-child td:first-child {
 	border-bottom-left-radius: var(--tabble-radius);
 }
-.wewrite tbody tr:last-child td:last-child {
+.smart-mp tbody tr:last-child td:last-child {
 	border-bottom-right-radius: var(--tabble-radius);
 }

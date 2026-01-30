@@ -179,14 +179,14 @@ function cleanAttributes(el: HTMLElement): void {
         // 1. Remove obvious risky attributes
         if (attrName.startsWith('data-') || attrName === 'class' || attrName === 'id' || attrName.startsWith('on')) {
             // keep internal data attributes
-            if (!attrName.startsWith('data-wewrite-')) {
+            if (!attrName.startsWith('data-smart-mp-')) {
                 el.removeAttribute(attr.name);
                 return;
             }
         }
 
         // 2. Filter logic based on whitelist
-        if (!whitelist.includes(attrName) && !attrName.startsWith('data-wewrite-')) {
+        if (!whitelist.includes(attrName) && !attrName.startsWith('data-smart-mp-')) {
             el.removeAttribute(attr.name);
             return;
         }
@@ -202,7 +202,7 @@ function cleanAttributes(el: HTMLElement): void {
                 value.startsWith('app:') ||
                 (value.startsWith('data:') && !value.startsWith('data:image/'))
             ) {
-                console.warn(`[WeWrite] Removed unsafe/local protocol in ${attrName}: ${value.substring(0, 50)}...`);
+                console.warn(`[SmartMP] Removed unsafe/local protocol in ${attrName}: ${value.substring(0, 50)}...`);
                 el.removeAttribute(attr.name);
             }
         }

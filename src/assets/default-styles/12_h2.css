@@ -15,8 +15,8 @@ h2  标题
 	--h2-text-decoration-thickness: var(--heading-text-decoration-thickness);
 	--h2-text-decoration-color: var(--heading-text-decoration-color);
 	--h2-margin: var(--heading-margin);
-	/* --h2-bg: var(--wewrite-primary); */
-	--h2-bg: var(--wewrite-bg);
+	/* --h2-bg: var(--smart-mp-primary); */
+	--h2-bg: var(--smart-mp-bg);
 	--h2-border-bottom-width: var(--heading-border-bottom-width);
 	/* --h2-border-bottom-color: var(--h2-bg); */
 	--h2-border-bottom-color: var(--heading-border-bottom-color);
@@ -28,7 +28,7 @@ h2  标题
 	--h2-text-align: var(--h2-text-align);
 	/*  标题主体 */
 	--h2-outbox-display: block;
-	--h2-outbox-radius: var(--wewrite-border-radius);
+	--h2-outbox-radius: var(--smart-mp-border-radius);
 	--h2-outbox-padding: var(--heading-padding);
 	/*  标题叶子 */
 	--h2-leaf-display: block;
@@ -46,7 +46,8 @@ h2  标题
 	--h2-tail-shadow-width: var(--heading-tail-shadow-width);
 	--h2-display: flex;
 }
-.wewrite h2 {
+
+.smart-mp h2 {
 	font-family: var(--h2-font-family);
 	font-weight: var(--h2-font-weight);
 	font-size: var(--h2-font-size);
@@ -66,34 +67,37 @@ h2  标题
 }
 
 
-.wewrite h2 .wewrite-heading-prefix {
+.smart-mp h2 .smart-mp-heading-prefix {
 	display: var(--h2-prefix-display);
 	color: var(--h2-prefix-color);
 	font-style: var(--h2-font-style);
 	text-align: var(--h2-text-align);
 
 }
-.wewrite h2 .wewrite-heading-outbox {
+
+.smart-mp h2 .smart-mp-heading-outbox {
 	border-top-right-radius: var(--h2-outbox-radius);
 	border-top-left-radius: var(--h2-outbox-radius);
 	background-color: var(--h2-bg);
 	padding: var(--h2-outbox-padding);
 	display: block;
 }
-.wewrite h2 .wewrite-heading-leaf {
+
+.smart-mp h2 .smart-mp-heading-leaf {
 	padding-left: var(--h2-leaf-padding);
 	padding-right: var(--h2-leaf-padding);
-	font-weight:  var(--h2-font-weight);
+	font-weight: var(--h2-font-weight);
 	display: var(--h2-leaf-display);
 	color: var(--h2-leaf-color)
 }
-.wewrite h2 .wewrite-heading-tail {
+
+.smart-mp h2 .smart-mp-heading-tail {
 	box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizelegibility;
-    display: var(--h2-tail-display);
-    content: var(--h2-tail-content);
-    vertical-align: var(--h2-tail-vertical-align);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizelegibility;
+	display: var(--h2-tail-display);
+	content: var(--h2-tail-content);
+	vertical-align: var(--h2-tail-vertical-align);
 	border-bottom: var(--h2-tail-shadow-height) solid var(--h2-tail-shadow-color);
 	border-right: var(--h2-tail-shadow-width) solid transparent;
 }

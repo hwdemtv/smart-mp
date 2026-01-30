@@ -1,10 +1,10 @@
-# WeWrite - WeChat Official Account Writing Plugin for Obsidian 
+# smart-mp - WeChat Official Account Writing Plugin for Obsidian 
 
 [中文版](README.md)
 
 ## Overview
 
-WeWrite is a plugin for Obsidian (https://obsidian.md). 
+smart-mp is a plugin for Obsidian (https://obsidian.md). 
 
 It is designed to render notes and publish them to the WeChat Official Account platform, integrating AI writing assistance to make Obsidian a powerful writing tool for WeChat Official Account content.
 
@@ -46,7 +46,7 @@ It is designed to render notes and publish them to the WeChat Official Account p
 
 1. Open **Settings** in Obsidian.
 2. Go to the **Community Plugins** page.
-3. Search for "WeWrite."
+3. Search for "smart-mp."
 4. Click **Install** and enable the plugin.
 
 ## Usage Instructions
@@ -59,7 +59,7 @@ We will release some tutorials in our WeChat Official Account in the future.
 
 ### Basic Usage
 1. Use the editor's context menu to access AI writing assistance (e.g., content polishing, translation, etc.).
-2. Access WeWrite features via the right-click menu or command palette.
+2. Access smart-mp features via the right-click menu or command palette.
 3. Set up draft properties in the previewer on the right side (e.g., title, digest, cover image, etc.).
 4. Generate a digest and cover image with one click using AI assistance.
 5. Send the draft to your WeChat Official Account.

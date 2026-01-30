@@ -1,21 +1,21 @@
 import { Notice, requestUrl } from "obsidian";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import {
-	WeWriteSetting
-} from "src/settings/wewrite-setting";
+	SmartMPSetting,
+} from "src/settings/smart-mp-setting";
 
 export class QwenImageClient {
 	private static instance: QwenImageClient;
-	private plugin: WeWritePlugin;
-	private settings: WeWriteSetting;
+	private plugin: SmartMPPlugin;
+	private settings: SmartMPSetting;
 
-	private constructor(plugin: WeWritePlugin) {
+	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 		this.settings = this.plugin.settings;
 	}
 
-	public static getInstance(plugin: WeWritePlugin): QwenImageClient {
+	public static getInstance(plugin: SmartMPPlugin): QwenImageClient {
 		if (!QwenImageClient.instance) {
 			QwenImageClient.instance = new QwenImageClient(plugin);
 		}
@@ -136,7 +136,7 @@ export class QwenImageClient {
 			body: JSON.stringify({
 				model: account.model || "wanx2.1-t2i-turbo",
 				input: {
-					prompt: prompt,
+					prompt: account.systemPrompt ? `${account.systemPrompt}\n${prompt}` : prompt,
 					negative_prompt: negative_prompt,
 				},
 				parameters: {

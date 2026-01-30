@@ -11,7 +11,7 @@
 		--profile-width: 600px;
 		--profile-radius: 12px;
 	}
-	.wewrite-profile-card {
+	.smart-mp-profile-card {
       background-color: var(--profile-background-color, #fff);
       border-radius: var(--profile-radius, 12px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -19,13 +19,13 @@
       width: var(--profile-width, 600px);
     }
 
-    .wewrite-profile-card .card-main {
+    .smart-mp-profile-card .card-main {
       display: flex;
       align-items: center;
       padding: 20px;
     }
 
-    .wewrite-profile-card .avatar {
+    .smart-mp-profile-card .avatar {
       width: var(--profile-avatar-size, 64px);
       height: var(--profile-avatar-size, 64px);
       border-radius: 50%;
@@ -34,41 +34,41 @@
       flex-shrink: 0;
     }
 
-    .wewrite-profile-card .avatar img {
+    .smart-mp-profile-card .avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .wewrite-profile-card .content {
+    .smart-mp-profile-card .content {
       flex-grow: 1;
     }
 
-    .wewrite-profile-card .title {
+    .smart-mp-profile-card .title {
       font-size: 20px;
       font-weight: bold;
       color: var(--profile-title-color, #1f1f1f);
       margin-bottom: 6px;
     }
 
-    .wewrite-profile-card .description {
+    .smart-mp-profile-card .description {
       font-size: 16px;
       color: var(--profile-description-color, #555);
       margin-bottom: 8px;
     }
 
-    .wewrite-profile-card .meta {
+    .smart-mp-profile-card .meta {
       font-size: 14px;
       color: var(--profile-meta-color, #888);
     }
 
-    .wewrite-profile-card .arrow {
+    .smart-mp-profile-card .arrow {
       font-size: 20px;
       color: #999;
       margin-left: 12px;
     }
 
-    .wewrite-profile-card .card-footer {
+    .smart-mp-profile-card .card-footer {
       background-color: var(--profile-footer-bg-color, #f7f7f7);
       padding: 10px 20px;
       font-size: 14px;

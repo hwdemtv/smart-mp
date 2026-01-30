@@ -71,7 +71,7 @@ export function DomToDom(node: HTMLElement, queies: string[]) {
         const elements = node.querySelectorAll(query);
         for (const element of elements) {
             const replaceNode = createDiv()
-            replaceNode.id = `wewrite-replace-${index}`
+            replaceNode.id = `smart-mp-replace-${index}`
             nodeMap.set(replaceNode.id, element as HTMLElement)
             element.replaceWith(replaceNode);
             index++;

@@ -8,10 +8,10 @@
 
 import { MarkedExtension, Tokens } from "marked";
 import { sanitizeHTMLToDom, TFile } from "obsidian";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 
 
-export class Image extends WeWriteMarkedExtension {
+export class Image extends SmartMPMarkedExtension {
 	private pathCache = new Map<string, string>();
 	private lastActiveFile: string | null = null;
 
@@ -34,7 +34,7 @@ export class Image extends WeWriteMarkedExtension {
 					const currentImg = imgEls[i];
 					const classNames = currentImg.getAttribute('class')?.split(' ');
 
-					if (classNames?.includes('wewrite-avatar-image')) {
+					if (classNames?.includes('smart-mp-avatar-image')) {
 						continue;
 					}
 
@@ -67,7 +67,7 @@ export class Image extends WeWriteMarkedExtension {
 						figureEl.prepend(currentImg);
 					});
 				} catch (imgError) {
-					console.warn(`[WeWrite] Skipped image ${i} due to error:`, imgError);
+					console.warn(`[SmartMP] Skipped image ${i} due to error:`, imgError);
 					errors.push(imgError instanceof Error ? imgError : new Error(String(imgError)));
 				}
 			}
@@ -77,7 +77,7 @@ export class Image extends WeWriteMarkedExtension {
 				try {
 					op();
 				} catch (domError) {
-					console.error("[WeWrite] DOM operation failed:", domError);
+					console.error("[SmartMP] DOM operation failed:", domError);
 				}
 			});
 		} catch (error) {
@@ -168,7 +168,7 @@ export class Image extends WeWriteMarkedExtension {
 					// 安全检查：确保 token.href 存在
 					if (!token.href) {
 						console.warn('[Image Extension] Missing href for image:', token.text);
-						return `<img src="" alt="${token.text || ''}" class="wewrite-image-fallback" />`;
+						return `<img src="" alt="${token.text || ''}" class="smart-mp-image-fallback" />`;
 					}
 					const resolvedSrc = getImagePath(token.href);
 					console.log('[Image Extension] Original:', token.href, '→ Resolved:', resolvedSrc);

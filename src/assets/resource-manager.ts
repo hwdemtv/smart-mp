@@ -5,16 +5,16 @@
  */
 
 import { MarkdownView, requestUrl } from 'obsidian';
-import WeWritePlugin from 'src/main';
+import SmartMPPlugin from 'src/main';
 
 export class ResourceManager {
     private static instance: ResourceManager;
-    private plugin: WeWritePlugin;
-    private constructor(plugin: WeWritePlugin) {
+    private plugin: SmartMPPlugin;
+    private constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
         this.init();
     }
-    static getInstance(plugin: WeWritePlugin) {
+    static getInstance(plugin: SmartMPPlugin) {
         if (!this.instance) {
             this.instance = new ResourceManager(plugin);
         }
@@ -102,18 +102,18 @@ export class ResourceManager {
 
         // Create new filename
         const newFilename = `${noteBasename}_generated_${timestamp}.${ext || 'jpg'}`;
-        const fullPath = folderPath === '/' ? `/${newFilename}`:`${folderPath}/${newFilename}`;
+        const fullPath = folderPath === '/' ? `/${newFilename}` : `${folderPath}/${newFilename}`;
         try {
             // Fetch image using Obsidian's requestUrl
-            const response = await requestUrl({url});
+            const response = await requestUrl({ url });
             if (response.status !== 200) throw new Error('Failed to fetch image');
-            
+
             // Get ArrayBuffer from response
             const arrayBuffer = response.arrayBuffer;
-            
+
             // Save to vault
             await this.plugin.app.vault.adapter.writeBinary(fullPath, arrayBuffer);
-            
+
             return fullPath;
         } catch (error) {
             console.error('Error saving image:', error);

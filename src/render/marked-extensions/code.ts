@@ -12,11 +12,11 @@ import { Tokens } from "marked";
 import { $t } from "src/lang/i18n";
 import { replaceDivWithSection, serializeElement } from "../../utils/utils.js";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { Notice } from "obsidian";
 import hljs from "highlight.js";
 
-export class CodeRenderer extends WeWriteMarkedExtension {
+export class CodeRenderer extends SmartMPMarkedExtension {
 	showLineNumber: boolean;
 	mermaidIndex: number = 0;
 	admonitionIndex: number = 0;
@@ -396,14 +396,14 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			return;
 		}
 
-		const previewer = root.closest<HTMLElement>(".wewrite-render-preview");
+		const previewer = root.closest<HTMLElement>(".smart-mp-render-preview");
 		const previewerHadClass =
-			previewer?.classList.contains("wewrite-render-preview-visible") ?? false;
-		const rootHadClass = root.classList.contains("wewrite-mermaid-visible");
+			previewer?.classList.contains("smart-mp-render-preview-visible") ?? false;
+		const rootHadClass = root.classList.contains("smart-mp-mermaid-visible");
 
 		try {
-			previewer?.classList.add("wewrite-render-preview-visible");
-			root.classList.add("wewrite-mermaid-visible");
+			previewer?.classList.add("smart-mp-render-preview-visible");
+			root.classList.add("smart-mp-mermaid-visible");
 
 			const { width, height } = this.getMermaidSize(svg);
 			const dataUrl = await renderer.domToImage(svg, {
@@ -411,15 +411,15 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 				height,
 			});
 
-			token.html = `<section id="wewrite-mermaid-${index}" class="mermaid"><img src="${dataUrl}" class="mermaid-image" style="width:${width}px;height:auto;"></section>`;
+			token.html = `<section id="smart-mp-mermaid-${index}" class="mermaid"><img src="${dataUrl}" class="mermaid-image" style="width:${width}px;height:auto;"></section>`;
 		} catch (error) {
 			console.error(error);
 		} finally {
 			if (previewer && !previewerHadClass) {
-				previewer.classList.remove("wewrite-render-preview-visible");
+				previewer.classList.remove("smart-mp-render-preview-visible");
 			}
 			if (!rootHadClass) {
-				root.classList.remove("wewrite-mermaid-visible");
+				root.classList.remove("smart-mp-mermaid-visible");
 			}
 		}
 	}
@@ -472,7 +472,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		}
 		return $t('render.charts-failed');
 	}
-	renderWewriteProfile(token: Tokens.Generic) {
+	renderSmartMPProfile(token: Tokens.Generic) {
 		// 按行分割并过滤空行
 		const lines = token.text.split(/\r?\n/).filter((line: string) => line.trim() !== '');
 		const result: Record<string, string> = {};
@@ -488,11 +488,11 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			}
 		});
 
-		const html = `<div class="wewrite-profile-card">
-		<a class="wewrite-profile-card-link" href="${result.url || ''}">
+		const html = `<div class="smart-mp-profile-card">
+		<a class="smart-mp-profile-card-link" href="${result.url || ''}">
 			<div class="card-main">
 				<div class="avatar">
-					<img src="${result.avatar || ''}" alt="${result.nickname || ''}" avatar class="wewrite-avatar-image" >
+					<img src="${result.avatar || ''}" alt="${result.nickname || ''}" avatar class="smart-mp-avatar-image" >
 				</div>
 			<div class="content">
 				<div class="title">${result.nickname || ''}</div>
@@ -520,8 +520,8 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 						if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
 							return this.renderCharts(token);
 						}
-						else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
-							return this.renderWewriteProfile(token);
+						else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'smart-mp-profile') {
+							return this.renderSmartMPProfile(token);
 						}
 						else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
 							return token.html
@@ -535,7 +535,7 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
 					await this.renderMermaidAsync(token);
 				}
-				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
+				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'smart-mp-profile') {
 					// await this.renderProfileAsync(token); 
 					// No async profile renderer found, assuming synchronous renderer handles it or no async work needed.
 					// If async is needed, restore the correct method name. But for now, keeping it consistent with valid code.

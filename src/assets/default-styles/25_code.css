@@ -23,13 +23,13 @@
 	--code-border-width: 0.5px;
 }
 
-.wewrite code {
+.smart-mp code {
 	display: inline;
 	color: var(--code-color, rgb(153, 153, 153));
 	line-height: var(--code-line-height, 1.6);
 }
 
-.wewrite .code-container {
+.smart-mp .code-container {
 	display: flex;
 	flex-direction: column;
 	border-radius: var(--code-border-radius, 4px);
@@ -41,7 +41,7 @@
 }
 
 
-.wewrite .code-section-banner {
+.smart-mp .code-section-banner {
 	background-image: url('https://mmbiz.qpic.cn/mmbiz_svg/QAm7hEbaujTQuIH8VVl7W7PicH14grAZxd7oUx579CB2wpytwlLSpiaq2DXBpNUz8R6ckkAuO8tBLr52XjAsvR67mh3oibs2dYK/640?wx_fmt=svg&from=appmsg&tp=webp&wxfrom=15&wx_lazy=1');
 	background-position: 10px 10px;
 	background-size: 40px auto;
@@ -52,7 +52,7 @@
 	border-bottom: solid 0.5px var(--code-color, rgb(153, 153, 153));
 }
 
-.wewrite .code-section {
+.smart-mp .code-section {
 	display: flex;
 	flex-grow: 1;
 	font-size: var(--code-font-size, 0.9rem);
@@ -60,7 +60,7 @@
 	border-radius: var(--code-border-radius, 4px);
 }
 
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
 	position: relative;
 	padding: 2px;
 	margin: 0;
@@ -72,7 +72,7 @@
 }
 
 
-.wewrite .code-section code {
+.smart-mp .code-section code {
 	display: block;
 	padding: 10px 5px !important;
 	padding-left: .5em;
@@ -82,7 +82,7 @@
 	overflow-x: auto;
 }
 
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
 	padding-top: var(--code-padding, 8px);
 	padding-bottom: var(--code-padding, 8px);
 	position: relative;
@@ -103,7 +103,7 @@
 	border-bottom-left-radius: var(--code-border-radius, 4px);
 }
 
-.wewrite .code-section ul>li {
+.smart-mp .code-section ul>li {
 	position: relative;
 	margin: 0;
 	display: list-item;
@@ -118,17 +118,17 @@
 
 }
 
-.wewrite .code-section ul>li::marker {
+.smart-mp .code-section ul>li::marker {
 	content: none;
 }
 
-.wewrite pre code .hljs {
+.smart-mp pre code .hljs {
 	display: block;
 	overflow-x: auto;
 	padding: 1em
 }
 
-.wewrite code .hljs {
+.smart-mp code .hljs {
 	padding: 3px 5px
 }
 
@@ -151,77 +151,77 @@
   hue-6-2: #e6c07b
   
   */
-.wewrite .hljs {
+.smart-mp .hljs {
 	color: var(--code-color, #abb2bf);
 	background: var(--code-section-background-color, #282c34)
 }
 
-.wewrite .hljs-comment,
-.wewrite .hljs-quote {
+.smart-mp .hljs-comment,
+.smart-mp .hljs-quote {
 	color: var(--code-color, #5c6370);
 	font-style: italic
 }
 
-.wewrite .hljs-doctag,
-.wewrite .hljs-keyword,
-.wewrite .hljs-formula {
+.smart-mp .hljs-doctag,
+.smart-mp .hljs-keyword,
+.smart-mp .hljs-formula {
 	color: var(--code-keyword-color, #c678dd)
 }
 
-.wewrite .hljs-section,
-.wewrite .hljs-name,
-.wewrite .hljs-selector-tag,
-.wewrite .hljs-deletion,
-.wewrite .hljs-subst {
+.smart-mp .hljs-section,
+.smart-mp .hljs-name,
+.smart-mp .hljs-selector-tag,
+.smart-mp .hljs-deletion,
+.smart-mp .hljs-subst {
 	color: var(--code-name-color, #e06c75)
 }
 
-.wewrite .hljs-literal {
+.smart-mp .hljs-literal {
 	color: var(--code-literal-color, #56b6c2)
 }
 
-.wewrite .hljs-string,
-.wewrite .hljs-regexp,
-.wewrite .hljs-addition,
-.wewrite .hljs-attribute,
-.wewrite .hljs-meta .wewrite .hljs-string {
+.smart-mp .hljs-string,
+.smart-mp .hljs-regexp,
+.smart-mp .hljs-addition,
+.smart-mp .hljs-attribute,
+.smart-mp .hljs-meta .smart-mp .hljs-string {
 	color: var(--code-string-color, #98c379)
 }
 
-.wewrite .hljs-attr,
-.wewrite .hljs-variable,
-.wewrite .hljs-template-variable,
-.wewrite .hljs-type,
-.wewrite .hljs-selector-class,
-.wewrite .hljs-selector-attr,
-.wewrite .hljs-selector-pseudo,
-.wewrite .hljs-number {
+.smart-mp .hljs-attr,
+.smart-mp .hljs-variable,
+.smart-mp .hljs-template-variable,
+.smart-mp .hljs-type,
+.smart-mp .hljs-selector-class,
+.smart-mp .hljs-selector-attr,
+.smart-mp .hljs-selector-pseudo,
+.smart-mp .hljs-number {
 	color: var(--code-variable-color, #d19a66)
 }
 
-.wewrite .hljs-symbol,
-.wewrite .hljs-bullet,
-.wewrite .hljs-link,
-.wewrite .hljs-meta,
-.wewrite .hljs-selector-id,
-.wewrite .hljs-title {
+.smart-mp .hljs-symbol,
+.smart-mp .hljs-bullet,
+.smart-mp .hljs-link,
+.smart-mp .hljs-meta,
+.smart-mp .hljs-selector-id,
+.smart-mp .hljs-title {
 	color: var(--code-symbol-color, #61aeee)
 }
 
-.wewrite .hljs-built_in,
-.wewrite .hljs-title.class_,
-.wewrite .hljs-class .wewrite .hljs-title {
+.smart-mp .hljs-built_in,
+.smart-mp .hljs-title.class_,
+.smart-mp .hljs-class .smart-mp .hljs-title {
 	color: var (--code-class-color, #e6c07b)
 }
 
-.wewrite .hljs-emphasis {
+.smart-mp .hljs-emphasis {
 	font-style: italic
 }
 
-.wewrite .hljs-strong {
+.smart-mp .hljs-strong {
 	font-weight: bold
 }
 
-.wewrite .hljs-link {
+.smart-mp .hljs-link {
 	text-decoration: underline
 }

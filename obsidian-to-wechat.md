@@ -1,6 +1,6 @@
 ## Obsidian 笔记 → 渲染 → 微信公众号草稿箱流程对比
 
-本文对比 `note-to-mp` 与 `wewrite` 两个插件，从本地 Markdown 到公众号草稿箱的完整链路，并标出关键实现点与差异。
+本文对比 `note-to-mp` 与 `smart-mp` 两个插件，从本地 Markdown 到公众号草稿箱的完整链路，并标出关键实现点与差异。
 
 ---
 
@@ -16,8 +16,8 @@
   5) 可改用“复制”直接复制带样式的 HTML，到公众号编辑器粘贴。
 - 批量：在文件夹右键“发布到公众号”可批量发多篇，支持取消。
 
-**WeWrite 用户流程**
-- 前置：在设置里添加公众号账号（或中心 token），配置主题目录（默认 `wewrite-css-styles`）；如需 AI/素材侧栏可额外配置。
+**smart-mp 用户流程**
+- 前置：在设置里添加公众号账号（或中心 token），配置主题目录（默认 `smart-mp-css-styles`）；如需 AI/素材侧栏可额外配置。
 - 操作：
   1) 打开 Markdown，右侧预览自动渲染（可选实时渲染开关）。
   2) 预览顶部选择主题（从主题目录的 md 文件中选），填写封面/摘要等文章属性。
@@ -57,10 +57,10 @@
 
 ---
 
-### WeWrite（/Users/zhangyufan/Projects/wewrite）
+### smart-mp（/Users/zhangyufan/Projects/smart-mp）
 
 **入口与设置**
-- `src/main.ts`：注册预览视图（PreviewPanel）、素材视图、命令、状态栏 spinner；账号/设置存储在 PouchDB（`settings/wewrite-setting.ts`），支持“中心 token”模式。
+- `src/main.ts`：注册预览视图（PreviewPanel）、素材视图、命令、状态栏 spinner；账号/设置存储在 PouchDB（`settings/smart-mp-setting.ts`），支持“中心 token”模式。
 - 设置页：`src/settings/setting-tab.ts`，配置公众号账号、主题目录、行号、实时渲染等。
 
 **渲染链路**
@@ -89,9 +89,9 @@
 
 ### 样式兼容的关键差异
 - NoteToMP：全量内联 CSS，并处理伪元素、类依赖；主题/高亮由 assets 统一管理，保证公众号端样式一致。
-- WeWrite：原版仅通过 CSSMerger 局部内联且会移除类名、忽略伪元素，易导致公众号端样式缺失；已在本地修改为保留类名并处理伪元素，并在发送前强制内联。高亮需手动并入主题 CSS。
+- smart-mp：原版仅通过 CSSMerger 局部内联且会移除类名、忽略伪元素，易导致公众号端样式缺失；已在本地修改为保留类名并处理伪元素，并在发送前强制内联。高亮需手动并入主题 CSS。
 
-### 适配建议（针对 WeWrite）
+### 适配建议（针对 smart-mp）
 - 确保发送前对文章根元素执行一次 `ThemeManager.applyTheme`（已改），避免仅依赖 Shadow DOM。
 - 主题 CSS 内加入代码高亮样式，或扩展 ThemeManager 读取 `highlights` 目录。
 - 若主题使用背景图/伪元素图片，需在 `post-render.ts` 添加背景图抓取与上传逻辑。

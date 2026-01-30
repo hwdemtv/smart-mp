@@ -1,0 +1,55 @@
+/* 00_smart-mp.css 
+	定义smart-mp的基本色系
+
+*/
+:root {
+  /* 主色系 */
+  --smart-mp-primary: #2c3e50;
+  --smart-mp-secondary: #3498db;
+  --smart-mp-accent: #e67e22;
+  --smart-mp-primary-light: #d0e4ff;
+  
+  /* 中性色 */
+  --smart-mp-bg: transparent;
+  --smart-mp-bg-alt: var(--smart-mp-primary);
+  --smart-mp-text: #333333;
+  --smart-mp-text-color: var(--smart-mp-text);
+  --smart-mp-text-alt: #ffffff;
+  --smart-mp-border:#999999;
+  
+  /* 状态色 */
+  --smart-mp-success: #27ae60;
+  --smart-mp-success: #28a745;
+  --smart-mp-warning: #ff9800;
+  --smart-mp-error: #e74c3c;
+  --smart-mp-danger:  #dc3545;
+  --smart-mp-blue: #1e3a8a;
+}	
+
+:root {
+	--smart-mp-font-size: 16px;
+	--smart-mp-line-height: 1.8;
+	--smart-mp-text-indent: 0;
+	--smart-mp-letter-spacing: 0;
+	--smart-mp-word-spacing: 0;
+	--smart-mp-text-align: left;
+	--smart-mp-text-decoration: none;
+	--smart-mp-border-width: 1px;
+	--smart-mp-border-style: solid;
+	--smart-mp-border-radius: 4px;
+	--smart-mp-border-radius-sm: 2px;
+	--smart-mp-border-radius-lg: 6px;
+	--smart-mp-border-radius-xl: 8px;
+}
+body{
+	font-size: var(--smart-mp-font-size);
+	line-height: var(--smart-mp-line-height);
+	text-indent: var(--smart-mp-text-indent);
+	letter-spacing: var(--smart-mp-letter-spacing);
+	word-spacing: var(--smart-mp-word-spacing);
+	text-align: var(--smart-mp-text-align);
+	text-decoration: var(--smart-mp-text-decoration);
+	border-width: var(--smart-mp-border-width);
+	border-style: var(--smart-mp-border-style);
+	border-radius: var(--smart-mp-border-radius);
+} 

@@ -6,12 +6,12 @@
  */
 
 import { Tokens, MarkedExtension } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
 import { serializeElement } from "src/utils/utils";
 
 
-export class Table extends WeWriteMarkedExtension {
+export class Table extends SmartMPMarkedExtension {
 
     tableIndex = 0;
     prepare(): Promise<void> {

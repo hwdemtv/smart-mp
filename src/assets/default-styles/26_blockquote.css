@@ -13,16 +13,16 @@
 	--blockquote-font-style: italic;
 }
 
-.wewrite blockquote {
+.smart-mp blockquote {
 	border-left-width: var(--blockquote-border-width);
 	border-left-style: var(--blockquote-border-style);
 	border-left-color: var(--blockquote-border-color);
 	border-radius: var(--blockquote-border-radius);
 	padding: var(--blockquote-padding);
 	margin: var(--blockquote-margin);
-	color: var(--wewrite-secondary);	
+	color: var(--smart-mp-secondary);	
 	background-color: var(--blockquote-background-color);
-	line-height: var(--wewrite-line-height);
+	line-height: var(--smart-mp-line-height);
 	text-indent: 0;
 	color: var(--blockquote-color);
 	font-family: var(--blockquote-font-family);

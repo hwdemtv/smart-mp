@@ -1,10 +1,14 @@
-import WeWritePlugin from "../main";
+import SmartMPPlugin from "../main";
 
 export interface DeepSeekResult {
     summary: string;
     corrections: {
         original: string;
-        corrected: string;
+        suggestion: string;
+        start: number;
+        end: number;
+        type?: string;
+        description?: string;
     }[];
     polished: string;
     coverImage: string;
@@ -14,10 +18,10 @@ export interface DeepSeekResult {
 
 
 declare global {
-	interface Window {
-		electron: unknown;
-		require: NodeJS.Require;
-	}
+    interface Window {
+        electron: unknown;
+        require: NodeJS.Require;
+    }
 }
 
 

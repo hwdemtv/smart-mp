@@ -8,12 +8,12 @@
 
 import { parseMath } from "../mathjax";
 import { MarkedExtension, Token, Tokens } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 
 const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/;
 const blockRule = /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
 
-export class MathRenderer extends WeWriteMarkedExtension {
+export class MathRenderer extends SmartMPMarkedExtension {
     
     renderer(token: Tokens.Generic, inline: boolean, type: string = '') {
         if (type === '') {

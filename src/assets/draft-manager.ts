@@ -6,7 +6,7 @@
  * 
  */
 
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import PouchDB from 'pouchdb';
 import PouchDBFind from 'pouchdb-find';
 import { areObjectsEqual } from "src/utils/utils";
@@ -39,18 +39,18 @@ export type LocalDraftItem = {
 }
 
 export const initDraftDB = () => {
-    const db = new PouchDB('wewrite-local-drafts');
+    const db = new PouchDB('smart-mp-local-drafts');
     return db;
 }
 export class LocalDraftManager {
-    private plugin: WeWritePlugin;
+    private plugin: SmartMPPlugin;
     private db: PouchDB.Database;
     private static instance: LocalDraftManager;
-    private constructor(plugin: WeWritePlugin) {
+    private constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
         this.db = initDraftDB();
     }
-    public static getInstance(plugin: WeWritePlugin): LocalDraftManager {
+    public static getInstance(plugin: SmartMPPlugin): LocalDraftManager {
         if (!LocalDraftManager.instance) {
             LocalDraftManager.instance = new LocalDraftManager(plugin);
         }
@@ -114,7 +114,11 @@ export class LocalDraftManager {
                 }
 
                 if (needSave) {
-                    await this.setDraft(draft);
+                    try {
+                        await this.setDraft(draft);
+                    } catch (error) {
+                        console.error('Failed to save draft:', error);
+                    }
                 }
             }
         }

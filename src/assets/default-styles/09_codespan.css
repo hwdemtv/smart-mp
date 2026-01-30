@@ -8,7 +8,7 @@
 	--codespan-font-weight: 500;
 }
 
-.wewrite .wewrite-codespan {
+.smart-mp .smart-mp-codespan {
 	color: var(--codespan-color, #e5c07b);
 	background-color: var(--codespan-background-color, #282c34);
 	padding: var(--codespan-padding, 2px);

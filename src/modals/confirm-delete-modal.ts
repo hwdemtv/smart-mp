@@ -5,14 +5,14 @@
 
 import { Modal } from 'obsidian';
 import { $t } from 'src/lang/i18n';
-import WeWritePlugin from 'src/main';
+import SmartMPPlugin from 'src/main';
 import { MaterialItem } from '../wechat-api/wechat-types';
 
 export class ConfirmDeleteModal extends Modal {
-    plugin: WeWritePlugin;
+    plugin: SmartMPPlugin;
     item: MaterialItem;
     callback: (item: MaterialItem) => void
-    constructor(plugin: WeWritePlugin, item: MaterialItem, callback: (item: MaterialItem) => void) {
+    constructor(plugin: SmartMPPlugin, item: MaterialItem, callback: (item: MaterialItem) => void) {
         super(plugin.app);
         this.plugin = plugin;
         this.item = item

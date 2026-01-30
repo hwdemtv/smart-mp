@@ -1,12 +1,12 @@
 import { TFile, Notice } from "obsidian";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { ThemeManager } from "./theme-manager";
 
 export class ThemeHotReloader {
-    private plugin: WeWritePlugin;
+    private plugin: SmartMPPlugin;
     private reloadTimeout: number | undefined;
 
-    constructor(plugin: WeWritePlugin) {
+    constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
     }
 

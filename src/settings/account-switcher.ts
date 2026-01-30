@@ -3,12 +3,12 @@
  */
 import { DropdownComponent, Setting } from "obsidian";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 
 export class WeChatMPAccountSwitcher extends Setting {
-    private plugin: WeWritePlugin;
+    private plugin: SmartMPPlugin;
     private accountDropdown: DropdownComponent;
-    constructor(plugin: WeWritePlugin, containerEl: HTMLElement) {
+    constructor(plugin: SmartMPPlugin, containerEl: HTMLElement) {
         super(containerEl);
         this.plugin = plugin;
         this.setName($t('settings.select-wechat-mp-account'))

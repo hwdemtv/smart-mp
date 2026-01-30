@@ -1,9 +1,9 @@
 {
-	"id": "wewrite-plus",
-	"name": "WeWrite+",
+	"id": "smart-mp",
+	"name": "SmartMP",
 	"version": "1.4.0",
 	"minAppVersion": "1.7.0",
-	"description": "Make a powerful workspace for writing and publishing articles to WeChat MP. Draft ahead of release.",
+	"description": "Powerful workspace for WeChat MP writing & publishing with custom AI assistants and premium UI experience.",
 	"author": "Learner Chen, hwdemtv",
 	"authorUrl": "https://www.3thinking.cn/#/learner-forever",
 	"isDesktopOnly": true

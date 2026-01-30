@@ -12,8 +12,8 @@
 	--list-margin-left: 1rem;
 	--list-text-indent: 0;
 }
-.wewrite ol,
-.wewrite ul:not(.wewrite .code-section ul) {
+.smart-mp ol,
+.smart-mp ul:not(.smart-mp .code-section ul) {
 	color: var(--list-text-color, #333);
 	/* background-color: var(--list-bg-color, #fff); */
 	padding-left: var(--list-padding-left);
@@ -25,22 +25,22 @@
 
 }
 
-.wewrite ol {
+.smart-mp ol {
 	list-style-type: var(--list-ol-style, decimal);
 }
-.wewrite ul:not(.wewrite .code-section ul) {
+.smart-mp ul:not(.smart-mp .code-section ul) {
 	list-style-type: var(--list-ul-style, disc);
 }
 
 
-.wewrite ol li,
-.wewrite ul li:not(.wewrite .code-section ul li) {
+.smart-mp ol li,
+.smart-mp ul li:not(.smart-mp .code-section ul li) {
 	margin-bottom: var(--list-item-margin-bottom, 3px);
 	line-height: var(--list-line-height, 1.6);
 	padding-left: var(--list-padding-left);
 }
 
-.wewrite ul li ul {
+.smart-mp ul li ul {
   list-style-type: circle;
   padding-left: var(--list-padding-left);
 }

@@ -5,11 +5,11 @@
  */
 
 import { Tokens, MarkedExtension } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { sanitizeHTMLToDom } from "obsidian";
 import { serializeChildren, serializeElement } from "src/utils/utils";
 
-export class ListItem extends WeWriteMarkedExtension {
+export class ListItem extends SmartMPMarkedExtension {
     postprocess(dom: HTMLElement): Promise<HTMLElement> {
         const uls = dom.querySelectorAll<HTMLElement>('ul,ol')
         for (let ul of uls) {
@@ -20,7 +20,7 @@ export class ListItem extends WeWriteMarkedExtension {
             const p = ul.parentNode
             if (p) {
                 const frame = document.createElement('div')
-                frame.className = 'wewrite-list-frame'
+                frame.className = 'smart-mp-list-frame'
                 frame.setAttribute('frame-type', 'list')
                 p.replaceChild(frame, ul)
                 frame.appendChild(ul)
@@ -35,7 +35,7 @@ export class ListItem extends WeWriteMarkedExtension {
         if (list.items.length === 0) {
             return '';
         } else {
-            const frame = createDiv({ cls: 'wewrite-list-frame' })
+            const frame = createDiv({ cls: 'smart-mp-list-frame' })
             const l = list.ordered ? 'ol' : 'ul'
             const list_el = frame.createEl(l)
             for (let item of list.items) {

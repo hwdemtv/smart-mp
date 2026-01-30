@@ -5,15 +5,15 @@
 
 import { Modal } from 'obsidian';
 import { $t } from 'src/lang/i18n';
-import WeWritePlugin from 'src/main';
+import SmartMPPlugin from 'src/main';
 
 export class ImageGenerateModal extends Modal {
-    plugin: WeWritePlugin;
+    plugin: SmartMPPlugin;
     callback: CallableFunction;
 	public prompt: string = '画面上有条河，小马在水边准备过河，河边有小马的妈妈一匹老马，还有老牛，河边还有一棵树，树上有松鼠，它们仿佛在对话中，小马很疑惑的表情';
 	public negative_prompt: string = '没有人，和其它动物';
 	public size: string = '1440*613';
-    constructor(plugin: WeWritePlugin, callback: (url: string) => void) {
+    constructor(plugin: SmartMPPlugin, callback: (url: string) => void) {
         super(plugin.app);
         this.plugin = plugin;
         this.callback = callback

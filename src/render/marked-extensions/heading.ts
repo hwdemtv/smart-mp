@@ -5,19 +5,19 @@
  */
 
 import { Tokens, MarkedExtension } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { sanitizeHTMLToDom } from "obsidian";
 import { serializeChildren } from "src/utils/utils";
 
-export class Heading extends WeWriteMarkedExtension {
+export class Heading extends SmartMPMarkedExtension {
 	postprocess(dom: HTMLElement): Promise<HTMLElement> {
 		const headings = dom.querySelectorAll('h1, h2, h3, h4, h5, h6');
 		for (const heading of headings) {
 			const contentHtml = heading.innerHTML;
 			heading.empty();
-			heading.createSpan({ text: " ", cls: 'wewrite-heading-prefix' });
-			const outbox = heading.createSpan({ cls: 'wewrite-heading-outbox' });
-			const leaf = outbox.createSpan({ cls: 'wewrite-heading-leaf' });
+			heading.createSpan({ text: " ", cls: 'smart-mp-heading-prefix' });
+			const outbox = heading.createSpan({ cls: 'smart-mp-heading-outbox' });
+			const leaf = outbox.createSpan({ cls: 'smart-mp-heading-leaf' });
 
 			// 性能优化：如果只是纯文本，跳过安全过滤
 			if (!/[<>&]/.test(contentHtml)) {
@@ -26,7 +26,7 @@ export class Heading extends WeWriteMarkedExtension {
 				leaf.appendChild(sanitizeHTMLToDom(contentHtml));
 			}
 
-			heading.createSpan({ cls: 'wewrite-heading-tail' });
+			heading.createSpan({ cls: 'smart-mp-heading-tail' });
 		}
 		return Promise.resolve(dom);
 
@@ -37,15 +37,15 @@ export class Heading extends WeWriteMarkedExtension {
 
 	// 	return `
 	//         <h${depth}>
-	// 		<span class="wewrite-heading-prefix">
+	// 		<span class="smart-mp-heading-prefix">
 	// 		${depth}
 	// 		  </span>
-	// 		<span class="wewrite-heading-outbox">
-	// 		<span class="wewrite-heading-leaf">
+	// 		<span class="smart-mp-heading-outbox">
+	// 		<span class="smart-mp-heading-leaf">
 	//           ${text}
 	// 		  </span>
 	// 		  </span>
-	// 		  <span class="wewrite-heading-tail">
+	// 		  <span class="smart-mp-heading-tail">
 	// 		  </span>
 	//         </h${depth}>`;
 

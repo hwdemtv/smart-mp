@@ -1408,7 +1408,7 @@
     // render at all with `display: none`, so we have to use `visibility: hidden` with `position: fixed`.
     sandbox = document.createElement('iframe');
     sandbox.id = 'domtoimage-sandbox-' + util.uid();
-    sandbox.classList.add('wewrite-domtoimage-sandbox');
+    sandbox.classList.add('smart-mp-domtoimage-sandbox');
     document.body.append(sandbox);
 
     return tryTechniques(

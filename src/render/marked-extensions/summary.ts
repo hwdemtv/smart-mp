@@ -7,7 +7,7 @@
 
 import { MarkedExtension } from "marked";
 import { sanitizeHTMLToDom } from "obsidian";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { serializeChildren } from "src/utils/utils";
 
 function isHeading(element: Element) {
@@ -31,7 +31,7 @@ function isSubContent(currnetHeading: Element, currentNode: Element) {
     }
     return nodeLevel === null || nodeLevel > headingLevel
 }
-export class Summary extends WeWriteMarkedExtension {
+export class Summary extends SmartMPMarkedExtension {
     processHeading(dom: HTMLElement, heading: string) {
         const validHeadings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
         const headingType = heading.trim().toLowerCase();

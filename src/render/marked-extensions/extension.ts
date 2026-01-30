@@ -11,7 +11,7 @@
  */
 
 import { Marked, MarkedExtension } from "marked";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 
 // type RenderBLock = 'space'| 'code'| 'blockquote'| 'html'| 'heading'| 'hr'| 'list'| 'listitem'| 'checkbox'| 'paragraph'| 'table'| 'tablerow'| 'tablecell'
 // type RenderInline = 'strong'| 'em'| 'codespan'| 'br'| 'del'| 'link'| 'image'| 'text'
@@ -25,11 +25,11 @@ export interface PreviewRender {
 
 }
 
-export abstract class WeWriteMarkedExtension {
-    plugin: WeWritePlugin
+export abstract class SmartMPMarkedExtension {
+    plugin: SmartMPPlugin
     previewRender: PreviewRender
     marked: Marked
-    constructor(plugin: WeWritePlugin, previewRender: PreviewRender, marked: Marked) {
+    constructor(plugin: SmartMPPlugin, previewRender: PreviewRender, marked: Marked) {
         this.plugin = plugin;
         this.previewRender = previewRender
         this.marked = marked

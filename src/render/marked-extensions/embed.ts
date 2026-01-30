@@ -12,7 +12,7 @@
 import { MarkedExtension, Token, Tokens } from "marked";
 import { TAbstractFile, TFile } from "obsidian";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { $t } from "src/lang/i18n";
 import matter from "gray-matter";
 import { serializeElement } from "src/utils/utils";
@@ -77,7 +77,7 @@ function getEmbedType(link: string) {
 	}
 }
 
-export class Embed extends WeWriteMarkedExtension {
+export class Embed extends SmartMPMarkedExtension {
 	// Simple LRU Cache implementation
 	private static readonly MAX_CACHE_SIZE = 50;
 	public static fileCache: Map<string, string> = new Map<string, string>();

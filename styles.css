@@ -1,15 +1,15 @@
 /*
 
-CSS for wewrite plugin.
+CSS for smart-mp plugin.
 
 
 */
 
-.wewrite-ribbon-icon {
+.smart-mp-ribbon-icon {
 	color: rgb(8, 203, 138);
 }
 
-.wewrite-web-image {
+.smart-mp-web-image {
 	display: flex;
 	justify-content: center;
 	/* 水平居中 */
@@ -22,7 +22,7 @@ CSS for wewrite plugin.
     border: solid 2px #ddd; */
 }
 
-.wewrite-web-image img {
+.smart-mp-web-image img {
 	width: 100%;
 	height: auto;
 }
@@ -47,13 +47,13 @@ CSS for wewrite plugin.
 /********************************* 
 left side view 
 *********************************/
-.wewrite-material-panel-container {
+.smart-mp-material-panel-container {
 	/* border: 1px solid #ccc; */
 	margin-bottom: 5px;
 	vertical-align: middle;
 }
 
-.wewrite-material-panel-header {
+.smart-mp-material-panel-header {
 	/* background-color: bisque; */
 	padding: 5px;
 	cursor: pointer;
@@ -81,40 +81,120 @@ left side view
 	/* color: darkorange; */
 }
 
-.wewrite-material-panel-total {
+.smart-mp-material-panel-total {
 	margin-left: 5px;
 	margin-right: 5px;
 	color: green;
 }
 
-.wewrite-material-panel-content {
+.smart-mp-material-panel-content {
 	padding: 0.5em;
 }
 
-.wewrite-setting-frame,
-.wewrite-account-info-div {
+.smart-mp-setting-frame {
+	border: 1px solid var(--background-modifier-border) !important;
+	background-color: var(--background-primary) !important;
+	border-radius: 8px !important;
+	margin-bottom: 12px;
+	padding: 0 !important;
+	overflow: hidden;
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smart-mp-setting-frame[open] {
+	border-color: var(--interactive-accent) !important;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.smart-mp-setting-frame>summary {
+	list-style: none !important;
+	display: flex !important;
+	align-items: center;
+	padding: 12px 16px !important;
+	cursor: pointer;
+	user-select: none;
+	background-color: var(--background-secondary);
+	transition: background-color 0.2s ease;
+}
+
+.smart-mp-setting-frame>summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.smart-mp-setting-frame>summary::before {
+	content: "";
+	width: 14px;
+	height: 14px;
+	background-color: var(--text-muted);
+	mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+	mask-repeat: no-repeat;
+	mask-position: center;
+	mask-size: contain;
+	-webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+	-webkit-mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	-webkit-mask-size: contain;
+	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+	margin-right: 12px;
+	flex-shrink: 0;
+}
+
+.smart-mp-setting-frame[open]>summary::before {
+	transform: rotate(90deg);
+	background-color: var(--interactive-accent);
+}
+
+.smart-mp-setting-frame>summary:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.smart-mp-setting-frame>summary:hover::before {
+	background-color: var(--interactive-accent);
+}
+
+/* 内部内容区域 */
+.smart-mp-setting-frame> :not(summary) {
+	padding: 16px;
+}
+
+.smart-mp-setting-frame .setting-item-control input {
+	flex: 3;
+}
+
+
+
+.smart-mp-account-info-div {
 	padding: 1em;
-	border: 2px solid #ccc;
-	background-color: #fff;
-	border-radius: 5px;
+	border: 2px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	border-radius: 8px;
 	margin-top: 0.5em;
 	margin-bottom: 1em;
 }
 
-.wewrite-setting-frame .setting-item-control input {
-	flex: 3;
-}
-
-.wewrite-setting-input {
-	display: flex !important;
-	flex-direction: row !important;
-}
-
-.wewrite-setting-input input {
+.smart-mp-setting-input input {
 	flex-grow: 1;
 }
 
-.wewrite-account-info-div .wewrite-account-info-title {
+.smart-mp-setting-textarea {
+	flex-direction: column !important;
+	align-items: flex-start !important;
+}
+
+.smart-mp-setting-textarea .setting-item-control {
+	width: 100% !important;
+	margin-top: 8px;
+}
+
+.smart-mp-setting-textarea textarea {
+	width: 100% !important;
+	min-height: 4.5em;
+	height: 4.5em;
+	resize: vertical !important;
+	line-height: 1.5;
+}
+
+.smart-mp-account-info-div .smart-mp-account-info-title {
 	position: absolute;
 	top: -15px;
 	/* 调整标题距离顶部的距离 */
@@ -130,14 +210,14 @@ left side view
 }
 
 
-.wewrite-account-info-div .wewrite-account-info-content {
+.smart-mp-account-info-div .smart-mp-account-info-content {
 	padding: 10px;
 	font-size: 0.8em;
 	font-weight: 500;
 }
 
 /* article header */
-.wewrite-article-header {
+.smart-mp-article-header {
 	padding: 5px;
 	border: 1px solid #ccc;
 	/* background-color: bisque; papayawhip */
@@ -145,11 +225,11 @@ left side view
 	margin-bottom: 0.5em;
 }
 
-.wewrite-article-header details {
+.smart-mp-article-header details {
 	margin: 5px;
 }
 
-.wewrite-article-header summary {
+.smart-mp-article-header summary {
 	font-weight: normal;
 	cursor: pointer;
 	outline: none;
@@ -157,13 +237,13 @@ left side view
 
 }
 
-.wewrite-article-header summary::-webkit-details-marker {
+.smart-mp-article-header summary::-webkit-details-marker {
 	display: none;
 }
 
 
 
-.wewrite-article-header .cover-container {
+.smart-mp-article-header .cover-container {
 	max-width: 500px;
 	position: relative;
 	width: 100%;
@@ -173,14 +253,14 @@ left side view
 	margin: auto;
 }
 
-.wewrite-article-header .cover-container::before {
+.smart-mp-article-header .cover-container::before {
 	content: "";
 	display: block;
 	padding-top: 42.55%;
 	/* 1 / 2.35 * 100%，计算得到的百分比 */
 }
 
-.wewrite-article-header .cover-frame {
+.smart-mp-article-header .cover-frame {
 	margin: auto;
 	position: absolute;
 	top: 0;
@@ -192,7 +272,7 @@ left side view
 }
 
 
-.wewrite-article-header .cover-frame>* {
+.smart-mp-article-header .cover-frame>* {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -200,7 +280,7 @@ left side view
 	height: 100%;
 }
 
-.wewrite-article-header .cover-frame img {
+.smart-mp-article-header .cover-frame img {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
@@ -209,11 +289,11 @@ left side view
 	/* 设置图片的宽高比 */
 }
 
-.wewrite-article-header .cover-frame .image-on-dragover {
+.smart-mp-article-header .cover-frame .image-on-dragover {
 	border: 2px dashed red;
 }
 
-.wewrite-article-header .digest {
+.smart-mp-article-header .digest {
 	width: 100%;
 	/* 全宽 */
 	height: auto;
@@ -229,14 +309,14 @@ left side view
 }
 
 /* previewer */
-.wewrite-previewer-container {
+.smart-mp-previewer-container {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 	overflow: hidden;
 }
 
-.wewrite-previewer-container .render-container {
+.smart-mp-previewer-container .render-container {
 	border: 1px solid #ccc;
 	border-radius: 6px;
 	background-color: var(--background-primary);
@@ -260,12 +340,12 @@ left side view
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.render-container.is-mobile-view .wewrite-article {
+.render-container.is-mobile-view .smart-mp-article {
 	width: 100%;
 }
 
 /* Article Stats (Word Count / Reading Time) */
-.wewrite-article-stats {
+.smart-mp-article-stats {
 	text-align: center;
 	font-size: 0.85em;
 	color: var(--text-muted);
@@ -275,7 +355,7 @@ left side view
 }
 
 /* Obsidian Callout Styles */
-.wewrite-callout {
+.smart-mp-callout {
 	border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.1));
 	border-radius: 4px;
 	margin: 1em 0;
@@ -307,7 +387,7 @@ left side view
 	padding: 10px 15px;
 }
 
-.wewrite-callout.is-collapsed .callout-content {
+.smart-mp-callout.is-collapsed .callout-content {
 	display: none;
 }
 
@@ -361,7 +441,7 @@ left side view
 }
 
 /* Task List Styles */
-.wewrite-task-list-item {
+.smart-mp-task-list-item {
 	list-style-type: none !important;
 	display: flex;
 	align-items: flex-start;
@@ -378,7 +458,7 @@ left side view
 }
 
 /* Wikilink Style */
-.wewrite-wikilink {
+.smart-mp-wikilink {
 	color: var(--link-color, #2979ff);
 	text-decoration: underline;
 	cursor: default;
@@ -398,14 +478,14 @@ left side view
 	margin: 1em 0;
 }
 
-.wewrite-draft-header {
+.smart-mp-draft-header {
 	font-size: 1.2rem;
 	font-weight: bold;
 	margin-left: 0.5em;
 }
 
-.wewrite-hr-replacement,
-.wewrite-article hr {
+.smart-mp-hr-replacement,
+.smart-mp-article hr {
 	margin: 1em 0;
 	padding: 0;
 	height: 1px;
@@ -413,13 +493,13 @@ left side view
 	flex-shrink: 0;
 }
 
-.wewrite-previewer-container .wewrite-article {
+.smart-mp-previewer-container .smart-mp-article {
 	margin: 0;
 	padding: 0;
 	border: 1px dashed lightgray;
 }
 
-.wewrite-previewer-container .article-div {
+.smart-mp-previewer-container .article-div {
 	border: none;
 }
 
@@ -429,19 +509,19 @@ left side view
 material view 
 */
 
-.wewrite-material-view-tabs {
+.smart-mp-material-view-tabs {
 	width: 100%;
 	/* margin-top: 1rem; */
 }
 
-.wewrite-material-view-tab-header {
+.smart-mp-material-view-tab-header {
 	display: flex;
 	/* border-bottom: 1px solid var(--background-modifier-border);
   margin-bottom: 0.5rem; */
 	margin: 5px;
 }
 
-.wewrite-material-view-tab {
+.smart-mp-material-view-tab {
 	background: transparent !important;
 	/* Remove background */
 	border: none !important;
@@ -455,18 +535,18 @@ material view
 	/* Add pointer cursor for better UX */
 }
 
-.wewrite-material-view-tab:hover {
+.smart-mp-material-view-tab:hover {
 	background: var(--background-modifier-hover);
 	/* Add hover effect */
 	color: var(--interactive-accent)
 }
 
-.wewrite-material-view-tab.active {
+.smart-mp-material-view-tab.active {
 	background: var(--background-modifier-active);
 	/* Add active effect */
 }
 
-.wewrite-material-view-tab-content {
+.smart-mp-material-view-tab-content {
 	padding: 0;
 }
 
@@ -600,30 +680,30 @@ material view
 	padding: auto;
 }
 
-.wewrite-list-frame {
+.smart-mp-list-frame {
 	width: 100%;
 	height: 100%;
 	border: solid 1px #ccc;
 	visibility: visible;
 }
 
-.wewrite-markdown-render-container {
+.smart-mp-markdown-render-container {
 	max-width: 720px;
 }
 
-.wewrite-markdown-render-container li {
+.smart-mp-markdown-render-container li {
 	line-height: 3rem;
 
 }
 
-.wewrite-markdown-render-container ul,
+.smart-mp-markdown-render-container ul,
 ol {
 	margin-top: 1rem;
 	margin-bottom: 2rem;
 
 }
 
-.wewrite-markdown-render-container .callout {
+.smart-mp-markdown-render-container .callout {
 	font-size: 20px;
 	padding: 1rem;
 
@@ -727,11 +807,11 @@ ol {
 }
 
 
-.wewrite-material-panel-item {
+.smart-mp-material-panel-item {
 	cursor: 'pointer';
 }
 
-.wewrite-webview-iframe {
+.smart-mp-webview-iframe {
 	width: 100%;
 	height: 100%;
 	border: none;
@@ -781,7 +861,7 @@ proofreed
 	opacity: 0.7;
 }
 
-.wewrite-chat-playground {
+.smart-mp-chat-playground {
 	padding: 16px;
 
 	.vertical-layout {
@@ -977,13 +1057,13 @@ proofreed
 }
 
 /* 滚动条样式 we use shadow dom, make the preview looks better.*/
-.wewrite-article::-webkit-scrollbar {
+.smart-mp-article::-webkit-scrollbar {
 	width: 10px;
 	height: 10px;
 	background-color: var(--scrollbar-bg);
 }
 
-.wewrite-article::-webkit-scrollbar-thumb {
+.smart-mp-article::-webkit-scrollbar-thumb {
 	background-color: var(--scrollbar-thumb-bg);
 	-webkit-border-radius: var(--radius-l);
 	background-clip: padding-box;
@@ -992,15 +1072,15 @@ proofreed
 	min-height: 45px;
 }
 
-.wewrite-article::-webkit-scrollbar-thumb:hover {
+.smart-mp-article::-webkit-scrollbar-thumb:hover {
 	background-color: var(--scrollbar-thumb-hover-bg);
 }
 
-.wewrite-article::-webkit-scrollbar-corner {
+.smart-mp-article::-webkit-scrollbar-corner {
 	background: transparent;
 }
 
-.wewrite-render-preview {
+.smart-mp-render-preview {
 	position: absolute;
 	left: -100000px;
 	top: 0;
@@ -1008,16 +1088,16 @@ proofreed
 	visibility: hidden;
 }
 
-.wewrite-render-preview.wewrite-render-preview-visible {
+.smart-mp-render-preview.smart-mp-render-preview-visible {
 	visibility: visible;
 }
 
-.wewrite-mermaid-visible {
+.smart-mp-mermaid-visible {
 	visibility: visible;
 	display: block;
 }
 
-.wewrite-domtoimage-sandbox {
+.smart-mp-domtoimage-sandbox {
 	position: fixed;
 	visibility: hidden;
 }
@@ -1210,15 +1290,15 @@ proofreed
    Prevent Obsidian theme pollution
    ================================ */
 
-/* Base Reset for WeWrite Article Content */
-.wewrite-article,
-.wewrite-article * {
+/* Base Reset for smart-mp Article Content */
+.smart-mp-article,
+.smart-mp-article * {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 	box-sizing: border-box !important;
 }
 
 /* Paragraph Styles */
-.wewrite-article p {
+.smart-mp-article p {
 	margin: 0 0 1em 0 !important;
 	padding: 0 !important;
 	line-height: 1.75 !important;
@@ -1226,12 +1306,12 @@ proofreed
 }
 
 /* Heading Styles */
-.wewrite-article h1,
-.wewrite-article h2,
-.wewrite-article h3,
-.wewrite-article h4,
-.wewrite-article h5,
-.wewrite-article h6 {
+.smart-mp-article h1,
+.smart-mp-article h2,
+.smart-mp-article h3,
+.smart-mp-article h4,
+.smart-mp-article h5,
+.smart-mp-article h6 {
 	margin: 1.5em 0 0.5em 0 !important;
 	padding: 0 !important;
 	font-weight: bold !important;
@@ -1239,81 +1319,81 @@ proofreed
 	color: inherit !important;
 }
 
-.wewrite-article h1 {
+.smart-mp-article h1 {
 	font-size: 1.8em !important;
 }
 
-.wewrite-article h2 {
+.smart-mp-article h2 {
 	font-size: 1.5em !important;
 }
 
-.wewrite-article h3 {
+.smart-mp-article h3 {
 	font-size: 1.25em !important;
 }
 
-.wewrite-article h4 {
+.smart-mp-article h4 {
 	font-size: 1.1em !important;
 }
 
-.wewrite-article h5 {
+.smart-mp-article h5 {
 	font-size: 1em !important;
 }
 
-.wewrite-article h6 {
+.smart-mp-article h6 {
 	font-size: 0.9em !important;
 }
 
 /* List Styles */
 /* List Styles */
-.wewrite-article ul,
-.wewrite-article ol {
+.smart-mp-article ul,
+.smart-mp-article ol {
 	margin: 0 0 1em 0 !important;
 	padding-left: 2em !important;
 }
 
 /* Nested Lists */
-.wewrite-article ul ul,
-.wewrite-article ul ol,
-.wewrite-article ol ul,
-.wewrite-article ol ol {
+.smart-mp-article ul ul,
+.smart-mp-article ul ol,
+.smart-mp-article ol ul,
+.smart-mp-article ol ol {
 	margin: 0 !important;
 	padding-left: 1.5em !important;
 }
 
-.wewrite-article li {
+.smart-mp-article li {
 	margin: 0.25em 0 !important;
 	padding: 0 !important;
 	line-height: 1.75 !important;
 }
 
 /* Unordered List Markers */
-.wewrite-article ul li {
+.smart-mp-article ul li {
 	list-style-type: disc !important;
 }
 
-.wewrite-article ul ul li {
+.smart-mp-article ul ul li {
 	list-style-type: circle !important;
 }
 
-.wewrite-article ul ul ul li {
+.smart-mp-article ul ul ul li {
 	list-style-type: square !important;
 }
 
 /* Ordered List Markers */
-.wewrite-article ol li {
+.smart-mp-article ol li {
 	list-style-type: decimal !important;
 }
 
-.wewrite-article ol ol li {
+.smart-mp-article ol ol li {
 	list-style-type: lower-alpha !important;
 }
 
-.wewrite-article ol ol ol li {
+.smart-mp-article ol ol ol li {
 	list-style-type: lower-roman !important;
 }
 
 /* Blockquote Styles */
-.wewrite-article blockquote {
+.smart-mp-article blockquote {
 	margin: 1em 0 !important;
 	padding: 0.5em 1em !important;
 	border-left: 4px solid #ddd !important;
@@ -1323,17 +1403,17 @@ proofreed
 }
 
 /* Link Styles */
-.wewrite-article a {
+.smart-mp-article a {
 	color: #576b95 !important;
 	text-decoration: none !important;
 }
 
-.wewrite-article a:hover {
+.smart-mp-article a:hover {
 	text-decoration: underline !important;
 }
 
 /* Inline Code Default (Dark Style - Base) */
-.wewrite-article code:not(pre code) {
+.smart-mp-article code:not(pre code) {
 	background-color: #282c34 !important;
 	color: #e5c07b !important;
 	padding: 0.2em 0.4em !important;
@@ -1345,31 +1425,31 @@ proofreed
 }
 
 /* Light Theme Overrides (GitHub, Default) */
-.wewrite-theme-github code:not(pre code),
-.wewrite-theme-default code:not(pre code) {
+.smart-mp-theme-github code:not(pre code),
+.smart-mp-theme-default code:not(pre code) {
 	background-color: rgba(27, 31, 35, 0.05) !important;
 	color: #24292e !important;
 	border: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Specific Dark Theme Refinements (Optional) */
-.wewrite-theme-atom-one-dark code:not(pre code) {
+.smart-mp-theme-atom-one-dark code:not(pre code) {
 	background-color: #282c34 !important;
 	color: #e5c07b !important;
 }
 
-.wewrite-theme-monokai code:not(pre code) {
+.smart-mp-theme-monokai code:not(pre code) {
 	background-color: #272822 !important;
 	color: #e6db74 !important;
 }
 
-.wewrite-theme-vs2015 code:not(pre code) {
+.smart-mp-theme-vs2015 code:not(pre code) {
 	background-color: #1e1e1e !important;
 	color: #dcdcdc !important;
 }
 
 /* Code Block */
-.wewrite-article pre {
+.smart-mp-article pre {
 	margin: 1em 0 !important;
 	padding: 1em !important;
 	overflow-x: auto !important;
@@ -1379,33 +1459,33 @@ proofreed
 	line-height: 1.5 !important;
 }
 
-.wewrite-article pre code {
+.smart-mp-article pre code {
 	background: transparent !important;
 	padding: 0 !important;
 	border-radius: 0 !important;
 }
 
 /* Table Styles */
-.wewrite-article table {
+.smart-mp-article table {
 	width: 100% !important;
 	border-collapse: collapse !important;
 	margin: 1em 0 !important;
 }
 
-.wewrite-article th,
-.wewrite-article td {
+.smart-mp-article th,
+.smart-mp-article td {
 	border: 1px solid #ddd !important;
 	padding: 8px 12px !important;
 	text-align: left !important;
 }
 
-.wewrite-article th {
+.smart-mp-article th {
 	background-color: #f6f8fa !important;
 	font-weight: bold !important;
 }
 
 /* Image Styles */
-.wewrite-article img {
+.smart-mp-article img {
 	max-width: 100% !important;
 	height: auto !important;
 	display: block !important;
@@ -1413,38 +1493,38 @@ proofreed
 }
 
 /* Horizontal Rule */
-.wewrite-article hr {
+.smart-mp-article hr {
 	border: none !important;
 	border-top: 1px solid #ddd !important;
 	margin: 2em 0 !important;
 }
 
 /* Strong and Emphasis */
-.wewrite-article strong,
-.wewrite-article b {
+.smart-mp-article strong,
+.smart-mp-article b {
 	font-weight: bold !important;
 }
 
-.wewrite-article em,
-.wewrite-article i {
+.smart-mp-article em,
+.smart-mp-article i {
 	font-style: italic !important;
 }
 
 /* Strikethrough */
-.wewrite-article del,
-.wewrite-article s {
+.smart-mp-article del,
+.smart-mp-article s {
 	text-decoration: line-through !important;
 }
 
 /* Task List Checkboxes */
-.wewrite-article input[type="checkbox"] {
+.smart-mp-article input[type="checkbox"] {
 	margin-right: 0.5em !important;
 }
 
 /* Prevent Obsidian-specific styles */
-.wewrite-article .markdown-preview-view,
-.wewrite-article .cm-content,
-.wewrite-article .markdown-rendered {
+.smart-mp-article .markdown-preview-view,
+.smart-mp-article .cm-content,
+.smart-mp-article .markdown-rendered {
 	all: unset !important;
 }
 
@@ -1453,36 +1533,36 @@ proofreed
    ================================ */
 
 /* First-line Indent (enabled via class) */
-.wewrite-article.wewrite-indent-enabled p {
+.smart-mp-article.smart-mp-indent-enabled p {
 	text-indent: 2em !important;
 }
 
 /* Image Beautification - Border Radius + Shadow */
-.wewrite-article img {
+.smart-mp-article img {
 	border-radius: 8px !important;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	transition: box-shadow 0.3s ease !important;
 }
 
-.wewrite-article img:hover {
+.smart-mp-article img:hover {
 	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Table Zebra Stripes */
-.wewrite-article table tbody tr:nth-child(odd) {
+.smart-mp-article table tbody tr:nth-child(odd) {
 	background-color: #f9f9f9 !important;
 }
 
-.wewrite-article table tbody tr:nth-child(even) {
+.smart-mp-article table tbody tr:nth-child(even) {
 	background-color: #ffffff !important;
 }
 
-.wewrite-article table tbody tr:hover {
+.smart-mp-article table tbody tr:hover {
 	background-color: #f0f7ff !important;
 }
 
 /* Blockquote Beautification */
-.wewrite-article blockquote {
+.smart-mp-article blockquote {
 	border-left: 4px solid #1e88e5 !important;
 	background: linear-gradient(to right, #e3f2fd, transparent) !important;
 	padding: 12px 16px !important;
@@ -1491,13 +1571,13 @@ proofreed
 	color: #37474f !important;
 }
 
-.wewrite-article blockquote p {
+.smart-mp-article blockquote p {
 	margin: 0 !important;
 	text-indent: 0 !important;
 }
 
 /* Link Footnotes Styles */
-.wewrite-article .wewrite-footnote-ref {
+.smart-mp-article .smart-mp-footnote-ref {
 	color: #1e88e5 !important;
 	font-size: 0.8em !important;
 	vertical-align: super !important;
@@ -1505,27 +1585,27 @@ proofreed
 	font-weight: bold !important;
 }
 
-.wewrite-article .wewrite-footnotes {
+.smart-mp-article .smart-mp-footnotes {
 	margin-top: 2em !important;
 	padding-top: 1em !important;
 	border-top: 1px solid #ddd !important;
 }
 
-.wewrite-article .wewrite-footnotes-title {
+.smart-mp-article .smart-mp-footnotes-title {
 	font-size: 1.1em !important;
 	font-weight: bold !important;
 	color: #666 !important;
 	margin-bottom: 0.5em !important;
 }
 
-.wewrite-article .wewrite-footnote-item {
+.smart-mp-article .smart-mp-footnote-item {
 	font-size: 0.9em !important;
 	color: #666 !important;
 	margin: 0.3em 0 !important;
 	word-break: break-all !important;
 }
 
-.wewrite-article .wewrite-footnote-item a {
+.smart-mp-article .smart-mp-footnote-item a {
 	color: #1e88e5 !important;
 	text-decoration: underline !important;
 }
@@ -1574,14 +1654,14 @@ proofreed
 }
 
 /* Adjust code block border radius when header is present */
-.wewrite-article .code-snippet__fix pre {
+.smart-mp-article .code-snippet__fix pre {
 	border-top-left-radius: 0 !important;
 	border-top-right-radius: 0 !important;
 	margin-top: 0 !important;
 }
 
 /* Fix for Code Section Layout - Ensure Header is on Top */
-.wewrite-article .code-section {
+.smart-mp-article .code-section {
 	display: flex !important;
 	flex-direction: column !important;
 	width: 100% !important;
@@ -1592,7 +1672,7 @@ proofreed
 }
 
 /* Decorative Horizontal Rule */
-.wewrite-article hr {
+.smart-mp-article hr {
 	border: none !important;
 	border-top: none !important;
 	margin: 2.5em auto !important;
@@ -1603,7 +1683,7 @@ proofreed
 	overflow: visible !important;
 }
 
-.wewrite-article hr::after {
+.smart-mp-article hr::after {
 	content: "· · ·" !important;
 	display: inline-block !important;
 	position: relative !important;
@@ -1616,20 +1696,20 @@ proofreed
 }
 
 /* Scrollable Table Container */
-.wewrite-table-container {
+.smart-mp-table-container {
 	width: 100% !important;
 	overflow-x: auto !important;
 	-webkit-overflow-scrolling: touch !important;
 	margin: 1em 0 !important;
 }
 
-.wewrite-article table {
+.smart-mp-article table {
 	min-width: 100% !important;
 	margin: 0 !important;
 }
 
 /* Image Caption Styles */
-.wewrite-caption {
+.smart-mp-caption {
 	display: block !important;
 	font-size: 14px !important;
 	color: #888 !important;
@@ -1641,7 +1721,7 @@ proofreed
 }
 
 /* HR Replacement Div */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
 	margin: 1.5em auto !important;
 	text-align: center !important;
 	font-size: 1.5em !important;
@@ -1652,13 +1732,13 @@ proofreed
 }
 
 /* Article Header Input Fields */
-.wewrite-article-header .setting-item-control input {
+.smart-mp-article-header .setting-item-control input {
 	width: 300px !important;
 	max-width: 100% !important;
 }
 
 /* Specific Title Field Styling */
-.wewrite-title-setting .setting-item-control input {
+.smart-mp-title-setting .setting-item-control input {
 	width: 600px !important;
 	font-size: 1.4em !important;
 	font-weight: bold !important;
@@ -1679,14 +1759,14 @@ proofreed
 	/* Let content scroll naturally */
 }
 
-.render-container.is-mobile-view .wewrite-article {
+.render-container.is-mobile-view .smart-mp-article {
 	padding: 0 !important;
 	font-size: 15px !important;
 	/* Standard WeChat font size */
 }
 
 /* Toolbar & Article Header Refinement */
-.wewrite-previewer-toolbar {
+.smart-mp-previewer-toolbar {
 	display: flex;
 	align-items: center;
 	padding: 6px 12px;
@@ -1695,32 +1775,32 @@ proofreed
 	margin-bottom: 0px;
 }
 
-.wewrite-toolbar-item {
+.smart-mp-toolbar-item {
 	border: none !important;
 	padding: 0 !important;
 	margin: 0 !important;
 }
 
-.wewrite-toolbar-spacer {
+.smart-mp-toolbar-spacer {
 	flex-grow: 1;
 }
 
-.wewrite-toolbar-buttons {
+.smart-mp-toolbar-buttons {
 	display: flex;
 	gap: 4px;
 }
 
-.wewrite-article-header {
+.smart-mp-article-header {
 	margin: 0px;
 	border-bottom: 1px solid var(--divider-color);
 	background-color: var(--background-primary);
 }
 
-.wewrite-article-header details {
+.smart-mp-article-header details {
 	padding: 0;
 }
 
-.wewrite-draft-header {
+.smart-mp-draft-header {
 	padding: 8px 16px;
 	background-color: var(--background-primary);
 	font-weight: 500;
@@ -1733,11 +1813,11 @@ proofreed
 	transition: color 0.2s;
 }
 
-.wewrite-draft-header:hover {
+.smart-mp-draft-header:hover {
 	color: var(--text-normal);
 }
 
-.wewrite-article-header .wewrite-draft-header::before {
+.smart-mp-article-header .smart-mp-draft-header::before {
 	content: "▼" !important;
 	font-size: 10px;
 	margin-right: 10px;
@@ -1746,39 +1826,39 @@ proofreed
 	transition: transform 0.2s ease-in-out;
 }
 
-.wewrite-article-header details[open] .wewrite-draft-header::before {
+.smart-mp-article-header details[open] .smart-mp-draft-header::before {
 	transform: rotate(0deg);
 }
 
-.wewrite-article-header details:not([open]) .wewrite-draft-header::before {
+.smart-mp-article-header details:not([open]) .smart-mp-draft-header::before {
 	transform: rotate(-90deg);
 }
 
-.wewrite-article-header .setting-item {
+.smart-mp-article-header .setting-item {
 	padding: 8px 16px;
 	border-top: 1px solid var(--background-modifier-border);
 	display: flex;
 	align-items: center;
 }
 
-.wewrite-article-header .setting-item-info {
+.smart-mp-article-header .setting-item-info {
 	flex: 0 0 auto;
 	margin-right: 12px;
 	min-width: 80px;
 }
 
-.wewrite-article-header .setting-item-control {
+.smart-mp-article-header .setting-item-control {
 	flex: 1 1 auto;
 	display: flex;
 }
 
-.wewrite-article-header input[type="text"] {
+.smart-mp-article-header input[type="text"] {
 	width: 100% !important;
 	max-width: none !important;
 	flex: 1 1 auto;
 }
 
-.wewrite-article-header .digest {
+.smart-mp-article-header .digest {
 	width: calc(100% - 32px);
 	margin: 8px 16px 12px 16px;
 	border-radius: 4px;
@@ -1789,11 +1869,11 @@ proofreed
 	color: var(--text-normal);
 }
 
-.wewrite-article-header .cover-container {
+.smart-mp-article-header .cover-container {
 	padding: 0 16px 12px 16px;
 }
 
-.wewrite-article-header .cover-frame {
+.smart-mp-article-header .cover-frame {
 	border: 1px dashed var(--divider-color);
 	border-radius: 4px;
 	min-height: 80px;
@@ -1803,20 +1883,20 @@ proofreed
 	background-color: var(--background-primary-alt);
 }
 
-.wewrite-article-header .cover-frame canvas {
+.smart-mp-article-header .cover-frame canvas {
 	max-width: 100%;
 }
 
 /* Obsidian-like Code Block Styling (GH Style) */
-.wewrite .code-container {
+.smart-mp .code-container {
 	border-radius: 6px !important;
 	margin: 0.8rem 0 !important;
 	overflow: hidden !important;
 }
 
 /* GitHub (Default Light) */
-.wewrite.wewrite-theme-github,
-.wewrite.wewrite-theme-default {
+.smart-mp.smart-mp-theme-github,
+.smart-mp.smart-mp-theme-default {
 	--code-bg: #f6f8fa;
 	--code-header-bg: #eef1f5;
 	--code-border: #e1e4e8;
@@ -1828,7 +1908,7 @@ proofreed
 }
 
 /* Dracula (Dark) */
-.wewrite.wewrite-theme-dracula {
+.smart-mp.smart-mp-theme-dracula {
 	--code-bg: #282a36;
 	--code-header-bg: #191a21;
 	--code-border: #44475a;
@@ -1840,7 +1920,7 @@ proofreed
 }
 
 /* Monokai */
-.wewrite.wewrite-theme-monokai {
+.smart-mp.smart-mp-theme-monokai {
 	--code-bg: #272822;
 	--code-header-bg: #1e1f1c;
 	--code-border: #49483e;
@@ -1852,7 +1932,7 @@ proofreed
 }
 
 /* Atom One Dark */
-.wewrite.wewrite-theme-atom-one-dark {
+.smart-mp.smart-mp-theme-atom-one-dark {
 	--code-bg: #282c34;
 	--code-header-bg: #21252b;
 	--code-border: #181a1f;
@@ -1864,7 +1944,7 @@ proofreed
 }
 
 /* VS2015 (Dark) */
-.wewrite.wewrite-theme-vs2015 {
+.smart-mp.smart-mp-theme-vs2015 {
 	--code-bg: #1e1e1e;
 	--code-header-bg: #252526;
 	--code-border: #3e3e42;
@@ -1875,47 +1955,47 @@ proofreed
 	--code-comment: #57a64a;
 }
 
-.wewrite[class*="wewrite-theme-"] .code-container {
+.smart-mp[class*="smart-mp-theme-"] .code-container {
 	background-color: var(--code-bg) !important;
 	border: 1px solid var(--code-border) !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .code-mac-header {
+.smart-mp[class*="smart-mp-theme-"] .code-mac-header {
 	background-color: var(--code-header-bg) !important;
 	border-bottom: 1px solid var(--code-border) !important;
 	padding: 4px 12px !important;
 }
 
 /* Apply Syntax Colors */
-.wewrite[class*="wewrite-theme-"] .hljs {
+.smart-mp[class*="smart-mp-theme-"] .hljs {
 	color: var(--code-text) !important;
 	background: transparent !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .hljs-comment {
+.smart-mp[class*="smart-mp-theme-"] .hljs-comment {
 	color: var(--code-comment) !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .hljs-keyword {
+.smart-mp[class*="smart-mp-theme-"] .hljs-keyword {
 	color: var(--code-keyword) !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .hljs-string {
+.smart-mp[class*="smart-mp-theme-"] .hljs-string {
 	color: var(--code-string) !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .hljs-title {
+.smart-mp[class*="smart-mp-theme-"] .hljs-title {
 	color: var(--code-title) !important;
 }
 
-.wewrite[class*="wewrite-theme-"] .hljs-variable {
+.smart-mp[class*="smart-mp-theme-"] .hljs-variable {
 	color: var(--code-text) !important;
 }
 
 /* Global Code Formatting */
-.wewrite .code-section code,
-.wewrite .code-section pre,
-.wewrite .code-section span {
+.smart-mp .code-section code,
+.smart-mp .code-section pre,
+.smart-mp .code-section span {
 	font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace !important;
 	font-size: 14.5px !important;
 	line-height: 22px !important;
@@ -1927,16 +2007,16 @@ proofreed
 	min-height: 0 !important;
 }
 
-.wewrite .code-section code {
+.smart-mp .code-section code {
 	display: block !important;
 }
 
-.wewrite .code-section span {
+.smart-mp .code-section span {
 	display: inline !important;
 }
 
-.wewrite .code-section ul,
-.wewrite .code-section ul li {
+.smart-mp .code-section ul,
+.smart-mp .code-section ul li {
 	line-height: 22px !important;
 	font-size: 14.5px !important;
 }

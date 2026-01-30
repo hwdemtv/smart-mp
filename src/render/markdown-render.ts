@@ -31,7 +31,7 @@ export class ObsidianMarkdownRenderer {
         }
 
         this.container = container
-        this.container.addClass('wewrite-markdown-render-container')
+        this.container.addClass('smart-mp-markdown-render-container')
         this.view = view
         this.path = path
 

@@ -14,7 +14,7 @@
 	--heading-text-decoration-style: none;
 	--heading-text-decoration-thickness: 0;
 	--heading-text-decoration-color: transparent; 
-	--heading-radius: var(--wewrite-radius);
+	--heading-radius: var(--smart-mp-radius);
 	--heading-border-bottom-width: 0;
 	--heading-border-bottom-style: none;
 	--heading-border-bottom-color: transparent;
@@ -29,12 +29,12 @@
 }
 
 /* 标题 */
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
 	font-family: var(--heading-font-family);
 	font-weight: var(--heading-font-weight);
 	color: var(--heading-color);
@@ -49,15 +49,15 @@
 	display: var(--heading-display);
 }
 
-.wewrite .wewrite-heading-prefix {
+.smart-mp .smart-mp-heading-prefix {
 	display: none;
 }
-.wewrite .wewrite-heading-outbox {
+.smart-mp .smart-mp-heading-outbox {
 	display: block;
 }
-.wewrite .wewrite-heading-leaf {
+.smart-mp .smart-mp-heading-leaf {
 	display: block;
 }
-.wewrite .wewrite-heading-tail {
+.smart-mp .smart-mp-heading-tail {
 	display: none;
 }

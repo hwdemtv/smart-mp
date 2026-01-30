@@ -1,8 +1,8 @@
 import { Notice } from "obsidian";
 import OpenAI from "openai";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
-import { WeWriteSetting } from "src/settings/wewrite-setting";
+import SmartMPPlugin from "src/main";
+import { SmartMPSetting } from "src/settings/smart-mp-setting";
 import { DeepSeekResult } from "../types/types";
 import prompt from "./prompt.json";
 import { buildPrompt, Prompt } from "./ai-client";
@@ -10,19 +10,39 @@ import { ChatCompletionMessage } from "openai/resources";
 import { obsidianFetch } from "./fetch";
 export class OpenAIClient {
 	private static instance: OpenAIClient;
-	private plugin: WeWritePlugin;
-	private settings: WeWriteSetting;
+	private plugin: SmartMPPlugin;
+	private settings: SmartMPSetting;
 
-	private constructor(plugin: WeWritePlugin) {
+	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 		this.settings = this.plugin.settings;
 	}
 
-	public static getInstance(plugin: WeWritePlugin): OpenAIClient {
+	public static getInstance(plugin: SmartMPPlugin): OpenAIClient {
 		if (!OpenAIClient.instance) {
 			OpenAIClient.instance = new OpenAIClient(plugin);
 		}
 		return OpenAIClient.instance;
+	}
+
+	private getMessages(key: string, defaultTemplate: any, content: string, account: any): ChatCompletionMessage[] {
+		const customTemplate = this.settings.customPrompts?.[key];
+		let messages: any[];
+
+		if (customTemplate) {
+			messages = [{
+				role: "user",
+				content: customTemplate.replace("{{content}}", content)
+			}];
+		} else {
+			messages = buildPrompt(defaultTemplate);
+			messages[1].content = messages[1].content.replace("{{content}}", content);
+		}
+
+		if (account.systemPrompt) {
+			return [{ role: "system", content: account.systemPrompt }, ...messages] as ChatCompletionMessage[];
+		}
+		return messages as ChatCompletionMessage[];
 	}
 
 	public async getModelList(
@@ -51,11 +71,11 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return "";
 		}
-		const msg = buildPrompt(prompt.summary);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("summary", prompt.summary, content, account);
+
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus", //"deepseek-chat",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 100,
 			temperature: 0.7,
 		});
@@ -73,14 +93,12 @@ export class OpenAIClient {
 			return null;
 		}
 
-		const msg = buildPrompt(prompt.proofread);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
-
+		const messages = this.getMessages("proofread", prompt.proofread, content, account);
 
 		try {
 			const completion = await openai.chat.completions.create({
 				model: account.model || "qwen-plus",
-				messages: msg as ChatCompletionMessage[],
+				messages: messages,
 				response_format: { type: "json_object" },
 				max_tokens: 8192,
 				temperature: 0.7,
@@ -104,7 +122,7 @@ export class OpenAIClient {
 				correction.end = correction.start + correction.original.length;
 				start = correction.end;
 				console.debug(
-					`text[${correction.start},${correction.end}]: ${correction.original} -> ${correction.suggestion}`
+					`text[${correction.start},${correction.end}]: ${correction.original} -> ${correction.suggestion} `
 				);
 			}
 
@@ -137,12 +155,11 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return null;
 		}
-		const msg = buildPrompt(prompt.polish);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("polish", prompt.polish, content, account);
 
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 8192,
 			temperature: 0.7,
 		});
@@ -174,8 +191,8 @@ export class OpenAIClient {
 				return response;
 			},
 			dangerouslyAllowBrowser: true,
-			baseURL: account.baseUrl, 
-			apiKey: account.apiKey, 
+			baseURL: account.baseUrl,
+			apiKey: account.apiKey,
 		});
 		return openai;
 	}
@@ -190,12 +207,11 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return "";
 		}
-		const msg = buildPrompt(prompt.mermaid);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("mermaid", prompt.mermaid, content, account);
 
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 1000,
 			temperature: 0.7,
 		});
@@ -212,11 +228,11 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return "";
 		}
-		const msg = buildPrompt(prompt.latex);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("latex", prompt.latex, content, account);
+
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 1000,
 			temperature: 0.7,
 		});
@@ -234,11 +250,11 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return [];
 		}
-		const msg = buildPrompt(prompt.synonyms);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("synonyms", prompt.synonyms, content, account);
+
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 200,
 			temperature: 0.7,
 		});
@@ -254,7 +270,7 @@ export class OpenAIClient {
 		targetLang: string = "Chinese"
 	): Promise<string> {
 		console.debug('translateText in openAI');
-		
+
 		const openai = this.getChatAI();
 		if (!openai) {
 			return "";
@@ -264,15 +280,43 @@ export class OpenAIClient {
 			new Notice($t("settings.no-chat-account-selected"));
 			return "";
 		}
-		const msg = buildPrompt(prompt.translate);
-		msg[1].content = msg[1].content.replace("{{content}}", content);
+		const messages = this.getMessages("translate", prompt.translate, content, account);
+
 		const completion = await openai.chat.completions.create({
 			model: account.model || "qwen-plus",
-			messages: msg as ChatCompletionMessage[],
+			messages: messages,
 			max_tokens: 4096,
 			temperature: 0.7,
 		});
 
+		return completion.choices[0].message.content || "";
+	}
+
+	public async generateCustom(promptTemplate: string, content: string): Promise<string> {
+		const openai = this.getChatAI();
+		if (!openai) {
+			return "";
+		}
+		const account = this.plugin.getChatAIAccount();
+		if (!account) {
+			return "";
+		}
+
+		const messages: any[] = [];
+		if (account.systemPrompt) {
+			messages.push({ role: "system", content: account.systemPrompt });
+		}
+		messages.push({
+			role: "user",
+			content: promptTemplate.replace("{{content}}", content)
+		});
+
+		const completion = await openai.chat.completions.create({
+			model: account.model || "qwen-plus",
+			messages: messages,
+			max_tokens: 8192,
+			temperature: 0.7,
+		});
 		return completion.choices[0].message.content || "";
 	}
 }

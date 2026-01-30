@@ -1,7 +1,7 @@
 /** view template for different types of material */
 import { ButtonComponent, ItemView, WorkspaceLeaf } from "obsidian";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { WeChatMPAccountSwitcher } from "src/settings/account-switcher";
 import { MaterialPanel } from "./material-panel";
 
@@ -24,10 +24,10 @@ export const MediaTypeNames = new Map([
 ]);
 
 export class MaterialView extends ItemView {
-  private readonly plugin: WeWritePlugin;
+  private readonly plugin: SmartMPPlugin;
   private panels: MaterialPanel[] = [];
 
-  constructor(leaf: WorkspaceLeaf, plugin: WeWritePlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: SmartMPPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -70,9 +70,9 @@ export class MaterialView extends ItemView {
     accountEl.setName($t('views.materials.account-prefix'))
 
     // Create tab container
-    const tabContainer = rootEl.createDiv({ cls: 'wewrite-material-view-tabs' });
-    const tabHeader = tabContainer.createDiv({ cls: 'wewrite-material-view-tab-header' });
-    const tabContent = tabContainer.createDiv({ cls: 'wewrite-material-view-tab-content' });
+    const tabContainer = rootEl.createDiv({ cls: 'smart-mp-material-view-tabs' });
+    const tabHeader = tabContainer.createDiv({ cls: 'smart-mp-material-view-tab-header' });
+    const tabContent = tabContainer.createDiv({ cls: 'smart-mp-material-view-tab-content' });
 
     // Get material panels from plugin and sort newest first
     this.panels = this.plugin.assetsManager.getMaterialPanels()
@@ -91,7 +91,7 @@ export class MaterialView extends ItemView {
         .onClick(() => {
           this.panels.forEach(p => p.containerEl.toggle(p === panel));
         })
-        .setClass("wewrite-material-view-tab");
+        .setClass("smart-mp-material-view-tab");
     });
 
     this.panels.forEach(panel => {
@@ -111,7 +111,7 @@ export class MaterialView extends ItemView {
     new ButtonComponent(tabHeader)
       .setIcon('school')
       .setTooltip($t('views.materials.open-mp-page'))
-      .setClass("wewrite-material-view-tab")
+      .setClass("smart-mp-material-view-tab")
       .onClick(() => {
         window.open('https://mp.weixin.qq.com/', '_blank');
       })

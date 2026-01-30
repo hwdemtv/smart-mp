@@ -17,7 +17,7 @@
 	
 }
 
-.wewrite em {
+.smart-mp em {
 	font-family: var(--em-font-family);
 	font-weight: var(--em-font-weight);
 	font-size: var(--em-font-size);

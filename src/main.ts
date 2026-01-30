@@ -1,7 +1,7 @@
 /**
- * wewrite plugin for Obsidian
+ * smart-mp plugin for Obsidian
  * author: Learner Chen.
- * latest update: 2025-01-24
+ * latest update: 2026-01-30
  */
 import {
 	debounce,
@@ -13,6 +13,7 @@ import {
 	Plugin,
 	TFile,
 	WorkspaceLeaf,
+	addIcon,
 } from "obsidian";
 import { getPublicIpAddress } from "src/utils/ip-address";
 import { AssetsManager } from "./assets/assets-manager";
@@ -22,14 +23,14 @@ import { ConfirmModal } from "./modals/confirm-modal";
 import { ImageGenerateModal } from "./modals/image-generate-modal";
 import { PromptModal } from "./modals/prompt-modal";
 import { SynonymsModal } from "./modals/synonyms-modal";
-import { WeWriteSettingTab } from "./settings/setting-tab";
+import { SmartMPSettingTab } from "./settings/setting-tab";
 import { DeepSeekResult } from "./types/types";
 import {
-	getWeWriteSetting,
-	saveWeWriteSetting,
-	WeWriteSetting,
-	initWeWriteDB
-} from "./settings/wewrite-setting";
+	getSmartMPSetting,
+	saveSmartMPSetting,
+	SmartMPSetting,
+	initSmartMPDB
+} from "./settings/smart-mp-setting";
 import { initAssetsDB } from "./assets/assets-manager";
 import { initDraftDB } from "./assets/draft-manager";
 import { AiClient } from "./utils/ai-client";
@@ -40,16 +41,17 @@ import {
 	proofreadText,
 } from "./utils/proofread";
 import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
-import { PreviewPanel, VIEW_TYPE_WEWRITE_PREVIEW } from "./views/previewer";
+import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "./views/previewer";
 import { WechatClient } from "./wechat-api/wechat-client";
 import { Spinner } from "./views/spinner";
 import { ThemeHotReloader } from "./theme/hot-reloader";
 import { ThemeManager } from "./theme/theme-manager";
+import { SMART_MP_ICON } from "./icons";
 
-const DEFAULT_SETTINGS: WeWriteSetting = {
+const DEFAULT_SETTINGS: SmartMPSetting = {
 	mpAccounts: [],
 	ipAddress: "",
-	css_styles_folder: "wewrite-css-styles",
+	css_styles_folder: "smart-mp-css-styles",
 	codeLineNumber: true,
 	codeTheme: "github",
 	showCodeMacHeader: true,
@@ -60,7 +62,7 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	embedArticleStats: false,
 	hrStyle: "dots",
 	customHrText: "· · ·",
-	accountDataPath: "wewrite-accounts",
+	accountDataPath: "smart-mp-accounts",
 	useCenterToken: false,
 	chatAccounts: [],
 	drawAccounts: [],
@@ -76,8 +78,8 @@ const DEFAULT_SETTINGS: WeWriteSetting = {
 	},
 };
 
-export default class WeWritePlugin extends Plugin {
-	settings: WeWriteSetting;
+export default class SmartMPPlugin extends Plugin {
+	settings: SmartMPSetting;
 	wechatClient: WechatClient;
 	assetsManager: AssetsManager;
 	aiClient: AiClient | null = null;
@@ -144,7 +146,7 @@ export default class WeWritePlugin extends Plugin {
 		delete this.settings._id;
 		delete this.settings._rev;
 		this.trimSettings();
-		await saveWeWriteSetting(this.settings);
+		await saveSmartMPSetting(this.settings);
 		await this.saveThemeFolder();
 	}
 
@@ -186,195 +188,128 @@ export default class WeWritePlugin extends Plugin {
 				}
 
 				menu.addItem((item) => {
-					item.setTitle($t("main.wewrite-ai")).setIcon("sparkles");
+					item.setTitle($t("main.smart-mp-ai")).setIcon("sparkles");
 
 					const subMenu = item.setSubmenu();
 
 					if (editor.somethingSelected()) {
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.polish"))
-								.setIcon("sun")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
+						// 1. 渲染自定义助手列表（包含已迁移的默认助手）
+						if (this.settings.customAssistantList && this.settings.customAssistantList.length > 0) {
+							this.settings.customAssistantList.forEach((assistant) => {
+								if (assistant.enabled === false) return;
 
-										const polished =
-											await this.polishContent(content);
+								// 特殊处理：翻译助手保留其语言选择子菜单
+								if (assistant.id === "translate") {
+									subMenu.addItem((subItem: MenuItem) => {
+										subItem
+											.setTitle(assistant.name)
+											.setIcon("languages");
+										const translateSubMenu = subItem.setSubmenu();
+										translateSubMenu.addItem((ssi) => {
+											ssi.setTitle($t("main.to-english")).onClick(async () => {
+												const content = editor.getSelection();
+												const res = await this.translateToEnglish(content);
+												if (res) editor.replaceSelection(res, content);
+											});
+										});
+										translateSubMenu.addItem((ssi) => {
+											ssi.setTitle($t("main.to-chinese")).onClick(async () => {
+												const content = editor.getSelection();
+												const res = await this.translateToChinese(content);
+												if (res) editor.replaceSelection(res, content);
+											});
+										});
+									});
+									return;
+								}
 
-										if (polished) {
-											editor.replaceSelection(
-												polished,
-												content
-											);
-										}
-									})();
+								// 通用项目渲染
+								subMenu.addItem((subItem: MenuItem) => {
+									let icon = "bot";
+									let action = () => void this.processCustomAssistant(assistant, editor);
+
+									// 映射默认助手的图标和特定方法（以保留可能的优化/逻辑）
+									switch (assistant.id) {
+										case "polish":
+											icon = "sun";
+											action = () => {
+												void (async () => {
+													const content = editor.getSelection();
+													const res = await this.polishContent(content);
+													if (res) editor.replaceSelection(res, content);
+												})();
+											};
+											break;
+										case "synonyms":
+											icon = "book-a";
+											action = () => {
+												void (async () => {
+													const content = editor.getSelection();
+													const res = await this.getSynonyms(content);
+													if (res) editor.replaceSelection(res, content);
+												})();
+											};
+											break;
+										case "mermaid":
+											icon = "git-compare-arrows";
+											action = () => {
+												void (async () => {
+													const content = editor.getSelection();
+													const res = await this.generateMermaid(content);
+													if (res) editor.replaceSelection(res, content);
+												})();
+											};
+											break;
+										case "latex":
+											icon = "square-radical";
+											action = () => {
+												void (async () => {
+													const content = editor.getSelection();
+													let res = await this.generateLaTex(content);
+													if (res) {
+														res = res.replace(/\\begin{document}/g, "").replace(/\\end{document}/g, "").replace(/\\\\/g, "\\");
+														editor.replaceSelection(res, content);
+													}
+												})();
+											};
+											break;
+										case "summary":
+											icon = "file-text";
+											action = () => {
+												void (async () => {
+													const content = editor.getSelection();
+													const res = await this.generateSummary(content);
+													if (res) editor.replaceSelection(res, content);
+												})();
+											};
+											break;
+										case "proofread":
+											icon = "clipboard-check";
+											action = () => {
+												void (async () => {
+													const content = editor.getValue();
+													const result = await this.proofContent(content);
+													if (result) {
+														proofreadText(
+															editor,
+															this.app.workspace.getActiveViewOfType(MarkdownView)!,
+															result as any
+														);
+													}
+												})();
+											};
+											break;
+										case "text-to-image":
+											icon = "image-plus";
+											action = () => void this.generateImage(editor);
+											break;
+									}
+
+									subItem.setTitle(assistant.name).setIcon(icon).onClick(action);
 								});
-						});
+							});
+						}
 
-						//  TODO: until stable.
-						// subMenu.addItem((subItem: MenuItem) => {
-						// 	subItem
-						// 		.setTitle($t("main.proof"))
-						// 		.setIcon("user-pen")
-						// 		.onClick(async () => {
-						// 			const content = editor.getSelection();
-						// 			const cursorPos = editor.getCursor();
-						// 			const cursorOffset =
-						// 				editor.posToOffset(cursorPos);
-
-						// 			const proofed = await this.proofContent(
-						// 				content
-						// 			);
-
-						// 			if (proofed) {
-						// 				const suggestions = proofed.map(
-						// 					(proofItem) => {
-						// 						return {
-						// 							...proofItem,
-						// 							start:
-						// 								proofItem.start +
-						// 								cursorOffset,
-						// 							end:
-						// 								proofItem.end +
-						// 								cursorOffset,
-						// 						};
-						// 					}
-						// 				);
-						// 				proofreadText(
-						// 					editor,
-						// 					this.app.workspace.getActiveViewOfType(
-						// 						MarkdownView
-						// 					)!,
-						// 					suggestions
-						// 				);
-						// 			}
-						// 		});
-						// });
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.synonyms"))
-								.setIcon("book-a")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
-										const synonym = await this.getSynonyms(
-											content
-										);
-										this.hideSpinner();
-
-										if (synonym) {
-											editor.replaceSelection(
-												synonym,
-												content
-											);
-										}
-									})();
-								});
-						});
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.to-english"))
-								.setIcon("languages")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
-										const translated =
-											await this.translateToEnglish(
-												content
-											);
-
-										if (translated) {
-											editor.replaceSelection(
-												translated,
-												content
-											);
-										}
-									})();
-								});
-						});
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.to-chinese"))
-								.setIcon("languages")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
-										const translated =
-											await this.translateToChinese(
-												content
-											);
-
-										if (translated) {
-											editor.replaceSelection(
-												translated,
-												content
-											);
-										}
-									})();
-								});
-						});
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.generate-mermaid"))
-								.setIcon("git-compare-arrows")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
-										const mermaid =
-											await this.generateMermaid(
-												content
-											);
-
-										if (mermaid) {
-											editor.replaceSelection(
-												mermaid,
-												content
-											);
-										}
-									})();
-								});
-						});
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.generate-latex"))
-								.setIcon("square-radical")
-								.onClick(() => {
-									void (async () => {
-										const content = editor.getSelection();
-										let latex =
-											await this.generateLaTex(content);
-
-										if (latex) {
-											latex = latex
-												.replace(
-													/\\begin{document}/g,
-													""
-												)
-												.replace(
-													/\\end{document}/g,
-													""
-												);
-											latex = latex.replace(
-												/\\\\/g,
-												"\\"
-											);
-											editor.replaceSelection(
-												latex,
-												content
-											);
-										}
-									})();
-								});
-						});
-						subMenu.addItem((subItem: MenuItem) => {
-							subItem
-								.setTitle($t("main.text-to-image"))
-								.setIcon("image-plus")
-								.onClick(() => {
-									void this.generateImage(editor);
-								});
-						});
 					} else {
 						subMenu.addItem((subItem) => {
 							subItem
@@ -473,8 +408,11 @@ export default class WeWritePlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const savedSettings = await getWeWriteSetting();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await getSmartMPSetting()
+		);
 		await this.loadThemeFolder();
 	}
 	async updateIpAddress(): Promise<string> {
@@ -497,13 +435,13 @@ export default class WeWritePlugin extends Plugin {
 		const { workspace } = this.app;
 
 		let leaf: WorkspaceLeaf | null | undefined = workspace
-			.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)
+			.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW)
 			.find((leaf) => leaf.view instanceof PreviewPanel);
 
 		if (leaf === undefined || leaf === null) {
 			leaf = workspace.getRightLeaf(false);
 			await leaf?.setViewState({
-				type: VIEW_TYPE_WEWRITE_PREVIEW,
+				type: VIEW_TYPE_SMART_MP_PREVIEW,
 				active: true,
 			});
 		}
@@ -829,6 +767,28 @@ export default class WeWritePlugin extends Plugin {
 		return null;
 	}
 
+	async processCustomAssistant(assistant: any, editor: Editor) {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+		const content = editor.getSelection();
+		if (!content) return;
+
+		this.showSpinner(assistant.name + "...");
+		try {
+			const result = await this.aiClient.generateCustom(assistant.prompt, content);
+			if (result) {
+				editor.replaceSelection(result, content);
+			}
+		} catch (error) {
+			console.error("自定义助手执行失败:", error);
+			new Notice("执行助手失败: " + assistant.name);
+		} finally {
+			this.hideSpinner();
+		}
+	}
+
 	async polishContent(content: string): Promise<string | null> {
 		if (!this.aiClient) {
 			new Notice($t("main.chat-llm-has-not-been-configured"));
@@ -896,13 +856,14 @@ export default class WeWritePlugin extends Plugin {
 		});
 	}
 	initDB() {
-		initWeWriteDB();
+		initSmartMPDB();
 		initAssetsDB();
 		initDraftDB();
 	}
 	async onload() {
+		addIcon("smart-mp-logo", SMART_MP_ICON);
 		this.initDB();
-		console.log("WeWrite+ Version: 1.1.7-Deployment-Fix-v21");
+		console.log("SmartMP Version: 1.4.0-Release");
 		this.messageService = new MessageService();
 		await this.loadSettings();
 		this.wechatClient = WechatClient.getInstance(this);
@@ -930,7 +891,7 @@ export default class WeWritePlugin extends Plugin {
 			id: "toggle-scroll-sync",
 			name: $t("main.toggle-scroll-sync"),
 			callback: () => {
-				const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW)[0];
+				const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW)[0];
 				if (leaf && leaf.view instanceof PreviewPanel) {
 					// Use the existing logic in PreviewPanel
 					const button = (leaf.view as any).scrollSyncButton;
@@ -944,11 +905,11 @@ export default class WeWritePlugin extends Plugin {
 			},
 		});
 
-		this.addRibbonIcon("pen-tool", "Wewrite", () => {
+		this.addRibbonIcon("smart-mp-logo", "SmartMP", () => {
 			void this.activateView();
 		});
 
-		this.addSettingTab(new WeWriteSettingTab(this.app, this));
+		this.addSettingTab(new SmartMPSettingTab(this.app, this));
 
 		this.addEditorMenu();
 		this.createSpinner();
@@ -972,7 +933,7 @@ export default class WeWritePlugin extends Plugin {
 	}
 	registerViewOnce(viewType: string) {
 		if (this.app.workspace.getLeavesOfType(viewType).length === 0) {
-			if (viewType === VIEW_TYPE_WEWRITE_PREVIEW) {
+			if (viewType === VIEW_TYPE_SMART_MP_PREVIEW) {
 
 				this.registerView(viewType, (leaf) => new PreviewPanel(leaf, this))
 			} else if (viewType === VIEW_TYPE_MP_MATERIAL) {
@@ -981,7 +942,7 @@ export default class WeWritePlugin extends Plugin {
 		}
 	}
 	registerViews() {
-		this.registerViewOnce(VIEW_TYPE_WEWRITE_PREVIEW);
+		this.registerViewOnce(VIEW_TYPE_SMART_MP_PREVIEW);
 		this.registerViewOnce(VIEW_TYPE_MP_MATERIAL);
 	}
 
@@ -1003,7 +964,7 @@ export default class WeWritePlugin extends Plugin {
 				leaf.detach();
 			}
 		});
-		this.app.workspace.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW).forEach((leaf) => leaf.detach());
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW).forEach((leaf) => leaf.detach());
 		this.app.workspace.getLeavesOfType(VIEW_TYPE_MP_MATERIAL).forEach((leaf) => leaf.detach());
 	}
 

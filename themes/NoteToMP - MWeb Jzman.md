@@ -3,7 +3,7 @@ theme_name: NoteToMP MWeb Jzman
 ---
 
 ```css
-.wewrite {
+.smart-mp {
   padding: 0 1em;
   word-break: break-word;
   line-height: 1.8;
@@ -17,32 +17,32 @@ theme_name: NoteToMP MWeb Jzman
   background-size: 20px 20px;
   background-position: center center;
 }
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
   line-height: 1.5;
   margin-top: 35px;
   margin-bottom: 10px;
   padding-bottom: 5px;
   font-weight: 600;
 }
-.wewrite h1 {
+.smart-mp h1 {
   font-size: 30px;
   margin-bottom: 5px;
 }
-.wewrite h2 {
+.smart-mp h2 {
   padding-bottom: 12px;
   font-size: 24px;
   border-bottom: 1px solid #ececec;
 }
-.wewrite h3 {
+.smart-mp h3 {
   font-size: 18px;
   padding-bottom: 0;
 }
-.wewrite h4 {
+.smart-mp h4 {
   font-size: 1.2em;
   border-bottom: 2px solid rgb(239, 112, 96);
   word-spacing: 0px !important;
@@ -58,21 +58,21 @@ theme_name: NoteToMP MWeb Jzman
   border-top-left-radius: 3px;
   margin-right: 3px;
 }
-.wewrite h5 {
+.smart-mp h5 {
   font-size: 15px;
 }
-.wewrite h6 {
+.smart-mp h6 {
   margin-top: 5px;
 }
-.wewrite p {
+.smart-mp p {
   line-height: inherit;
   margin-top: 22px;
   margin-bottom: 22px;
 }
-.wewrite img {
+.smart-mp img {
   max-width: 100%;
 }
-.wewrite hr {
+.smart-mp hr {
   border-top: 1px solid #ddd;
   border-bottom: none;
   border-left: none;
@@ -80,12 +80,12 @@ theme_name: NoteToMP MWeb Jzman
   margin-top: 32px;
   margin-bottom: 32px;
 }
-.wewrite a {
+.smart-mp a {
   text-decoration: none;
   color: #0269c8;
   border-bottom: 1px solid #d1e9ff;
 }
-.wewrite table {
+.smart-mp table {
   display: inline-block !important;
   font-size: 12px;
   width: auto;
@@ -93,55 +93,55 @@ theme_name: NoteToMP MWeb Jzman
   overflow: auto;
   border: solid 1px #f6f6f6;
 }
-.wewrite thead {
+.smart-mp thead {
   background: #f6f6f6;
   color: #000;
   text-align: left;
 }
-.wewrite tr:nth-child(2n) {
+.smart-mp tr:nth-child(2n) {
   background-color: #fcfcfc;
 }
-.wewrite th,
-.wewrite td {
+.smart-mp th,
+.smart-mp td {
   padding: 12px 7px;
   line-height: 24px;
 }
-.wewrite td {
+.smart-mp td {
   min-width: 120px;
 }
-.wewrite blockquote {
+.smart-mp blockquote {
   color: #666;
   padding: 1px 23px;
   margin: 22px 0;
   border-left: 4px solid #cbcbcb;
   background-color: #f8f8f8;
 }
-.wewrite blockquote > p {
+.smart-mp blockquote > p {
   margin: 10px 0;
 }
-.wewrite ol,
-.wewrite ul {
+.smart-mp ol,
+.smart-mp ul {
   padding-left: 28px;
 }
-.wewrite ol li,
-.wewrite ul li {
+.smart-mp ol li,
+.smart-mp ul li {
   margin-bottom: 0;
   list-style: inherit;
 }
-.wewrite ol ul,
-.wewrite ol ol,
-.wewrite ul ul,
-.wewrite ul ol {
+.smart-mp ol ul,
+.smart-mp ol ol,
+.smart-mp ul ul,
+.smart-mp ul ol {
   margin-top: 3px;
 }
-.wewrite ol li {
+.smart-mp ol li {
   padding-left: 6px;
 }
-.wewrite .footnotes hr {
+.smart-mp .footnotes hr {
   margin-top: 4em;
   margin-bottom: 0.5em;
 }
-.wewrite code {
+.smart-mp code {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   word-break: break-word;
   border-radius: 2px;
@@ -150,7 +150,7 @@ theme_name: NoteToMP MWeb Jzman
   font-size: 0.87em;
   padding: 0.065em 0.4em;
 }
-.wewrite .code-section pre code {
+.smart-mp .code-section pre code {
   font-size: inherit;
   padding: 0;
   margin: 0;
@@ -159,7 +159,7 @@ theme_name: NoteToMP MWeb Jzman
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px #cbcbcb;
   margin: 1.5em 0;
@@ -167,7 +167,7 @@ theme_name: NoteToMP MWeb Jzman
   padding: 0.5em;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -175,12 +175,12 @@ theme_name: NoteToMP MWeb Jzman
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -191,12 +191,12 @@ theme_name: NoteToMP MWeb Jzman
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -204,7 +204,7 @@ theme_name: NoteToMP MWeb Jzman
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, #1e3a8a, transparent) !important;

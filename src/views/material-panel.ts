@@ -4,7 +4,7 @@
 import { Menu, Notice, setIcon } from "obsidian";
 import { AssetsManager } from "src/assets/assets-manager";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import {
 	DraftItem,
 	MaterialItem,
@@ -28,23 +28,23 @@ export class MaterialPanel {
 	private titleSpan: HTMLSpanElement;
 	private totalSpan: HTMLSpanElement;
 	private refreshButton: HTMLElement;
-	private plugin: WeWritePlugin;
+	private plugin: SmartMPPlugin;
 	public type: MediaType;
 	private items: REROUCE_ITEM[] = [];
 	private cleanupFns: (() => void)[] = [];
 
-	constructor(plugin: WeWritePlugin, parent: HTMLElement, title: string, type: MediaType) {
+	constructor(plugin: SmartMPPlugin, parent: HTMLElement, title: string, type: MediaType) {
 		this.plugin = plugin;
 		this.type = type;
 		this.name = title;
-		this.container = parent.createDiv({ cls: 'wewrite-material-panel-container' });
+		this.container = parent.createDiv({ cls: 'smart-mp-material-panel-container' });
 		this.containerEl = this.container;
-		this.header = parent.createDiv({ cls: 'wewrite-material-panel-header' });
+		this.header = parent.createDiv({ cls: 'smart-mp-material-panel-header' });
 		this.refreshButton = this.header.createEl('i', { cls: 'refresh-material-button' });
-		this.titleSpan = this.header.createSpan({ cls: 'wewrite-material-panel-title' });
-		this.totalSpan = this.header.createSpan({ cls: 'wewrite-material-panel-total' });
+		this.titleSpan = this.header.createSpan({ cls: 'smart-mp-material-panel-title' });
+		this.totalSpan = this.header.createSpan({ cls: 'smart-mp-material-panel-total' });
 
-		this.content = parent.createDiv({ cls: 'wewrite-material-panel-content' });
+		this.content = parent.createDiv({ cls: 'smart-mp-material-panel-content' });
 		setIcon(this.refreshButton, 'folder-sync')
 
 
@@ -228,7 +228,7 @@ export class MaterialPanel {
 		if (this.isItemExist(item)) {
 			return
 		}
-		const itemDiv = this.content.createDiv({ cls: 'wewrite-material-panel-item' });
+		const itemDiv = this.content.createDiv({ cls: 'smart-mp-material-panel-item' });
 
 
 		this.items.push({ item: item, el: itemDiv });

@@ -12,10 +12,10 @@
 	--strong-letter-spacing: var(--article-letter-space);
 	--strong-text-align: var(--article-text-align);
 	--strong-text-indent: var(--article-text-indent);
-	--strong-color: var(--wewrite-primary);
+	--strong-color: var(--smart-mp-primary);
 }
 
-.wewrite strong {
+.smart-mp strong {
 	font-family: var(--strong-font-family);
 	font-weight: var(--strong-font-weight);
 	font-size: var(--strong-font-size);

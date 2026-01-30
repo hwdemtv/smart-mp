@@ -1,8 +1,8 @@
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import {
-	WeWriteSetting
-} from "src/settings/wewrite-setting";
+	SmartMPSetting
+} from "src/settings/smart-mp-setting";
 import { DeepSeekResult } from "../types/types";
 import { OllamaClient } from "./ollama-client";
 import { OpenAIClient } from "./openAI-client";
@@ -10,13 +10,13 @@ import { QwenImageClient } from "./qwen-image-client";
 
 export class AiClient {
 	private static instance: AiClient;
-	private plugin: WeWritePlugin;
-	private settings: WeWriteSetting;
+	private plugin: SmartMPPlugin;
+	private settings: SmartMPSetting;
 	private openaiClient: OpenAIClient;
 	private ollamaClient: OllamaClient;
 	private imageClient: QwenImageClient;
 
-	private constructor(plugin: WeWritePlugin) {
+	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 		this.settings = this.plugin.settings;
 		this.openaiClient = OpenAIClient.getInstance(plugin);
@@ -24,7 +24,7 @@ export class AiClient {
 		this.imageClient = QwenImageClient.getInstance(plugin);
 	}
 
-	public static getInstance(plugin: WeWritePlugin): AiClient {
+	public static getInstance(plugin: SmartMPPlugin): AiClient {
 		if (!AiClient.instance) {
 			AiClient.instance = new AiClient(plugin);
 		}
@@ -38,14 +38,14 @@ export class AiClient {
 		if (account.baseUrl === undefined || !account.baseUrl) {
 			throw new Error($t("utils.no-ai-server-url-given"));
 		}
-		
-		if (account.baseUrl.startsWith("https://")) {
+
+		if (account.baseUrl.startsWith("https://") || account.baseUrl.includes("/v1")) {
 			return this.openaiClient
 		} else {
 			return this.ollamaClient;
 		}
 	}
-	public async getModelList(account:string|undefined = undefined): Promise<string[]> {
+	public async getModelList(account: string | undefined = undefined): Promise<string[]> {
 		const client = this.getClient();
 		return await client.getModelList(account);
 	}
@@ -53,7 +53,7 @@ export class AiClient {
 		const client = this.getClient();
 		return await client.generateSummary(content);
 	}
-	
+
 
 	public async proofContent(content: string): Promise<DeepSeekResult | null> {
 		const client = this.getClient();
@@ -66,7 +66,7 @@ export class AiClient {
 		const client = this.getClient();
 		return await client.polishContent(content);
 	}
-	
+
 
 
 	public async generateCoverImageFromText(
@@ -101,6 +101,13 @@ export class AiClient {
 		const client = this.getClient();
 		return await client.translateText(content, sourceLang, targetLang);
 	}
+
+	public async generateCustom(promptTemplate: string, content: string): Promise<string> {
+		const client = this.getClient();
+		// In OpenAIClient and OllamaClient, we will add this method
+		// @ts-ignore
+		return await client.generateCustom(promptTemplate, content);
+	}
 }
 
 export interface Prompt {
@@ -108,7 +115,7 @@ export interface Prompt {
 	content: string[];
 }
 
-export  const buildPrompt = (msg: Prompt[]) => {
+export const buildPrompt = (msg: Prompt[]) => {
 	return msg.map((item) => {
 		return {
 			role: item.role,

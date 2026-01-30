@@ -1,12 +1,12 @@
 /**
- * to build custom css for wewrite.
+ * to build custom css for SmartMP.
  * author: Learner Chen <learner.chen@icloud.com>
  * date: 2025-05-10
  */
 
 import postcss from 'postcss';
 
-import $00 from '../assets/default-styles/00_wewrite.css';
+import $00 from '../assets/default-styles/00_smart-mp.css';
 import $01 from '../assets/default-styles/01_layout.css';
 import $02 from '../assets/default-styles/02_icons.css';
 import $03 from '../assets/default-styles/03_typography.css';
@@ -361,7 +361,7 @@ export class CSSMerger {
 	}
 
 	private ensurePseudoElement(target: HTMLElement, pseudo: 'before' | 'after', content: string | undefined) {
-		const attr = `data-wewrite-pseudo-${pseudo}`;
+		const attr = `data-smart-mp-pseudo-${pseudo}`;
 		let pseudoEl = target.querySelector<HTMLElement>(`[${attr}]`);
 		if (!pseudoEl) {
 			pseudoEl = document.createElement('span');
@@ -431,7 +431,7 @@ export class CSSMerger {
 
 							// Correctly handle display: none or content: none to HIDE base pseudo-elements
 							if (displayDecl?.value === 'none' || contentDecl?.value === 'none') {
-								const attr = `data-wewrite-pseudo-${pseudo}`;
+								const attr = `data-smart-mp-pseudo-${pseudo}`;
 								const existing = currentNode.querySelector(`[${attr}]`);
 								if (existing) existing.remove();
 								return; // Break out of this specific rule application

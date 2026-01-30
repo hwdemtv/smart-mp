@@ -1,7 +1,7 @@
 import { MarkedExtension } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 
-export class Highlight extends WeWriteMarkedExtension {
+export class Highlight extends SmartMPMarkedExtension {
     markedExtension(): MarkedExtension {
         return {
             extensions: [{

@@ -21,7 +21,7 @@
 	--u-underline-offset: 0.2em;
 }
 
-.wewrite u {
+.smart-mp u {
 	font-family: var(--u-font-family);
 	font-weight: var(--u-font-weight);
 	font-size: var(--u-font-size);

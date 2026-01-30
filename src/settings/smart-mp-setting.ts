@@ -23,6 +23,7 @@ export type AIChatAccountInfo = {
     baseUrl: string;
     apiKey: string;
     model: string;
+    systemPrompt?: string;
     doc_id?: string;
 }
 export type AITaskAccountInfo = {
@@ -32,11 +33,20 @@ export type AITaskAccountInfo = {
     taskUrl: string;
     apiKey: string;
     model: string;
+    systemPrompt?: string;
     doc_id?: string;
 }
 
-// export type WeWriteAccountInfo = WeChatAccountInfo | AIChatAccountInfo | AITaskAccountInfo;
-export type WeWriteSetting = {
+export type CustomAssistant = {
+    id: string;
+    name: string;
+    prompt: string;
+    enabled?: boolean;
+    isDefault?: boolean;
+}
+
+// export type SmartMPAccountInfo = WeChatAccountInfo | AIChatAccountInfo | AITaskAccountInfo;
+export type SmartMPSetting = {
     useCenterToken: boolean;
     realTimeRender: boolean;
     realTimeRenderDelay?: number;
@@ -53,7 +63,7 @@ export type WeWriteSetting = {
     showImageCaptions?: boolean;
     embedArticleStats?: boolean;
     css_styles_folder: string;
-    _id?: string; // = 'wewrite-setting';
+    _id?: string; // = 'smart-mp-setting';
     _rev?: string;
     ipAddress?: string;
     selectedMPAccount?: string;
@@ -64,6 +74,8 @@ export type WeWriteSetting = {
     drawAccounts: Array<AITaskAccountInfo>;
     accountDataPath: string;
     chatSetting: ChatSetting;
+    customPrompts?: Record<string, string>;
+    customAssistantList?: CustomAssistant[];
     hrStyle?: string;
     customHrText?: string;
 }
@@ -80,30 +92,32 @@ export type ChatSetting = {
     max_tokens?: number;
 }
 
-export const initWeWriteDB = () => {
-    const db = new PouchDB('wewrite-settings');
+export const initSmartMPDB = () => {
+    const db = new PouchDB('smart-mp-settings');
     return db;
 }
 // Create a new database
-const db = initWeWriteDB();
+const db = initSmartMPDB();
 
 
-export const getWeWriteSetting = (): Promise<WeWriteSetting | undefined> => {
+export const getSmartMPSetting = (): Promise<SmartMPSetting | undefined> => {
     return new Promise((resolve, reject) => {
-        db.get('wewrite-settings')
+        db.get('smart-mp-settings')
             .then((doc) => {
-                resolve(doc as WeWriteSetting);
+                resolve(doc as SmartMPSetting);
             })
-            .catch((error: unknown) => {
-                console.warn('获取 WeWriteSetting 失败:', error);
+            .catch((error: any) => {
+                if (error.status !== 404) {
+                    console.warn('获取 SmartMPSetting 失败:', error);
+                }
                 resolve(undefined)
             });
     })
 }
 
-export const saveWeWriteSetting = (doc: WeWriteSetting): Promise<void> => {
+export const saveSmartMPSetting = (doc: SmartMPSetting): Promise<void> => {
     return new Promise((resolve, reject) => {
-        doc._id = 'wewrite-settings';
+        doc._id = 'smart-mp-settings';
         db.get(doc._id).then(existedDoc => {
             if (areObjectsEqual(doc, existedDoc)) {
                 resolve()
@@ -114,7 +128,7 @@ export const saveWeWriteSetting = (doc: WeWriteSetting): Promise<void> => {
                     resolve();
                 })
                 .catch((error: unknown) => {
-                    console.error('Error setting WeWriteSetting:', error);
+                    console.error('Error setting SmartMPSetting:', error);
                     resolve()
                 });
         }).catch(error => {
@@ -123,7 +137,7 @@ export const saveWeWriteSetting = (doc: WeWriteSetting): Promise<void> => {
                     resolve();
                 })
                 .catch((error: unknown) => {
-                    console.error('Error setting WeWriteSetting:', error);
+                    console.error('Error setting SmartMPSetting:', error);
                     resolve()
                 });
         })

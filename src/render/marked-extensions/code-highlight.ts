@@ -4,12 +4,12 @@
  */
  
 import { MarkedExtension } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
 import { CodeRenderer } from "./code";
 
-export class CodeHighlight extends WeWriteMarkedExtension {
+export class CodeHighlight extends SmartMPMarkedExtension {
   markedExtension(): MarkedExtension {
     return markedHighlight({
       langPrefix: 'hljs language-',
@@ -19,7 +19,7 @@ export class CodeHighlight extends WeWriteMarkedExtension {
         if (lang && lang.trim().toLocaleLowerCase() == 'mermaid') return code;
         if (lang && lang.trim().toLocaleLowerCase() == 'charts') return code;
         if (lang && lang.trim().toLocaleLowerCase() == 'dataview') return code;
-        if (lang && lang.trim().toLocaleLowerCase() == 'wewrite-profile') return code;
+        if (lang && lang.trim().toLocaleLowerCase() == 'smart-mp-profile') return code;
 
         if (lang && hljs.getLanguage(lang)) {
           try {

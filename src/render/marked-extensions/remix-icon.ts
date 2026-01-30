@@ -5,12 +5,12 @@
 */
 import { MarkedExtension, Tokens } from "marked";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { serializeElement } from "src/utils/utils";
 
 const remixIconRegex = /`(ris|fas):([a-z0-9-]+)`/i;
 const remixIconRegexTokenizer = /^`(ris|fas):([a-z0-9-]+)`/i;
-export class RemixIconRenderer extends WeWriteMarkedExtension {
+export class RemixIconRenderer extends SmartMPMarkedExtension {
 	remixIndex: number = 0;
 
 	prepare(): Promise<void> {

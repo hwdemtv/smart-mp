@@ -22,10 +22,10 @@ theme_name: NoteToMP MWeb Default
  * 各个属性的默认值为 chrome 的默认样式，见 variables/default.scss。
  */
 /**
- * MWeb 包裹 markdown 的容器是 .wewrite
+ * MWeb 包裹 markdown 的容器是 .smart-mp
  * Typora 中是 #write
  */
-.wewrite {
+.smart-mp {
   line-height: 1.6em;
   -webkit-text-size-adjust: 100%;
   margin: 0 0;
@@ -41,11 +41,11 @@ theme_name: NoteToMP MWeb Default
   /* table */
   /* svg */
 }
-.wewrite p, .wewrite details, .wewrite dl, .wewrite ol, .wewrite ul, .wewrite pre, .wewrite xmp, .wewrite plaintext, .wewrite listing, .wewrite blockquote, .wewrite table, .wewrite figure, .wewrite hr {
+.smart-mp p, .smart-mp details, .smart-mp dl, .smart-mp ol, .smart-mp ul, .smart-mp pre, .smart-mp xmp, .smart-mp plaintext, .smart-mp listing, .smart-mp blockquote, .smart-mp table, .smart-mp figure, .smart-mp hr {
   margin-top: 0.75em;
   margin-bottom: 0.75em;
 }
-.wewrite h1 {
+.smart-mp h1 {
   font-size: 2em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -53,7 +53,7 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite h2 {
+.smart-mp h2 {
   font-size: 1.5em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -61,7 +61,7 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite h3 {
+.smart-mp h3 {
   font-size: 1.17em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -69,7 +69,7 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite h4 {
+.smart-mp h4 {
   font-size: 1em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -77,7 +77,7 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite h5 {
+.smart-mp h5 {
   font-size: 0.83em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -85,7 +85,7 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite h6 {
+.smart-mp h6 {
   font-size: 0.67em;
   font-weight: bold;
   margin-top: 1.5em;
@@ -93,91 +93,91 @@ theme_name: NoteToMP MWeb Default
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite p {
+.smart-mp p {
   margin-left: 0;
   margin-right: 0;
 }
-.wewrite pre, .wewrite xmp, .wewrite plaintext, .wewrite listing {
+.smart-mp pre, .smart-mp xmp, .smart-mp plaintext, .smart-mp listing {
   font-family: monospace, Menlo-Regular, Menlo, Monaco, Consolas, "Courier New";
 }
-.wewrite blockquote > :first-child {
+.smart-mp blockquote > :first-child {
   margin-top: 0;
 }
-.wewrite blockquote > :last-child {
+.smart-mp blockquote > :last-child {
   margin-bottom: 0;
 }
-.wewrite hr {
+.smart-mp hr {
   border-style: inset;
   border-width: 1px;
 }
-.wewrite img {
+.smart-mp img {
   max-width: 100%;
   height: auto;
 }
-.wewrite li {
+.smart-mp li {
   word-wrap: break-all;
 }
-.wewrite li + li {
+.smart-mp li + li {
   margin-top: 0.25em;
 }
-.wewrite ul ul, .wewrite ol ul, .wewrite ul ol, .wewrite ol ol {
+.smart-mp ul ul, .smart-mp ol ul, .smart-mp ul ol, .smart-mp ol ol {
   margin-top: 0;
   margin-bottom: 0;
 }
-.wewrite .task-list-item {
+.smart-mp .task-list-item {
   list-style-type: none;
 }
-.wewrite a {
+.smart-mp a {
   color: -webkit-link;
   text-decoration: underline;
 }
-.wewrite a img {
+.smart-mp a img {
   border: none;
 }
-.wewrite b, .wewrite strong {
+.smart-mp b, .smart-mp strong {
   font-weight: bold;
 }
-.wewrite i, .wewrite cite, .wewrite em, .wewrite var, .wewrite address, .wewrite dfn {
+.smart-mp i, .smart-mp cite, .smart-mp em, .smart-mp var, .smart-mp address, .smart-mp dfn {
   font-style: italic;
 }
-.wewrite code, .wewrite kbd, .wewrite tt, .wewrite samp {
+.smart-mp code, .smart-mp kbd, .smart-mp tt, .smart-mp samp {
   font-family: monospace, Menlo-Regular, Menlo, Monaco, Consolas, "Courier New";
 }
-.wewrite mark {
+.smart-mp mark {
   padding: 0.2em 0;
   background-color: yellow;
 }
-.wewrite del, .wewrite s {
+.smart-mp del, .smart-mp s {
   color: inherit;
 }
-.wewrite table {
+.smart-mp table {
   color: black;
   border-collapse: collapse;
   background-color: white;
   border-spacing: 2px;
   font-size: 1em;
 }
-.wewrite th, .wewrite td {
+.smart-mp th, .smart-mp td {
   border-color: gray;
   border-width: 1px;
   border-style: solid;
 }
-.wewrite th {
+.smart-mp th {
   padding: 4px 8px;
   font-size: 1em;
   font-weight: bold;
 }
-.wewrite td {
+.smart-mp td {
   padding: 4px 8px;
   font-size: 1em;
   font-weight: normal;
 }
-.wewrite div[id^=mweb-chart-ele] svg {
+.smart-mp div[id^=mweb-chart-ele] svg {
   background-color: white;
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px gray;
   margin: 1.5em 0;
@@ -185,7 +185,7 @@ theme_name: NoteToMP MWeb Default
   padding: 0.5em;
   font-family: monospace, Menlo-Regular, Menlo, Monaco, Consolas, "Courier New";
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -193,12 +193,12 @@ theme_name: NoteToMP MWeb Default
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: monospace, Menlo-Regular, Menlo, Monaco, Consolas, "Courier New";
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -209,16 +209,16 @@ theme_name: NoteToMP MWeb Default
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
-.wewrite .code-section ul li {
+.smart-mp .code-section ul li {
   margin: 0;
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -226,7 +226,7 @@ theme_name: NoteToMP MWeb Default
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, rgba(0,0,0,0.3), transparent) !important;

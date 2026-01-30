@@ -3,7 +3,7 @@ theme_name: NoteToMP MWeb Vue
 ---
 
 ```css
-.wewrite {
+.smart-mp {
   font-size: 16px;
   color: #34495e;
   line-height: 1.6rem;
@@ -12,23 +12,23 @@ theme_name: NoteToMP MWeb Vue
   overflow-x: hidden;
   /* MWeb：代码块高亮 */
 }
-.wewrite img {
+.smart-mp img {
   max-width: 100%;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-.wewrite a {
+.smart-mp a {
   color: #42b983;
   font-weight: 600;
   padding: 0 2px;
   text-decoration: none;
 }
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
   position: relative;
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -36,74 +36,74 @@ theme_name: NoteToMP MWeb Vue
   line-height: 1.4;
   cursor: text;
 }
-.wewrite h1 tt,
-.wewrite h1 code {
+.smart-mp h1 tt,
+.smart-mp h1 code {
   font-size: inherit !important;
 }
-.wewrite h2 tt,
-.wewrite h2 code {
+.smart-mp h2 tt,
+.smart-mp h2 code {
   font-size: inherit !important;
 }
-.wewrite h3 tt,
-.wewrite h3 code {
+.smart-mp h3 tt,
+.smart-mp h3 code {
   font-size: inherit !important;
 }
-.wewrite h4 tt,
-.wewrite h4 code {
+.smart-mp h4 tt,
+.smart-mp h4 code {
   font-size: inherit !important;
 }
-.wewrite h5 tt,
-.wewrite h5 code {
+.smart-mp h5 tt,
+.smart-mp h5 code {
   font-size: inherit !important;
 }
-.wewrite h6 tt,
-.wewrite h6 code {
+.smart-mp h6 tt,
+.smart-mp h6 code {
   font-size: inherit !important;
 }
-.wewrite h2 a,
-.wewrite h3 a {
+.smart-mp h2 a,
+.smart-mp h3 a {
   color: #34495e;
 }
-.wewrite h1 {
+.smart-mp h1 {
   padding-bottom: 0.4rem;
   font-size: 2.2rem;
   line-height: 1.3;
 }
-.wewrite h2 {
+.smart-mp h2 {
   font-size: 1.75rem;
   line-height: 1.225;
   margin: 35px 0 15px;
   padding-bottom: 0.5em;
   border-bottom: 1px solid #ddd;
 }
-.wewrite h3 {
+.smart-mp h3 {
   font-size: 1.4rem;
   line-height: 1.43;
   margin: 20px 0 7px;
 }
-.wewrite h4 {
+.smart-mp h4 {
   font-size: 1.2rem;
 }
-.wewrite h5 {
+.smart-mp h5 {
   font-size: 1rem;
 }
-.wewrite h6 {
+.smart-mp h6 {
   font-size: 1rem;
   color: #777;
 }
-.wewrite p,
-.wewrite blockquote,
-.wewrite ul,
-.wewrite ol,
-.wewrite dl,
-.wewrite table {
+.smart-mp p,
+.smart-mp blockquote,
+.smart-mp ul,
+.smart-mp ol,
+.smart-mp dl,
+.smart-mp table {
   margin: 0.8em 0;
 }
-.wewrite li > ol,
-.wewrite li > ul {
+.smart-mp li > ol,
+.smart-mp li > ul {
   margin: 0 0;
 }
-.wewrite hr {
+.smart-mp hr {
   height: 2px;
   padding: 0;
   margin: 16px 0;
@@ -112,50 +112,50 @@ theme_name: NoteToMP MWeb Vue
   overflow: hidden;
   box-sizing: content-box;
 }
-.wewrite h1 p,
-.wewrite h2 p,
-.wewrite h3 p,
-.wewrite h4 p,
-.wewrite h5 p,
-.wewrite h6 p {
+.smart-mp h1 p,
+.smart-mp h2 p,
+.smart-mp h3 p,
+.smart-mp h4 p,
+.smart-mp h5 p,
+.smart-mp h6 p {
   margin-top: 0;
 }
-.wewrite li p.first {
+.smart-mp li p.first {
   display: inline-block;
 }
-.wewrite ul,
-.wewrite ol {
+.smart-mp ul,
+.smart-mp ol {
   padding-left: 30px;
 }
-.wewrite ul:first-child,
-.wewrite ol:first-child {
+.smart-mp ul:first-child,
+.smart-mp ol:first-child {
   margin-top: 0;
 }
-.wewrite ul:last-child,
-.wewrite ol:last-child {
+.smart-mp ul:last-child,
+.smart-mp ol:last-child {
   margin-bottom: 0;
 }
-.wewrite blockquote {
+.smart-mp blockquote {
   border-left: 4px solid #42b983;
   padding: 10px 15px;
   color: #777;
   background-color: rgba(66, 185, 131, 0.1);
 }
-.wewrite table {
+.smart-mp table {
   padding: 0;
   word-break: initial;
   border-collapse: collapse;
 }
-.wewrite table tr {
+.smart-mp table tr {
   border-top: 1px solid #dfe2e5;
   margin: 0;
   padding: 0;
 }
-.wewrite table tr:nth-child(2n),
-.wewrite thead {
+.smart-mp table tr:nth-child(2n),
+.smart-mp thead {
   background-color: #fafafa;
 }
-.wewrite table tr th {
+.smart-mp table tr th {
   font-weight: bold;
   border: 1px solid #dfe2e5;
   border-bottom: 0;
@@ -163,40 +163,40 @@ theme_name: NoteToMP MWeb Vue
   margin: 0;
   padding: 6px 13px;
 }
-.wewrite table tr td {
+.smart-mp table tr td {
   border: 1px solid #dfe2e5;
   text-align: left;
   margin: 0;
   padding: 6px 13px;
 }
-.wewrite table tr th:first-child,
-.wewrite table tr td:first-child {
+.smart-mp table tr th:first-child,
+.smart-mp table tr td:first-child {
   margin-top: 0;
 }
-.wewrite table tr th:last-child,
-.wewrite table tr td:last-child {
+.smart-mp table tr th:last-child,
+.smart-mp table tr td:last-child {
   margin-bottom: 0;
 }
-.wewrite .footnotes hr {
+.smart-mp .footnotes hr {
   margin-top: 4em;
   margin-bottom: 0.5em;
 }
-.wewrite code,
-.wewrite tt {
+.smart-mp code,
+.smart-mp tt {
   border-radius: 2px;
   font-family: Roboto Mono, Source Sans Pro, Monaco, courier, monospace !important;
   font-size: 0.92rem;
   color: #e96900;
   background-color: #f8f8f8;
 }
-.wewrite code {
+.smart-mp code {
   margin: 0 2px;
   padding: 2px 4px;
 }
-.wewrite .code-section {
+.smart-mp .code-section {
   border-radius: 2px;
 }
-.wewrite .code-section pre code {
+.smart-mp .code-section pre code {
   border: none;
   background-color: transparent;
   font-size: inherit;
@@ -208,7 +208,7 @@ theme_name: NoteToMP MWeb Vue
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px #e96900;
   margin: 1.5em 0;
@@ -216,7 +216,7 @@ theme_name: NoteToMP MWeb Vue
   padding: 0.5em;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -224,12 +224,12 @@ theme_name: NoteToMP MWeb Vue
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -240,12 +240,12 @@ theme_name: NoteToMP MWeb Vue
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -253,7 +253,7 @@ theme_name: NoteToMP MWeb Vue
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, #42b983, transparent) !important;

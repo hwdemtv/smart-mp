@@ -3,7 +3,7 @@ theme_name: NoteToMP MWeb Smartblue
 ---
 
 ```css
-.wewrite {
+.smart-mp {
   color: #595959;
   font-size: 15px;
   background-image: linear-gradient(90deg, rgba(60, 10, 30, 0.04) 3%, rgba(0, 0, 0, 0) 3%), linear-gradient(360deg, rgba(60, 10, 30, 0.04) 3%, rgba(0, 0, 0, 0) 3%);
@@ -26,105 +26,105 @@ theme_name: NoteToMP MWeb Smartblue
   /* 分隔线 */
   /* 表格 */
 }
-.wewrite p {
+.smart-mp p {
   color: #595959;
   font-size: 15px;
   line-height: 2;
   font-weight: 400;
 }
-.wewrite p + p {
+.smart-mp p + p {
   margin-top: 16px;
 }
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
   padding: 30px 0;
   margin: 0;
   color: #135ce0;
   font-weight: 600;
 }
-.wewrite h1 {
+.smart-mp h1 {
   position: relative;
   text-align: center;
   font-size: 22px;
   margin: 50px 0;
 }
-.wewrite h2 {
+.smart-mp h2 {
   position: relative;
   font-size: 20px;
   border-left: 4px solid;
   padding: 0 0 0 10px;
   margin: 30px 0;
 }
-.wewrite h3 {
+.smart-mp h3 {
   font-size: 16px;
 }
-.wewrite ul {
+.smart-mp ul {
   list-style: disc outside;
   margin-left: 2em;
   margin-top: 1em;
 }
-.wewrite li {
+.smart-mp li {
   line-height: 2;
   color: #595959;
   margin-bottom: 0;
   list-style: inherit;
 }
-.wewrite img {
+.smart-mp img {
   max-width: 100%;
 }
 :root {
   --blockquote-background-color: #fff9f9;
 }
 
-.wewrite blockquote {
+.smart-mp blockquote {
   background: var(--blockquote-background-color, #fff9f9);
   margin: 2em 0;
   padding: 2px 20px;
   border-left: 4px solid #b2aec5;
 }
-.wewrite blockquote p {
+.smart-mp blockquote p {
   color: #666;
   line-height: 2;
 }
-.wewrite a {
+.smart-mp a {
   color: #036aca;
   border-bottom: 1px solid rgba(3, 106, 202, 0.8);
   font-weight: 400;
   text-decoration: none;
 }
-.wewrite strong {
+.smart-mp strong {
   color: #036aca;
 }
-.wewrite em strong {
+.smart-mp em strong {
   color: #036aca;
 }
-.wewrite hr {
+.smart-mp hr {
   border-top: 1px solid #135ce0;
 }
-.wewrite table {
+.smart-mp table {
   border-collapse: collapse;
   margin: 1rem 0;
   overflow-x: auto;
 }
-.wewrite table th,
-.wewrite table td {
+.smart-mp table th,
+.smart-mp table td {
   border: 1px solid #dfe2e5;
   padding: 0.6em 1em;
 }
-.wewrite table tr {
+.smart-mp table tr {
   border-top: 1px solid #dfe2e5;
 }
-.wewrite table tr:nth-child(2n) {
+.smart-mp table tr:nth-child(2n) {
   background-color: #f6f8fa;
 }
-.wewrite .footnotes hr {
+.smart-mp .footnotes hr {
   margin-bottom: 0.5em;
 }
-.wewrite code {
+.smart-mp code {
   word-break: break-word;
   border-radius: 2px;
   background-color: #fff5f5;
@@ -132,7 +132,7 @@ theme_name: NoteToMP MWeb Smartblue
   font-size: 0.87em;
   padding: 0.065em 0.4em;
 }
-.wewrite .code-section pre code {
+.smart-mp .code-section pre code {
   border: none;
   background-color: transparent;
   font-size: inherit;
@@ -140,12 +140,12 @@ theme_name: NoteToMP MWeb Smartblue
   margin: 0 !important;
   text-wrap: nowrap;
 }
-.wewrite .code-section ul li {
+.smart-mp .code-section ul li {
   line-height: inherit;
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px #ff502c;
   margin: 1.5em 0;
@@ -153,7 +153,7 @@ theme_name: NoteToMP MWeb Smartblue
   padding: 0.5em;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -161,12 +161,12 @@ theme_name: NoteToMP MWeb Smartblue
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -177,12 +177,12 @@ theme_name: NoteToMP MWeb Smartblue
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -190,7 +190,7 @@ theme_name: NoteToMP MWeb Smartblue
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, #135ce0, transparent) !important;

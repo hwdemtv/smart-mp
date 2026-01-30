@@ -10,21 +10,22 @@ import {
 	RequestUrlParam,
 } from "obsidian";
 import { LocalDraftItem } from "src/assets/draft-manager";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 
 import { getErrorMessage } from "./error-code";
 import { $t } from "src/lang/i18n";
 import { MSG_TYPE } from "src/utils/message-service";
+import { SmartMPSetting } from "src/settings/smart-mp-setting";
 
 export class WechatClient {
 	private static instance: WechatClient;
-	private plugin: WeWritePlugin;
+	private plugin: SmartMPPlugin;
 	readonly baseUrl: string = "https://api.weixin.qq.com/cgi-bin";
 
-	private constructor(plugin: WeWritePlugin) {
+	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 	}
-	public static getInstance(plugin: WeWritePlugin): WechatClient {
+	public static getInstance(plugin: SmartMPPlugin): WechatClient {
 		if (!WechatClient.instance) {
 			WechatClient.instance = new WechatClient(plugin);
 		}
@@ -272,7 +273,7 @@ export class WechatClient {
 
 		const N = 16; // The length of our random boundry string
 		const randomBoundryString =
-			"wewriteBoundary" +
+			"smartmpBoundary" +
 			Array(N + 1)
 				.join(
 					(Math.random().toString(36) + "00000000000000000").slice(

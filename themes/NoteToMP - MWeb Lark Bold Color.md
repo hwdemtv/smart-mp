@@ -19,26 +19,26 @@ theme_name: NoteToMP MWeb Lark Bold Color
 /* header */
 /* spacing */
 /* table */
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
   color: #1f2329;
   line-height: 1.4;
   font-weight: 600;
   margin-top: 1em;
   margin-bottom: 0.37em;
 }
-.wewrite blockquote {
+.smart-mp blockquote {
   display: block;
   margin-left: 0;
   padding-left: 14px;
   border-left: 2px solid #3370ff;
   color: rgba(31, 35, 41, 0.7);
 }
-.wewrite a {
+.smart-mp a {
   overflow-wrap: break-word;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -47,7 +47,7 @@ theme_name: NoteToMP MWeb Lark Bold Color
   color: #3370ff;
   text-decoration: none;
 }
-.wewrite hr {
+.smart-mp hr {
   margin: 13px 0 12px;
   border: 0px;
   height: 1px;
@@ -55,41 +55,41 @@ theme_name: NoteToMP MWeb Lark Bold Color
   background-image: linear-gradient(90deg, rgb(187, 191, 196), rgb(187, 191, 196));
   background-repeat: no-repeat;
 }
-.wewrite ul > li:not([class*=task-list-item]) {
+.smart-mp ul > li:not([class*=task-list-item]) {
   word-wrap: break-all;
   padding-left: 12px;
   color: #3370ff;
 }
-.wewrite ul > li:not([class*=task-list-item]) > section {
+.smart-mp ul > li:not([class*=task-list-item]) > section {
   color: #1f2329;
 }
-.wewrite ul > li:not([class*=task-list-item])::marker {
+.smart-mp ul > li:not([class*=task-list-item])::marker {
   color: #3370ff;
 }
-.wewrite ol > li:not([class*=task-list-item]) {
+.smart-mp ol > li:not([class*=task-list-item]) {
   word-wrap: break-all;
   padding-left: 12px;
 }
-.wewrite ol > li:not([class*=task-list-item]) > section {
+.smart-mp ol > li:not([class*=task-list-item]) > section {
   color: #1f2329;
 }
-.wewrite ol > li:not([class*=task-list-item])::marker {
+.smart-mp ol > li:not([class*=task-list-item])::marker {
   color: #3370ff;
 }
-.wewrite li + li,
-.wewrite ul ul,
-.wewrite ol ul,
-.wewrite ul ol,
-.wewrite ol ol,
-.wewrite li ul,
-.wewrite li ol {
+.smart-mp li + li,
+.smart-mp ul ul,
+.smart-mp ol ul,
+.smart-mp ul ol,
+.smart-mp ol ol,
+.smart-mp li ul,
+.smart-mp li ol {
   margin-top: 4px;
 }
-.wewrite .footnotes hr {
+.smart-mp .footnotes hr {
   margin-top: 4em;
   margin-bottom: 0.5em;
 }
-.wewrite code {
+.smart-mp code {
   border-radius: 4px;
   margin-left: 2px;
   margin-right: 2px;
@@ -99,7 +99,7 @@ theme_name: NoteToMP MWeb Lark Bold Color
   line-height: 1.6em;
   padding: 0 2px;
 }
-.wewrite .code-section pre code {
+.smart-mp .code-section pre code {
   border: none;
   background-color: transparent;
   line-height: inherit;
@@ -107,13 +107,13 @@ theme_name: NoteToMP MWeb Lark Bold Color
   margin: 0;
   text-wrap: nowrap;
 }
-.wewrite .code-section ul li {
+.smart-mp .code-section ul li {
   color: inherit;
   margin: 0;
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px #dee0e3;
   margin: 1.5em 0;
@@ -121,7 +121,7 @@ theme_name: NoteToMP MWeb Lark Bold Color
   padding: 0.5em;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -129,12 +129,12 @@ theme_name: NoteToMP MWeb Lark Bold Color
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -145,16 +145,16 @@ theme_name: NoteToMP MWeb Lark Bold Color
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
-.wewrite strong {
+.smart-mp strong {
   color: rgb(36, 91, 219);
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -162,7 +162,7 @@ theme_name: NoteToMP MWeb Lark Bold Color
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, #ff6b6b, transparent) !important;

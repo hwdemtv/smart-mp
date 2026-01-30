@@ -4,7 +4,7 @@ theme_name: NoteToMP MWeb Typo
 
 ```css
 /* MWeb：增大字体，便于阅读 */
-.wewrite {
+.smart-mp {
   font-size: 16px;
   min-width: 200px;
   max-width: 760px;
@@ -46,70 +46,70 @@ theme_name: NoteToMP MWeb Typo
   /* Responsive images */
   /* 代码片断 */
 }
-.wewrite dl,
-.wewrite dt,
-.wewrite dd,
-.wewrite ul,
-.wewrite ol,
-.wewrite li,
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6,
-.wewrite pre,
-.wewrite code,
-.wewrite form,
-.wewrite fieldset,
-.wewrite legend,
-.wewrite input,
-.wewrite textarea,
-.wewrite p,
-.wewrite blockquote,
-.wewrite th,
-.wewrite td,
-.wewrite hr,
-.wewrite button,
-.wewrite article,
-.wewrite aside,
-.wewrite details,
-.wewrite figcaption,
-.wewrite figure,
-.wewrite footer,
-.wewrite header,
-.wewrite menu,
-.wewrite nav,
-.wewrite section {
+.smart-mp dl,
+.smart-mp dt,
+.smart-mp dd,
+.smart-mp ul,
+.smart-mp ol,
+.smart-mp li,
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6,
+.smart-mp pre,
+.smart-mp code,
+.smart-mp form,
+.smart-mp fieldset,
+.smart-mp legend,
+.smart-mp input,
+.smart-mp textarea,
+.smart-mp p,
+.smart-mp blockquote,
+.smart-mp th,
+.smart-mp td,
+.smart-mp hr,
+.smart-mp button,
+.smart-mp article,
+.smart-mp aside,
+.smart-mp details,
+.smart-mp figcaption,
+.smart-mp figure,
+.smart-mp footer,
+.smart-mp header,
+.smart-mp menu,
+.smart-mp nav,
+.smart-mp section {
   margin: 0;
   padding: 0;
 }
-.wewrite article,
-.wewrite aside,
-.wewrite details,
-.wewrite figcaption,
-.wewrite figure,
-.wewrite footer,
-.wewrite header,
-.wewrite menu,
-.wewrite nav,
-.wewrite section {
+.smart-mp article,
+.smart-mp aside,
+.smart-mp details,
+.smart-mp figcaption,
+.smart-mp figure,
+.smart-mp footer,
+.smart-mp header,
+.smart-mp menu,
+.smart-mp nav,
+.smart-mp section {
   display: block;
 }
-.wewrite audio,
-.wewrite canvas,
-.wewrite video {
+.smart-mp audio,
+.smart-mp canvas,
+.smart-mp video {
   display: inline-block;
 }
-.wewrite table {
+.smart-mp table {
   border-collapse: collapse;
   border-spacing: 0;
 }
-.wewrite fieldset,
-.wewrite img {
+.smart-mp fieldset,
+.smart-mp img {
   border: 0;
 }
-.wewrite blockquote {
+.smart-mp blockquote {
   position: relative;
   color: #999;
   font-weight: 400;
@@ -117,251 +117,251 @@ theme_name: NoteToMP MWeb Typo
   padding-left: 1em;
   margin: 1em 3em 1em 2em;
 }
-.wewrite acronym,
-.wewrite abbr {
+.smart-mp acronym,
+.smart-mp abbr {
   border-bottom: 1px dotted;
   font-variant: normal;
   text-decoration: none;
 }
-.wewrite abbr {
+.smart-mp abbr {
   cursor: help;
 }
-.wewrite del {
+.smart-mp del {
   text-decoration: line-through;
 }
-.wewrite address,
-.wewrite caption,
-.wewrite cite,
-.wewrite code,
-.wewrite dfn,
-.wewrite em,
-.wewrite th,
-.wewrite var {
+.smart-mp address,
+.smart-mp caption,
+.smart-mp cite,
+.smart-mp code,
+.smart-mp dfn,
+.smart-mp em,
+.smart-mp th,
+.smart-mp var {
   font-style: normal;
   font-weight: 400;
 }
-.wewrite ul,
-.wewrite ol {
+.smart-mp ul,
+.smart-mp ol {
   list-style: none;
 }
-.wewrite caption,
-.wewrite th {
+.smart-mp caption,
+.smart-mp th {
   text-align: left;
 }
-.wewrite sub,
-.wewrite sup {
+.smart-mp sub,
+.smart-mp sup {
   font-size: 75%;
   line-height: 0;
   position: relative;
 }
-.wewrite :root sub,
-.wewrite :root sup {
+.smart-mp :root sub,
+.smart-mp :root sup {
   vertical-align: baseline;
   /* for ie9 and other modern browsers */
 }
-.wewrite sup {
+.smart-mp sup {
   top: -0.5em;
 }
-.wewrite sub {
+.smart-mp sub {
   bottom: -0.25em;
 }
-.wewrite a {
+.smart-mp a {
   color: #1abc9c;
 }
-.wewrite a:hover {
+.smart-mp a:hover {
   text-decoration: underline;
 }
-.wewrite a {
+.smart-mp a {
   border-bottom: 1px solid #1abc9c;
 }
-.wewrite a:hover {
+.smart-mp a:hover {
   border-bottom-color: #555;
   color: #555;
   text-decoration: none;
 }
-.wewrite ins,
-.wewrite a {
+.smart-mp ins,
+.smart-mp a {
   text-decoration: none;
 }
-.wewrite u,
-.wewrite .typo-u {
+.smart-mp u,
+.smart-mp .typo-u {
   text-decoration: underline;
 }
-.wewrite mark {
+.smart-mp mark {
   background: #fffdd1;
   border-bottom: 1px solid #ffedce;
   padding: 2px;
   /* margin: 0 5px; */
 }
-.wewrite hr {
+.smart-mp hr {
   border: none;
   border-bottom: 1px solid #cfcfcf;
   margin-bottom: 0.8em;
   height: 10px;
 }
-.wewrite small,
-.wewrite .typo-small,
-.wewrite figcaption {
+.smart-mp small,
+.smart-mp .typo-small,
+.smart-mp figcaption {
   font-size: 0.9em;
   color: #888;
 }
-.wewrite strong,
-.wewrite b {
+.smart-mp strong,
+.smart-mp b {
   font-weight: bold;
   color: #000;
 }
-.wewrite [draggable] {
+.smart-mp [draggable] {
   cursor: move;
 }
-.wewrite .clearfix {
+.smart-mp .clearfix {
   zoom: 1;
 }
-.wewrite .textwrap,
-.wewrite .textwrap td,
-.wewrite .textwrap th {
+.smart-mp .textwrap,
+.smart-mp .textwrap td,
+.smart-mp .textwrap th {
   word-wrap: break-word;
   word-break: break-all;
 }
-.wewrite .textwrap-table {
+.smart-mp .textwrap-table {
   table-layout: fixed;
 }
-.wewrite .serif {
+.smart-mp .serif {
   font-family: Palatino, Optima, Georgia, serif;
 }
-.wewrite p,
-.wewrite pre,
-.wewrite ul,
-.wewrite ol,
-.wewrite dl,
-.wewrite form,
-.wewrite hr,
-.wewrite table,
-.wewrite .typo-p,
-.wewrite .typo-pre,
-.wewrite .typo-ul,
-.wewrite .typo-ol,
-.wewrite .typo-dl,
-.wewrite .typo-form,
-.wewrite .typo-hr,
-.wewrite .typo-table,
-.wewrite blockquote {
+.smart-mp p,
+.smart-mp pre,
+.smart-mp ul,
+.smart-mp ol,
+.smart-mp dl,
+.smart-mp form,
+.smart-mp hr,
+.smart-mp table,
+.smart-mp .typo-p,
+.smart-mp .typo-pre,
+.smart-mp .typo-ul,
+.smart-mp .typo-ol,
+.smart-mp .typo-dl,
+.smart-mp .typo-form,
+.smart-mp .typo-hr,
+.smart-mp .typo-table,
+.smart-mp blockquote {
   margin-bottom: 1.2em;
 }
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6 {
   font-family: PingFang SC, Verdana, Helvetica Neue, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans-serif;
   font-weight: lighter;
   color: #000;
   line-height: 1.35;
 }
-.wewrite h1,
-.wewrite h2,
-.wewrite h3,
-.wewrite h4,
-.wewrite h5,
-.wewrite h6,
-.wewrite .typo-h1,
-.wewrite .typo-h2,
-.wewrite .typo-h3,
-.wewrite .typo-h4,
-.wewrite .typo-h5,
-.wewrite .typo-h6 {
+.smart-mp h1,
+.smart-mp h2,
+.smart-mp h3,
+.smart-mp h4,
+.smart-mp h5,
+.smart-mp h6,
+.smart-mp .typo-h1,
+.smart-mp .typo-h2,
+.smart-mp .typo-h3,
+.smart-mp .typo-h4,
+.smart-mp .typo-h5,
+.smart-mp .typo-h6 {
   margin-top: 1.2em;
   margin-bottom: 0.6em;
   line-height: 1.35;
 }
-.wewrite h1,
-.wewrite .typo-h1 {
+.smart-mp h1,
+.smart-mp .typo-h1 {
   font-size: 2em;
 }
-.wewrite h2,
-.wewrite .typo-h2 {
+.smart-mp h2,
+.smart-mp .typo-h2 {
   font-size: 1.8em;
 }
-.wewrite h3,
-.wewrite .typo-h3 {
+.smart-mp h3,
+.smart-mp .typo-h3 {
   font-size: 1.6em;
 }
-.wewrite h4,
-.wewrite .typo-h4 {
+.smart-mp h4,
+.smart-mp .typo-h4 {
   font-size: 1.4em;
 }
-.wewrite h5,
-.wewrite h6,
-.wewrite .typo-h5,
-.wewrite .typo-h6 {
+.smart-mp h5,
+.smart-mp h6,
+.smart-mp .typo-h5,
+.smart-mp .typo-h6 {
   font-size: 1.2em;
 }
-.wewrite ul,
-.wewrite .typo-ul {
+.smart-mp ul,
+.smart-mp .typo-ul {
   margin-left: 1.3em;
   list-style: disc;
 }
-.wewrite ol,
-.wewrite .typo-ol {
+.smart-mp ol,
+.smart-mp .typo-ol {
   list-style: decimal;
   margin-left: 1.9em;
 }
-.wewrite li ul,
-.wewrite li ol,
-.wewrite .typo-ul ul,
-.wewrite .typo-ul ol,
-.wewrite .typo-ol ul,
-.wewrite .typo-ol ol {
+.smart-mp li ul,
+.smart-mp li ol,
+.smart-mp .typo-ul ul,
+.smart-mp .typo-ul ol,
+.smart-mp .typo-ol ul,
+.smart-mp .typo-ol ol {
   margin-bottom: 0.8em;
   margin-left: 2em;
 }
-.wewrite li ul,
-.wewrite .typo-ul ul,
-.wewrite .typo-ol ul {
+.smart-mp li ul,
+.smart-mp .typo-ul ul,
+.smart-mp .typo-ol ul {
   list-style: circle;
 }
-.wewrite table th,
-.wewrite table td,
-.wewrite .typo-table th,
-.wewrite .typo-table td,
-.wewrite table caption {
+.smart-mp table th,
+.smart-mp table td,
+.smart-mp .typo-table th,
+.smart-mp .typo-table td,
+.smart-mp table caption {
   border: 1px solid #ddd;
   padding: 0.5em 1em;
   color: #666;
 }
-.wewrite table th,
-.wewrite .typo-table th {
+.smart-mp table th,
+.smart-mp .typo-table th {
   background: #fbfbfb;
 }
-.wewrite table thead th,
-.wewrite .typo-table thead th {
+.smart-mp table thead th,
+.smart-mp .typo-table thead th {
   background: #f1f1f1;
 }
-.wewrite table caption {
+.smart-mp table caption {
   border-bottom: none;
 }
-.wewrite .typo-em,
-.wewrite em,
-.wewrite legend,
-.wewrite caption {
+.smart-mp .typo-em,
+.smart-mp em,
+.smart-mp legend,
+.smart-mp caption {
   color: #000;
   font-weight: inherit;
 }
-.wewrite img {
+.smart-mp img {
   max-width: 100%;
 }
-.wewrite .footnotes hr {
+.smart-mp .footnotes hr {
   margin-top: 4em;
   margin-bottom: 0.5em;
 }
-.wewrite pre,
-.wewrite code,
-.wewrite pre tt {
+.smart-mp pre,
+.smart-mp code,
+.smart-mp pre tt {
   font-family: Courier, "Courier New", monospace;
 }
 
 /* 代码块 */
-.wewrite .code-section {
+.smart-mp .code-section {
   display: flex;
   border: solid 1px #ddd;
   margin: 1.5em 0;
@@ -369,7 +369,7 @@ theme_name: NoteToMP MWeb Typo
   padding: 0.5em;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section pre {
+.smart-mp .code-section pre {
   margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -377,12 +377,12 @@ theme_name: NoteToMP MWeb Typo
   overflow-x: auto;
   padding: 0 0 0 1em;
 }
-.wewrite .code-section code {
+.smart-mp .code-section code {
   display: flex;
   text-wrap: nowrap;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-.wewrite .code-section ul {
+.smart-mp .code-section ul {
   margin: 0;
   padding: 0;
   margin-block-start: 0;
@@ -393,12 +393,12 @@ theme_name: NoteToMP MWeb Typo
   line-height: 26px;
   list-style-type: none;
 }
-.wewrite .code-section ul > li {
+.smart-mp .code-section ul > li {
   text-align: right;
 }
 
 /* 高亮文本样式 */
-.wewrite mark, .wewrite .highlight {
+.smart-mp mark, .smart-mp .highlight {
   background-color: #ffeb3b !important;
   color: #333 !important;
   padding: 0 2px !important;
@@ -406,7 +406,7 @@ theme_name: NoteToMP MWeb Typo
 }
 
 /* 分隔符样式 */
-.wewrite-hr-replacement {
+.smart-mp-hr-replacement {
   margin: 30px 0 !important;
   height: 2px !important;
   background: linear-gradient(to right, transparent, #333, transparent) !important;

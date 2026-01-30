@@ -21,7 +21,7 @@
 import { App, Notice, sanitizeHTMLToDom } from "obsidian";
 import PouchDB from 'pouchdb';
 import PouchDBFind from 'pouchdb-find';
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { areObjectsEqual } from "src/utils/utils";
 import { getErrorMessage } from "src/wechat-api/error-code";
 import { ConfirmDeleteModal } from "src/modals/confirm-delete-modal";
@@ -53,8 +53,8 @@ type ASSETS = {
 }
 const MAX_COUNT = 20;
 export const initAssetsDB = () => {
-	const db = new PouchDB('wewrite-wechat-assets');
-	return  db;
+    const db = new PouchDB('smart-mp-wechat-assets');
+    return db;
 }
 export class AssetsManager {
     app: App;
@@ -66,8 +66,8 @@ export class AssetsManager {
 
 
     private static instance: AssetsManager;
-    private plugin: WeWritePlugin;
-    constructor(app: App, plugin: WeWritePlugin) {
+    private plugin: SmartMPPlugin;
+    constructor(app: App, plugin: SmartMPPlugin) {
         this.app = app;
         this.plugin = plugin
         this.assets = new Map()
@@ -104,7 +104,7 @@ export class AssetsManager {
         this.assets.get('draft')?.push(item)
         this.scanDraftNewsUsedImages()
     }
-    public static getInstance(app: App, plugin: WeWritePlugin): AssetsManager {
+    public static getInstance(app: App, plugin: SmartMPPlugin): AssetsManager {
         if (!AssetsManager.instance) {
             AssetsManager.instance = new AssetsManager(app, plugin);
         }
@@ -118,7 +118,7 @@ export class AssetsManager {
     private isMediaItem(item: MaterialItem): item is MaterialMeidaItem {
         return "url" in item && "used" in item;
     }
-    
+
     public async loadMaterial(accountName: string) {
         const types: MediaType[] = [
             'draft', 'image', 'video', 'voice', 'news'
@@ -388,23 +388,28 @@ export class AssetsManager {
             return items;
         }
         while (true) {
-            const result = await this.db.find({
-                selector: {
-                    accountName: { $eq: accountName },
-                    type: { $eq: type }
-                },
-                limit: pageSize,
-                skip: offset
-            });
+            try {
+                const result = await this.db.find({
+                    selector: {
+                        accountName: { $eq: accountName },
+                        type: { $eq: type }
+                    },
+                    limit: pageSize,
+                    skip: offset
+                });
 
-            const docs = result.docs as Array<MaterialItem>;
-            if (docs.length === 0) {
+                const docs = result.docs as Array<MaterialItem>;
+                if (docs.length === 0) {
+                    break;
+                }
+
+                items.push(...docs);
+
+                offset += docs.length;
+            } catch (error) {
+                console.error('Error fetching material from DB:', error);
                 break;
             }
-
-            items.push(...docs);
-
-            offset += docs.length;
         }
         items.sort((a, b) => {
             return b.update_time - a.update_time

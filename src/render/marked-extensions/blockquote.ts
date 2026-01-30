@@ -5,7 +5,7 @@
  */
 
 import { MarkedExtension, Tokens } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 
 type CalloutInfo = { icon: string };
 
@@ -86,7 +86,7 @@ function getCalloutTitle(callout: string, text: string) {
 	return title;
 }
 
-export class BlockquoteRenderer extends WeWriteMarkedExtension {
+export class BlockquoteRenderer extends SmartMPMarkedExtension {
 	prepare(): Promise<void> {
 		if (!this.marked) {
 			console.error("marked is not ready");
@@ -120,7 +120,7 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 		}
 		const info = calloutIcons.get(calloutType) || calloutIcons.get("note");
 		const icon = info ? info.icon : "";
-		return `<section class="wewrite-callout" data-callout="${calloutType}"><div class="callout-title"><div class="callout-icon">${icon}</div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${body}</div></section>`;
+		return `<section class="smart-mp-callout" data-callout="${calloutType}"><div class="callout-title"><div class="callout-icon">${icon}</div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${body}</div></section>`;
 	}
 
 	markedExtension(): MarkedExtension {

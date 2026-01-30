@@ -20,7 +20,7 @@
 	--del-text-decoration-color: var(--article-text-color);
 }
 
-.wewrite del {
+.smart-mp del {
 	font-family: var(--del-font-family);
 	font-weight: var(--del-font-weight);
 	font-size: var(--del-font-size);

@@ -12,7 +12,7 @@
 import matter from "gray-matter";
 import { Marked, Tokens, RendererObject, RendererThis } from "marked";
 import { Component, debounce, sanitizeHTMLToDom, TFile } from "obsidian";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { WechatClient } from "../wechat-api/wechat-client";
 import { BlockquoteRenderer } from "./marked-extensions/blockquote";
 import { CodeRenderer } from "./marked-extensions/code";
@@ -21,7 +21,7 @@ import { Embed } from "./marked-extensions/embed";
 import { ObsidianMarkdownRenderer } from "./markdown-render";
 import {
 	PreviewRender,
-	WeWriteMarkedExtension,
+	SmartMPMarkedExtension,
 } from "./marked-extensions/extension";
 import { Heading } from "./marked-extensions/heading";
 import { IconizeRender } from "./marked-extensions/iconize";
@@ -41,9 +41,9 @@ const markedOptiones = {
 };
 
 export class WechatRender {
-	plugin: WeWritePlugin;
+	plugin: SmartMPPlugin;
 	client: WechatClient;
-	extensions: WeWriteMarkedExtension[] = [];
+	extensions: SmartMPMarkedExtension[] = [];
 	private static instance: WechatRender;
 	marked: Marked;
 	previewRender: PreviewRender;
@@ -78,7 +78,7 @@ export class WechatRender {
 	}
 
 
-	private constructor(plugin: WeWritePlugin, previewRender: PreviewRender) {
+	private constructor(plugin: SmartMPPlugin, previewRender: PreviewRender) {
 		this.plugin = plugin;
 		this.previewRender = previewRender;
 		this.client = WechatClient.getInstance(plugin);
@@ -97,7 +97,7 @@ export class WechatRender {
 					token.ordered && token.start !== 1
 						? ` start="${token.start}"`
 						: '';
-				return `<${type}${startatt} class="wewrite-list list-paddingleft-1">${body}</${type}>`;
+				return `<${type}${startatt} class="smart-mp-list list-paddingleft-1">${body}</${type}>`;
 			},
 			listitem(this: RendererThis, token: Tokens.ListItem) {
 				return renderListItem(this.parser, token);
@@ -106,13 +106,13 @@ export class WechatRender {
 		this.marked.use({ renderer });
 		this.useExtensions();
 	}
-	static getInstance(plugin: WeWritePlugin, previewRender: PreviewRender) {
+	static getInstance(plugin: SmartMPPlugin, previewRender: PreviewRender) {
 		if (!WechatRender.instance) {
 			WechatRender.instance = new WechatRender(plugin, previewRender);
 		}
 		return this.instance;
 	}
-	addExtension(extension: WeWriteMarkedExtension) {
+	addExtension(extension: SmartMPMarkedExtension) {
 		this.extensions.push(extension);
 		this.marked.use(extension.markedExtension());
 	}

@@ -5,7 +5,7 @@
 import { $t } from 'src/lang/i18n';
 import { fetchImageBlob, serializeElement } from 'src/utils/utils';
 import { WechatClient } from './../wechat-api/wechat-client';
-import WeWritePlugin from 'src/main';
+import SmartMPPlugin from 'src/main';
 function imageFileName(mime: string) {
     const type = mime.split('/')[1]
     return `image-${new Date().getTime()}.${type}`

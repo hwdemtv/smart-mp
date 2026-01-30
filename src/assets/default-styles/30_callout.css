@@ -4,7 +4,7 @@
     --callout-background-color: var(--callout-color, var(--background-secondary, rgba(8, 109, 221, 0.1)));
     --callout-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     --callout-border-color: rgba(8, 109, 221, 0.25);
-    --callout-border-radius: var(--wewrite-border-radius, 4px);
+    --callout-border-radius: var(--smart-mp-border-radius, 4px);
     --callout-border-width: 0px;
     --callout-icon-color: rgba(8, 109, 221, 0.5);
     --callout-icon-size: 1.25em;
@@ -12,7 +12,7 @@
     --cursor: pointer;
 }
 
-.wewrite-callout {
+.smart-mp-callout {
     overflow: hidden;
     border-style: solid;
     border-color: var(--callout-border-color, rgba(8, 109, 221, 0.25));
@@ -23,35 +23,35 @@
     padding: 12px 12px 12px 24px;
 }
 
-.wewrite-callout:not(.admonition).drop-shadow {
+.smart-mp-callout:not(.admonition).drop-shadow {
     box-shadow: var(--callout-box-shadow, 0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
-.wewrite-callout:not(.admonition) .no-title {
+.smart-mp-callout:not(.admonition) .no-title {
     display: none;
 }
 
 
 @supports selector(:has(*)) {
 
-    :has(.wewrite-callout .callout-title .callout-title-inner:dir(rtl)),
-    .wewrite-callout:has(> .callout-title .callout-title-inner:dir(rtl)) {
+    :has(.smart-mp-callout .callout-title .callout-title-inner:dir(rtl)),
+    .smart-mp-callout:has(> .callout-title .callout-title-inner:dir(rtl)) {
         direction: rtl;
     }
 
-    :has(.wewrite-callout .callout-title .callout-title-inner:dir(rtl))>.callout-title,
-    .wewrite-callout:has(> .callout-title .callout-title-inner:dir(rtl))>.callout-title {
+    :has(.smart-mp-callout .callout-title .callout-title-inner:dir(rtl))>.callout-title,
+    .smart-mp-callout:has(> .callout-title .callout-title-inner:dir(rtl))>.callout-title {
         direction: rtl;
         --direction: -1;
     }
 
-    :has(.wewrite-callout .callout-title .callout-title-inner:dir(rtl))>.callout-title .callout-icon svg.svg-icon,
-    .wewrite-callout:has(> .callout-title .callout-title-inner:dir(rtl))>.callout-title .callout-icon svg.svg-icon {
+    :has(.smart-mp-callout .callout-title .callout-title-inner:dir(rtl))>.callout-title .callout-icon svg.svg-icon,
+    .smart-mp-callout:has(> .callout-title .callout-title-inner:dir(rtl))>.callout-title .callout-icon svg.svg-icon {
         transform: scale(-1, 1);
     }
 }
 
-.wewrite-callout {
+.smart-mp-callout {
     background-color: var(--callout-background-color, rgba(8, 109, 221, 0.1));
     box-shadow: var(--callout-box-shadow, 0 4px 8px rgba(0, 0, 0, 0.2));
 }
@@ -61,77 +61,77 @@
     height: 1em;
 }
 
-.wewrite-callout[data-callout="summary"] {
+.smart-mp-callout[data-callout="summary"] {
     background-color: rgba(0, 191, 188, 0.1);
 }
 
-.wewrite-callout[data-callout="abstract"],
-.wewrite-callout[data-callout="tldr"] {
+.smart-mp-callout[data-callout="abstract"],
+.smart-mp-callout[data-callout="tldr"] {
     background-color: rgba(0, 176, 255, 0.1);
 }
 
-.wewrite-callout[data-callout="info"] {
+.smart-mp-callout[data-callout="info"] {
     background-color: rgba(8, 109, 221, 0.1);
 }
 
-.wewrite-callout[data-callout="todo"] {
+.smart-mp-callout[data-callout="todo"] {
     background-color: rgba(8, 109, 221, 0.1);
 }
 
-.wewrite-callout[data-callout="important"] {
+.smart-mp-callout[data-callout="important"] {
     background-color: rgba(8, 191, 188, 0.1);
 }
 
-.wewrite-callout[data-callout="tip"],
-.wewrite-callout[data-callout="hint"] {
+.smart-mp-callout[data-callout="tip"],
+.smart-mp-callout[data-callout="hint"] {
     background-color: rgba(8, 191, 188, 0.1);
 }
 
-.wewrite-callout[data-callout="success"],
-.wewrite-callout[data-callout="check"],
-.wewrite-callout[data-callout="done"] {
+.smart-mp-callout[data-callout="success"],
+.smart-mp-callout[data-callout="check"],
+.smart-mp-callout[data-callout="done"] {
     background-color: rgba(8, 185, 78, 0.1);
 
 }
 
-.wewrite-callout[data-callout="question"],
-.wewrite-callout[data-callout="help"],
-.wewrite-callout[data-callout="faq"] {
+.smart-mp-callout[data-callout="question"],
+.smart-mp-callout[data-callout="help"],
+.smart-mp-callout[data-callout="faq"] {
     background-color: rgba(236, 117, 0, 0.1);
 }
 
-.wewrite-callout[data-callout="warning"],
-.wewrite-callout[data-callout="caution"],
-.wewrite-callout[data-callout="attention"] {
+.smart-mp-callout[data-callout="warning"],
+.smart-mp-callout[data-callout="caution"],
+.smart-mp-callout[data-callout="attention"] {
     background-color: rgba(236, 117, 0, 0.1);
 }
 
-.wewrite-callout[data-callout="failure"],
-.wewrite-callout[data-callout="fail"],
-.wewrite-callout[data-callout="missing"] {
+.smart-mp-callout[data-callout="failure"],
+.smart-mp-callout[data-callout="fail"],
+.smart-mp-callout[data-callout="missing"] {
     background-color: rgba(233, 49, 71, 0.1);
 }
 
-.wewrite-callout[data-callout="danger"],
-.wewrite-callout[data-callout="error"] {
+.smart-mp-callout[data-callout="danger"],
+.smart-mp-callout[data-callout="error"] {
     background-color: rgba(233, 49, 71, 0.1);
 }
 
-.wewrite-callout[data-callout="bug"] {
+.smart-mp-callout[data-callout="bug"] {
     background-color: rgba(233, 49, 71, 0.1);
 }
 
-.wewrite-callout[data-callout="example"] {
+.smart-mp-callout[data-callout="example"] {
     background-color: rgba(120, 82, 238, 0.1);
 }
 
-.wewrite-callout[data-callout="quote"],
-.wewrite-callout[data-callout="cite"] {
+.smart-mp-callout[data-callout="quote"],
+.smart-mp-callout[data-callout="cite"] {
     background-color: rgba(158, 158, 158, 0.1);
 }
 
 /* title start */
-.wewrite-callout.is-collapsible {
+.smart-mp-callout.is-collapsible {
     cursor: var(--cursor);
 }
 
@@ -147,72 +147,72 @@
 }
 
 
-.wewrite-callout[data-callout="summary"] .callout-title {
+.smart-mp-callout[data-callout="summary"] .callout-title {
     color: rgb(0, 191, 188);
 }
 
-.wewrite-callout[data-callout="abstract"] .callout-title,
-.wewrite-callout[data-callout="tldr"] .callout-title {
+.smart-mp-callout[data-callout="abstract"] .callout-title,
+.smart-mp-callout[data-callout="tldr"] .callout-title {
     color: rgb(0, 176, 255);
 }
 
-.wewrite-callout[data-callout="info"] .callout-title {
+.smart-mp-callout[data-callout="info"] .callout-title {
     color: rgb(8, 109, 221);
 }
 
-.wewrite-callout[data-callout="todo"] .callout-title {
+.smart-mp-callout[data-callout="todo"] .callout-title {
     color: rgb(8, 109, 221);
 }
 
-.wewrite-callout[data-callout="important"] .callout-title {
+.smart-mp-callout[data-callout="important"] .callout-title {
     color: rgb(8, 191, 188);
 }
 
-.wewrite-callout[data-callout="tip"] .callout-title,
-.wewrite-callout[data-callout="hint"] .callout-title {
+.smart-mp-callout[data-callout="tip"] .callout-title,
+.smart-mp-callout[data-callout="hint"] .callout-title {
     color: rgb(8, 191, 188);
 }
 
-.wewrite-callout[data-callout="success"] .callout-title,
-.wewrite-callout[data-callout="check"] .callout-title,
-.wewrite-callout[data-callout="done"] .callout-title {
+.smart-mp-callout[data-callout="success"] .callout-title,
+.smart-mp-callout[data-callout="check"] .callout-title,
+.smart-mp-callout[data-callout="done"] .callout-title {
     color: rgb(8, 185, 78);
 
 }
 
-.wewrite-callout[data-callout="question"] .callout-title,
-.wewrite-callout[data-callout="help"] .callout-title,
-.wewrite-callout[data-callout="faq"] .callout-title {
+.smart-mp-callout[data-callout="question"] .callout-title,
+.smart-mp-callout[data-callout="help"] .callout-title,
+.smart-mp-callout[data-callout="faq"] .callout-title {
     color: rgb(236, 117, 0);
 }
 
-.wewrite-callout[data-callout="warning"] .callout-title,
-.wewrite-callout[data-callout="caution"] .callout-title,
-.wewrite-callout[data-callout="attention"] .callout-title {
+.smart-mp-callout[data-callout="warning"] .callout-title,
+.smart-mp-callout[data-callout="caution"] .callout-title,
+.smart-mp-callout[data-callout="attention"] .callout-title {
     color: rgb(236, 117, 0);
 }
 
-.wewrite-callout[data-callout="failure"] .callout-title,
-.wewrite-callout[data-callout="fail"] .callout-title,
-.wewrite-callout[data-callout="missing"] .callout-title {
+.smart-mp-callout[data-callout="failure"] .callout-title,
+.smart-mp-callout[data-callout="fail"] .callout-title,
+.smart-mp-callout[data-callout="missing"] .callout-title {
     color: rgb(233, 49, 71);
 }
 
-.wewrite-callout[data-callout="danger"] .callout-title,
-.wewrite-callout[data-callout="error"] .callout-title {
+.smart-mp-callout[data-callout="danger"] .callout-title,
+.smart-mp-callout[data-callout="error"] .callout-title {
     color: rgb(233, 49, 71);
 }
 
-.wewrite-callout[data-callout="bug"] .callout-title {
+.smart-mp-callout[data-callout="bug"] .callout-title {
     color: rgb(233, 49, 71);
 }
 
-.wewrite-callout[data-callout="example"] .callout-title {
+.smart-mp-callout[data-callout="example"] .callout-title {
     color: rgb(120, 82, 238);
 }
 
-.wewrite-callout[data-callout="quote"] .callout-title,
-.wewrite-callout[data-callout="cite"] .callout-title {
+.smart-mp-callout[data-callout="quote"] .callout-title,
+.smart-mp-callout[data-callout="cite"] .callout-title {
     color: rgb(158, 158, 158);
 }
 
@@ -223,7 +223,7 @@
     background-color: transparent;
 }
 
-.callout-content .wewrite-callout {
+.callout-content .smart-mp-callout {
     margin-top: 20px;
 }
 

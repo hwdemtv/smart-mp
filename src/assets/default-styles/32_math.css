@@ -1,16 +1,16 @@
-.wewrite .inline-math{
+.smart-mp .inline-math{
     display: inline-block;
     padding: 0 0.5rem;
 }
 
-.wewrite .block-math {
+.smart-mp .block-math {
     display: flex;
     width: 100%;
     overflow: auto;
     padding: 0.5rem;
 }
 
-.wewrite .block-math svg {
+.smart-mp .block-math svg {
     width: fit-content;
     margin: auto;
 }

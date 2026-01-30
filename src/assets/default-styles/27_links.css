@@ -1,22 +1,22 @@
 :root{
-	--link-color: var(--wewrite-secondary, rgb(0, 102, 204));
-	--link-hover-color: var(--wewrite-primary-light, rgb(0, 128, 255));
-	--link-active-color: var(--wewrite-primary, rgb(0, 128, 255));
+	--link-color: var(--smart-mp-secondary, rgb(0, 102, 204));
+	--link-hover-color: var(--smart-mp-primary-light, rgb(0, 128, 255));
+	--link-active-color: var(--smart-mp-primary, rgb(0, 128, 255));
 }
 
 
-.wewrite a {
+.smart-mp a {
 	font-weight: 500;
 	text-decoration: none;
 	color: var(--link-color, rgb(0, 102, 204));
 }
 
-.wewrite a:hover,
-.wewrite a:active {
+.smart-mp a:hover,
+.smart-mp a:active {
 	border-bottom: 1.5px solid var(--link-color, rgb(0, 102, 204));
 	color: var(--link-hover-color, rgb(0, 128, 255));
 }
 
-.wewrite a:before {
+.smart-mp a:before {
 	content: "⇲";
 }

@@ -9,14 +9,14 @@
 	--article-word-break: break-word;
 	--article-letter-space: 0px;
 	--article-text-font-size: 15px;
-	--article-text-color: var(--wewrite-text);
-	--article-line-height: var(--wewrite-line-height);
+	--article-text-color: var(--smart-mp-text);
+	--article-line-height: var(--smart-mp-line-height);
 	--article-text-align: left;
 	--article-text-indent: 0;
 	--article-font-style: normal;
 }
 
-.wewrite {
+.smart-mp {
 	font-family: var(--article-font-family);
 	font-weight: var(--article-font-weight);
 	word-break: var(--article-word-break);

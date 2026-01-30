@@ -15,8 +15,8 @@ h6  标题
 	--h6-text-decoration-thickness: var(--heading-text-decoration-thickness);
 	--h6-text-decoration-color: var(--heading-text-decoration-color);
 	--h6-margin: var(--heading-margin);
-	/* --h6-bg: var(--wewrite-primary); */
-	--h6-bg: var(--wewrite-bg);
+	/* --h6-bg: var(--smart-mp-primary); */
+	--h6-bg: var(--smart-mp-bg);
 	--h6-border-bottom-width: var(--heading-border-bottom-width);
 	/* --h6-border-bottom-color: var(--h6-bg); */
 	--h6-border-bottom-color: var(--heading-border-bottom-color);
@@ -28,7 +28,7 @@ h6  标题
 	--h6-text-align: var(--h6-text-align);
 	/*  标题主体 */
 	--h6-outbox-display: block;
-	--h6-outbox-radius: var(--wewrite-border-radius);
+	--h6-outbox-radius: var(--smart-mp-border-radius);
 	--h6-outbox-padding: var(--heading-padding);
 	/*  标题叶子 */
 	--h6-leaf-display: block;
@@ -47,7 +47,7 @@ h6  标题
 	--h6-display: flex;
 }
 
-.wewrite h6 {
+.smart-mp h6 {
 	font-family: var(--h6-font-family);
 	font-weight: var(--h6-font-weight);
 	font-size: var(--h6-font-size);
@@ -67,7 +67,7 @@ h6  标题
 }
 
 
-.wewrite h6 .wewrite-heading-prefix {
+.smart-mp h6 .smart-mp-heading-prefix {
 	display: var(--h6-prefix-display);
 	color: var(--h6-prefix-color);
 	font-style: var(--h6-font-style);
@@ -75,7 +75,7 @@ h6  标题
 
 }
 
-.wewrite h6 .wewrite-heading-outbox {
+.smart-mp h6 .smart-mp-heading-outbox {
 	border-top-right-radius: var(--h6-outbox-radius);
 	border-top-left-radius: var(--h6-outbox-radius);
 	background-color: var(--h6-bg);
@@ -83,7 +83,7 @@ h6  标题
 	display: block;
 }
 
-.wewrite h6 .wewrite-heading-leaf {
+.smart-mp h6 .smart-mp-heading-leaf {
 	padding-left: var(--h6-leaf-padding);
 	padding-right: var(--h6-leaf-padding);
 	font-weight: var(--h6-font-weight);
@@ -91,7 +91,7 @@ h6  标题
 	color: var(--h6-leaf-color)
 }
 
-.wewrite h6 .wewrite-heading-tail {
+.smart-mp h6 .smart-mp-heading-tail {
 	box-sizing: border-box;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizelegibility;

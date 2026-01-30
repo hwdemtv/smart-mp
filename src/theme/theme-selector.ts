@@ -2,16 +2,16 @@
  * Theme Selector
  */
 import { DropdownComponent, TFile } from "obsidian";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { ThemeManager } from "./theme-manager";
 import { $t } from "src/lang/i18n";
 
 export class ThemeSelector {
-    private plugin: WeWritePlugin;
+    private plugin: SmartMPPlugin;
     private _themeDropdown: DropdownComponent;
     private _themeManager: ThemeManager
 
-    constructor(plugin: WeWritePlugin) {
+    constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
         this._themeManager = ThemeManager.getInstance(plugin)
 		this.plugin.messageService.registerListener('custom-theme-folder-changed', () => {

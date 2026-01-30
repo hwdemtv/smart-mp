@@ -1,5 +1,5 @@
 /* summary */
-.wewrite details {
+.smart-mp details {
 	border: none;
 	outline: none;
 	/* border-left: 4px solid #3eaf7c; */
@@ -8,13 +8,13 @@
 	background-color: var(--wechat-collapse-bg-color, #f5f5f5);
 }
 
-.wewrite details summary {
+.smart-mp details summary {
 	cursor: pointer;
 	border: none;
 	outline: none;
 	margin: 0px -17px;
 }
 
-.wewrite details summary::-webkit-details-marker {
+.smart-mp details summary::-webkit-details-marker {
 	color: var(--wechat-collapse-bg-color, #f5f5f5);
 }

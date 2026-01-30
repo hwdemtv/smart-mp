@@ -8,7 +8,7 @@
 	--article-min-width: 200px;
 	--article-padding: 0px;
 	--article-margin: 0px;
-	--article-background-color: var(--wewrite-bg);
+	--article-background-color: var(--smart-mp-bg);
 	--article-background-image: none;
 	--article-background-repeat: repeat;
 	--article-background-size: auto;
@@ -16,7 +16,7 @@
 	
 }
 
-.wewrite {
+.smart-mp {
 	max-width: var(--article-max-width);
 	min-width: var(--article-min-width);
 	padding: var(--article-padding);

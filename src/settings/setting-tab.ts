@@ -9,7 +9,7 @@ import {
 	PluginSettingTab,
 	Setting,
 } from "obsidian";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { ThemeManager } from "src/theme/theme-manager";
 import { $t } from "src/lang/i18n";
 import { FolderSuggest } from "src/utils/folder-suggest";
@@ -18,9 +18,9 @@ import {
 	AIChatAccountInfo,
 	AITaskAccountInfo,
 	WeChatAccountInfo,
-	WeWriteSetting,
-} from "./wewrite-setting";
-import { PreviewPanel, VIEW_TYPE_WEWRITE_PREVIEW } from "../views/previewer";
+	SmartMPSetting,
+} from "./smart-mp-setting";
+import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
 
 interface FileSystemFileHandle {
 	createWritable(): Promise<FileSystemWritableFileStream>;
@@ -59,8 +59,8 @@ interface FilePickerAcceptType {
 	accept: Record<string, string[]>;
 }
 
-export class WeWriteSettingTab extends PluginSettingTab {
-	private plugin: WeWritePlugin;
+export class SmartMPSettingTab extends PluginSettingTab {
+	private plugin: SmartMPPlugin;
 	// appIdEl: Setting;
 	// appSecretEl: Setting;
 	mpAccountContainer: HTMLElement;
@@ -69,27 +69,38 @@ export class WeWriteSettingTab extends PluginSettingTab {
 	mpAccountDropdown: DropdownComponent;
 	aiChatAccountDropdown: DropdownComponent;
 	aiDrawAccountDropdown: DropdownComponent;
-	constructor(app: App, plugin: WeWritePlugin) {
+	constructor(app: App, plugin: SmartMPPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	activeTab: 'general' | 'llm' = 'general';
+	private expandedSections: Set<string> = new Set();
+	private initialAssistantPrompts: Record<string, string> = {};
+	private isFirstDisplay = true;
 
 	display(): void {
 		const { containerEl } = this;
 
+		if (this.isFirstDisplay) {
+			this.initialAssistantPrompts = {};
+			this.plugin.settings.customAssistantList?.forEach(a => {
+				this.initialAssistantPrompts[a.id] = a.prompt;
+			});
+			this.isFirstDisplay = false;
+		}
+
 		containerEl.empty();
 
 		// Tab Navigation
-		const navContainer = containerEl.createDiv({ cls: 'wewrite-settings-nav' });
+		const navContainer = containerEl.createDiv({ cls: 'smart-mp-settings-nav' });
 		navContainer.style.display = 'flex';
 		navContainer.style.marginBottom = '20px';
 		navContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
 		navContainer.style.paddingBottom = '10px';
 		navContainer.style.gap = '20px';
 
-		const generalTab = navContainer.createEl('div', { text: '通用 / 排版', cls: 'wewrite-nav-tab' });
+		const generalTab = navContainer.createEl('div', { text: $t("render.general-tab"), cls: 'smart-mp-nav-tab' });
 		generalTab.style.cursor = 'pointer';
 		generalTab.style.fontWeight = this.activeTab === 'general' ? 'bold' : 'normal';
 		generalTab.style.color = this.activeTab === 'general' ? 'var(--text-normal)' : 'var(--text-muted)';
@@ -100,7 +111,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			this.display();
 		});
 
-		const llmTab = navContainer.createEl('div', { text: 'AI / 大模型', cls: 'wewrite-nav-tab' });
+		const llmTab = navContainer.createEl('div', { text: $t("render.llm-tab"), cls: 'smart-mp-nav-tab' });
 		llmTab.style.cursor = 'pointer';
 		llmTab.style.fontWeight = this.activeTab === 'llm' ? 'bold' : 'normal';
 		llmTab.style.color = this.activeTab === 'llm' ? 'var(--text-normal)' : 'var(--text-muted)';
@@ -118,10 +129,10 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 			// Import/Export also moved here for now
 			new Setting(containerEl)
-				.setName($t("settings.import-export-wewrite-account"))
+				.setName($t("settings.import-export-smart-mp-account"))
 				.setHeading()
 				.setDesc($t("settings.import-or-export-your-account-info-for-b"))
-				.setClass("wewrite-import-export-config")
+				.setClass("smart-mp-import-export-config")
 				.addExtraButton((button) => {
 					button
 						.setIcon("upload")
@@ -141,6 +152,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		} else {
 			this.createAiChatSettings(containerEl);
 			this.createAiDrawSettings(containerEl);
+			this.createCustomPromptSettings(containerEl);
 		}
 	}
 	async exportSettings() {
@@ -150,7 +162,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 			// Use File System Access API for better control
 			const fileHandle = await window.showSaveFilePicker({
-				suggestedName: `wewrite-settings-${new Date()
+				suggestedName: `smart-mp-settings-${new Date()
 					.toISOString()
 					.slice(0, 10)}.json`,
 				types: [
@@ -197,7 +209,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					(() => {
 						try {
 							const content = loadEvent.target?.result as string;
-							let importedData: WeWriteSetting;
+							let importedData: SmartMPSetting;
 
 							// Validate JSON structure
 							try {
@@ -253,9 +265,9 @@ export class WeWriteSettingTab extends PluginSettingTab {
 	}
 
 	creatCSSStyleSetting(container: HTMLElement) {
-		const frame = container.createDiv({ cls: "wewrite-setting-frame" });
+		const frame = this.createCollapsibleFrame(container, $t("settings.custom-themes"));
 
-		new Setting(frame).setName($t("settings.custom-themes")).setHeading();
+		// new Setting(frame).setName($t("settings.custom-themes")).setHeading();
 
 		new Setting(frame)
 			.setName($t("settings.custom-themes-folder"))
@@ -297,7 +309,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 
 						// Rebuild debounce for active previewer
-						const leaves = this.app.workspace.getLeavesOfType("wewrite-article-preview");
+						const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
 						for (const leaf of leaves) {
 							if (leaf.view instanceof PreviewPanel) {
 								(leaf.view as any).rebuildDebounce();
@@ -307,8 +319,8 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(frame)
-			.setName("显示图片说明")
-			.setDesc("自动将图片的 Alt 文本转换为下方的说明文字")
+			.setName($t("settings.show-image-captions"))
+			.setDesc($t("settings.show-image-captions-desc"))
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.showImageCaptions || false)
@@ -317,7 +329,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 
 						// Rebuild debounce for active previewer
-						const leaves = this.app.workspace.getLeavesOfType("wewrite-article-preview");
+						const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
 						for (const leaf of leaves) {
 							if (leaf.view instanceof PreviewPanel) {
 								(leaf.view as any).renderDraft();
@@ -377,7 +389,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName($t("settings.account-name"))
 			.setDesc($t("settings.account-name-for-your-wechat-official"))
-			.setClass("wewrite-setting-input")
+			.setClass("smart-mp-setting-input")
 			.addText((text) =>
 				text.setValue(account.accountName).onChange((value) => {
 					account.accountName = value;
@@ -390,7 +402,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName($t("settings.app-id"))
 			.setDesc($t("settings.appid-for-your-wechat-official-account"))
-			.setClass("wewrite-setting-input")
+			.setClass("smart-mp-setting-input")
 			.addText((text) =>
 				text.setValue(account.appId).onChange((value) => {
 					account.appId = value;
@@ -402,7 +414,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName($t("settings.app-secret"))
 			.setDesc($t("settings.app-secret-for-your-wechat-official"))
-			.setClass("wewrite-setting-input")
+			.setClass("smart-mp-setting-input")
 			.addText((text) =>
 				text.setValue(account.appSecret).onChange((value) => {
 					account.appSecret = value;
@@ -484,15 +496,15 @@ export class WeWriteSettingTab extends PluginSettingTab {
 	}
 
 	createAiChatSettings(container: HTMLElement) {
-		const frame = container.createDiv({ cls: "wewrite-setting-frame" });
-		new Setting(frame).setName($t("settings.text-llm")).setHeading();
+		const frame = this.createCollapsibleFrame(container, $t("settings.text-llm"));
+		// new Setting(frame).setName($t("settings.text-llm")).setHeading();
 
 		const selectAiChatSetting = new Setting(frame)
 			.setName($t("settings.select-account"))
 			.setDesc($t("settings.choose-the-llm-account-to-modify"));
 
 		this.aiChatAccountContainer = frame.createDiv({
-			cls: "wewrite-account-info-content",
+			cls: "smart-mp-account-info-content",
 		});
 
 		selectAiChatSetting.addDropdown((dropdown) => {
@@ -579,6 +591,20 @@ export class WeWriteSettingTab extends PluginSettingTab {
 					account.model = value;
 					void this.plugin.saveSettings();
 				})
+			);
+
+		new Setting(container)
+			.setName($t("settings.llm-system-prompt"))
+			.setDesc($t("settings.llm-system-prompt-desc"))
+			.setClass("smart-mp-setting-textarea")
+			.addTextArea((text) =>
+				text
+					.setPlaceholder("你是一个得力的助手...")
+					.setValue(account.systemPrompt || "")
+					.onChange((value) => {
+						account.systemPrompt = value;
+						void this.plugin.saveSettings();
+					})
 			);
 
 		new Setting(container)
@@ -704,15 +730,15 @@ export class WeWriteSettingTab extends PluginSettingTab {
 	}
 
 	createAiDrawSettings(container: HTMLElement) {
-		const frame = container.createDiv({ cls: "wewrite-setting-frame" });
-		new Setting(frame).setName($t("settings.image-llm")).setHeading();
+		const frame = this.createCollapsibleFrame(container, $t("settings.image-llm"));
+		// new Setting(frame).setName($t("settings.image-llm")).setHeading();
 
 		const selectAIDrawSetting = new Setting(frame)
 			.setName($t("settings.select-account"))
 			.setDesc($t("settings.choose-the-llm-account-to-modify"));
 
 		this.aiDrawAccountContainer = frame.createDiv({
-			cls: "wewrite-account-info-content",
+			cls: "smart-mp-account-info-content",
 		});
 
 		selectAIDrawSetting.addDropdown((dropdown) => {
@@ -820,6 +846,20 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(container)
+			.setName($t("settings.llm-system-prompt"))
+			.setDesc($t("settings.llm-system-prompt-desc"))
+			.setClass("smart-mp-setting-textarea")
+			.addTextArea((text) =>
+				text
+					.setPlaceholder("你是一个优秀的绘图提示词专家...")
+					.setValue(account.systemPrompt || "")
+					.onChange((value) => {
+						account.systemPrompt = value;
+						void this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(container)
 			.setName($t("settings.delete-account"))
 			.setClass("danger-extra-button")
 			.addExtraButton((button) => {
@@ -848,9 +888,293 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			});
 	}
 
+	private ensureDefaultAssistants() {
+		if (!this.plugin.settings.customAssistantList) {
+			this.plugin.settings.customAssistantList = [];
+		}
+
+		const defaults = [
+			{ id: "polish", name: $t("settings.assistant.polish") },
+			{ id: "proofread", name: $t("settings.assistant.proofread") },
+			{ id: "synonyms", name: $t("settings.assistant.synonyms") },
+			{ id: "translate", name: $t("settings.assistant.translate") },
+			{ id: "mermaid", name: $t("settings.assistant.mermaid") },
+			{ id: "latex", name: $t("settings.assistant.latex") },
+			{ id: "summary", name: $t("settings.assistant.summary") },
+			{ id: "text-to-image", name: $t("main.text-to-image") },
+		];
+
+		defaults.forEach((def) => {
+			const exists = this.plugin.settings.customAssistantList?.some(a => a.id === def.id);
+			if (!exists) {
+				this.plugin.settings.customAssistantList?.push({
+					id: def.id,
+					name: def.name,
+					prompt: this.plugin.settings.customPrompts?.[def.id] || "",
+					enabled: true,
+					isDefault: true
+				});
+			}
+		});
+	}
+
+	createCustomPromptSettings(container: HTMLElement) {
+		this.ensureDefaultAssistants();
+		const frame = this.createCollapsibleFrame(container, $t("settings.assistant-prompts-customization"), false);
+
+		const header = new Setting(frame)
+			.setName($t("settings.custom-instruction-templates"))
+			.setDesc($t("settings.custom-prompt-desc"))
+			.setHeading();
+
+		header.addButton((button) => {
+			button
+				.setButtonText($t("settings.restore-defaults"))
+				.setWarning()
+				.onClick(() => {
+					// 弹出确认对话框
+					if (confirm($t("settings.confirm-restore-defaults"))) {
+						this.plugin.settings.customPrompts = {};
+						// Also reset default prompts in the list
+						this.plugin.settings.customAssistantList?.forEach(a => {
+							if (a.isDefault) {
+								a.prompt = "";
+							}
+						});
+						void this.plugin.saveSettings();
+						this.display();
+					}
+				});
+		});
+
+		this.createDynamicAssistantSettings(frame);
+	}
+
+	createDynamicAssistantSettings(container: HTMLElement) {
+		const managementFrame = this.createCollapsibleFrame(container, $t("settings.assistant.dynamic-assistants"), true, 'ww-sub-sections');
+
+		const header = new Setting(managementFrame)
+			.setHeading();
+
+		header.addButton((button) => {
+			button
+				.setButtonText($t("settings.assistant.add-assistant"))
+				.setCta()
+				.onClick(() => {
+					if (!this.plugin.settings.customAssistantList) {
+						this.plugin.settings.customAssistantList = [];
+					}
+					this.plugin.settings.customAssistantList.push({
+						id: Date.now().toString(),
+						name: "New Assistant",
+						prompt: "指令模板，使用 {{content}} 代表原文",
+						enabled: true,
+					});
+					void this.plugin.saveSettings();
+					this.display();
+				});
+		});
+
+		if (this.plugin.settings.customAssistantList) {
+			this.plugin.settings.customAssistantList.forEach((assistant, index) => {
+				const assistantDetails = managementFrame.createEl("details", { cls: "smart-mp-custom-assistant-item smart-mp-setting-frame" });
+
+				assistantDetails.setAttribute('name', 'ww-assistant-group');
+				if (this.expandedSections.has(assistant.id)) {
+					assistantDetails.setAttribute('open', '');
+				}
+				assistantDetails.ontoggle = () => {
+					if (assistantDetails.open) {
+						this.expandedSections.add(assistant.id);
+					} else {
+						this.expandedSections.delete(assistant.id);
+					}
+				};
+
+				const summary = assistantDetails.createEl("summary");
+
+				const titleSpan = summary.createEl("span", { text: assistant.name });
+				titleSpan.style.fontWeight = "bold";
+				titleSpan.style.flexGrow = "1";
+				if (assistant.enabled === false) {
+					titleSpan.style.textDecoration = "line-through";
+					titleSpan.style.color = "var(--text-muted)";
+				}
+
+				const controls = summary.createDiv();
+				controls.style.display = "flex";
+				controls.style.gap = "8px";
+				controls.style.alignItems = "center";
+
+				// Stop propagation so clicking buttons doesn't toggle details
+				controls.onClickEvent((e) => e.stopPropagation());
+
+				// Enable Toggle
+				const toggle = new Setting(controls)
+					.addToggle((t) => t
+						.setValue(assistant.enabled !== false)
+						.setTooltip($t("settings.assistant.enable-assistant"))
+						.onChange(async (val) => {
+							assistant.enabled = val;
+							if (val) {
+								titleSpan.style.textDecoration = "none";
+								titleSpan.style.color = "var(--text-normal)";
+							} else {
+								titleSpan.style.textDecoration = "line-through";
+								titleSpan.style.color = "var(--text-muted)";
+							}
+							await this.plugin.saveSettings();
+						})
+					);
+				toggle.infoEl.remove();
+				toggle.settingEl.style.border = "none";
+				toggle.settingEl.style.padding = "0";
+
+				// Sorting buttons
+				new Setting(controls)
+					.addExtraButton(b => {
+						b.setIcon("arrow-up")
+							.setTooltip($t("settings.assistant.move-up"))
+							.onClick(() => {
+								const list = this.plugin.settings.customAssistantList!;
+								[list[index - 1], list[index]] = [list[index], list[index - 1]];
+								void this.plugin.saveSettings();
+								this.display();
+							});
+						if (index === 0) b.extraSettingsEl.style.visibility = "hidden";
+					}).settingEl.style.border = "none";
+
+				new Setting(controls)
+					.addExtraButton(b => {
+						b.setIcon("arrow-down")
+							.setTooltip($t("settings.assistant.move-down"))
+							.onClick(() => {
+								const list = this.plugin.settings.customAssistantList!;
+								[list[index + 1], list[index]] = [list[index], list[index + 1]];
+								void this.plugin.saveSettings();
+								this.display();
+							});
+						if (index === (this.plugin.settings.customAssistantList?.length || 0) - 1) b.extraSettingsEl.style.visibility = "hidden";
+					}).settingEl.style.border = "none";
+
+				// Delete Button
+				new Setting(controls)
+					.addExtraButton(b => b
+						.setIcon("trash-2")
+						.setTooltip($t("settings.assistant.delete-assistant"))
+						.onClick(() => {
+							this.plugin.settings.customAssistantList?.splice(index, 1);
+							void this.plugin.saveSettings();
+							this.display();
+						})
+					).settingEl.style.border = "none";
+
+				// Content
+				const content = assistantDetails.createDiv();
+				content.style.marginTop = "10px";
+				content.style.borderTop = "1px solid var(--background-modifier-border)";
+				content.style.paddingTop = "10px";
+
+				new Setting(content)
+					.setName($t("settings.assistant.assistant-name"))
+					.setDesc($t("settings.assistant.assistant-name-desc"))
+					.addText((text) =>
+						text.setValue(assistant.name).onChange((value) => {
+							assistant.name = value;
+							titleSpan.setText(value);
+							void this.plugin.saveSettings();
+						})
+					);
+
+				new Setting(content)
+					.setName($t("settings.assistant.assistant-prompt"))
+					.setDesc($t("settings.assistant.assistant-prompt-desc"))
+					.setClass("smart-mp-setting-textarea")
+					.addTextArea((text) =>
+						text
+							.setValue(assistant.prompt)
+							.onChange((value) => {
+								assistant.prompt = value;
+								if (assistant.isDefault) {
+									if (!this.plugin.settings.customPrompts) this.plugin.settings.customPrompts = {};
+									this.plugin.settings.customPrompts[assistant.id] = value;
+								}
+								void this.plugin.saveSettings();
+							})
+					);
+
+				// Restore Button
+				new Setting(content)
+					.addButton((button) => {
+						const label = assistant.isDefault ? $t("settings.assistant.restore-default") : $t("settings.assistant.restore-last");
+						button.setButtonText(label)
+							.onClick(async () => {
+								if (assistant.isDefault) {
+									assistant.prompt = "";
+									if (this.plugin.settings.customPrompts) {
+										delete this.plugin.settings.customPrompts[assistant.id];
+									}
+								} else {
+									assistant.prompt = this.initialAssistantPrompts[assistant.id] || "";
+								}
+								await this.plugin.saveSettings();
+								this.display();
+							});
+					});
+			});
+		}
+	}
+
+	private addPromptSetting(container: HTMLElement, name: string, key: string, placeholder: string) {
+		new Setting(container)
+			.setName(name)
+			.setClass("smart-mp-setting-textarea")
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(placeholder)
+					.setValue(this.plugin.settings.customPrompts?.[key] || "")
+					.onChange((value) => {
+						if (!this.plugin.settings.customPrompts) {
+							this.plugin.settings.customPrompts = {};
+						}
+						this.plugin.settings.customPrompts[key] = value.trim();
+						void this.plugin.saveSettings();
+					})
+			);
+	}
+
+	createCollapsibleFrame(container: HTMLElement, title: string, isOpen: boolean = false, groupName: string = 'ww-main-sections'): HTMLElement {
+		const details = container.createEl('details', { cls: "smart-mp-setting-frame" });
+		if (groupName) details.setAttribute('name', groupName);
+		if (isOpen || this.expandedSections.has(title)) {
+			details.setAttribute('open', '');
+		}
+
+		details.ontoggle = () => {
+			if (details.open) {
+				this.expandedSections.add(title);
+			} else {
+				this.expandedSections.delete(title);
+			}
+		};
+
+		const summary = details.createEl('summary');
+		summary.style.outline = 'none';
+		summary.style.fontWeight = 'bold';
+		summary.style.fontSize = '1.1em'; // Slightly larger like a header
+		summary.setText(title);
+
+		// Container for the content
+		const content = details.createDiv();
+		return content;
+	}
+
 	createWeChatSettings(container: HTMLElement) {
-		const mpFrame = container.createDiv({ cls: "wewrite-setting-frame" });
-		new Setting(mpFrame).setName($t("settings.wechat-account")).setHeading();
+		// Use collapsible frame
+		const mpFrame = this.createCollapsibleFrame(container, $t("settings.wechat-account"));
+
+		// Remove the old heading since it's now in the summary
+		// new Setting(mpFrame).setName($t("settings.wechat-account")).setHeading();
 
 		// mpFrame.createEl("hr");
 
@@ -923,25 +1247,25 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		new Setting(mpFrame).setName($t("settings.account-info")).setHeading();
 
 		const div = mpFrame.createDiv({
-			cls: "wewrite-web-image elevated-shadow",
+			cls: "smart-mp-web-image elevated-shadow",
 		});
 		const link = div.createEl("a", {
-			cls: "wewrite-web-image-link",
+			cls: "smart-mp-web-image-link",
 			href: "https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame&nav=10141",
 		});
-		const img = link.createEl("img", { cls: "wewrite-web-image-img" });
+		const img = link.createEl("img", { cls: "smart-mp-web-image-img" });
 		img.src = WECHAT_MP_WEB_PAGE;
-		img.alt = "wewrite-web-page";
-		// div.innerHTML = `<a href="https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame&nav=10141"><img src="${WECHAT_MP_WEB_PAGE}" alt="wewrite-web-page"></a> </p>`
+		img.alt = "smart-mp-web-page";
+		// div.innerHTML = `<a href="https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame&nav=10141"><img src="${WECHAT_MP_WEB_PAGE}" alt="smart-mp-web-page"></a> </p>`
 
 		const selectAccountSetting = new Setting(mpFrame)
 			.setName($t("settings.select-account"))
 			.setHeading()
 			.setDesc($t("settings.choose-the-account-to-modify"));
 
-		const frame = mpFrame.createDiv({ cls: "wewrite-account-info-div" });
+		const frame = mpFrame.createDiv({ cls: "smart-mp-account-info-div" });
 		const title = frame.createEl("div", {
-			cls: "wewrite-account-info-title",
+			cls: "smart-mp-account-info-title",
 			text: $t("settings.account.info"),
 		});
 
@@ -959,7 +1283,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			);
 
 		this.mpAccountContainer = frame.createDiv({
-			cls: "wewrite-account-info-content",
+			cls: "smart-mp-account-info-content",
 		});
 
 		selectAccountSetting

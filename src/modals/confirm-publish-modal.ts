@@ -4,16 +4,16 @@
 */
 
 import { Modal, Notice } from 'obsidian';
-import WeWritePlugin from 'src/main';
+import SmartMPPlugin from 'src/main';
 import { DraftItem } from './../wechat-api/wechat-types';
 import { $t } from 'src/lang/i18n';
 
 export class ConfirmPublishModal extends Modal {
-    plugin: WeWritePlugin;
+    plugin: SmartMPPlugin;
     media_id: string;
     title: string
     draftItem: DraftItem;
-    constructor(plugin: WeWritePlugin, draftItem: DraftItem) {
+    constructor(plugin: SmartMPPlugin, draftItem: DraftItem) {
         super(plugin.app);
         this.plugin = plugin;
         this.draftItem = draftItem

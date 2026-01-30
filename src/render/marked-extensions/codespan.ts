@@ -9,14 +9,14 @@
 
 import { Tokens } from "marked";
 import { escapeHtml } from "../../utils/utils";
-import { WeWriteMarkedExtension } from "./extension";
-export class CodespanRenderer extends WeWriteMarkedExtension {
+import { SmartMPMarkedExtension } from "./extension";
+export class CodespanRenderer extends SmartMPMarkedExtension {
 	showLineNumber: boolean;
 	mermaidIndex: number = 0;
 	admonitionIndex: number = 0;
 	chartsIndex: number = 0;
 
-	extractWeWriteCaptions(input: string): string[] {
+	extractSmartMPCaptions(input: string): string[] {
 		// const regex = /wwcap:\s*(.+?)(?=\s|$)/gi;
 		const regex = /^wwcap:\s*(.*)$/gim;
 		const captions: string[] = [];
@@ -31,11 +31,11 @@ export class CodespanRenderer extends WeWriteMarkedExtension {
 
 	codespanRenderer(code: string): string {
 		code = code.trim();
-		const captions = this.extractWeWriteCaptions(code);
+		const captions = this.extractSmartMPCaptions(code);
 		if (captions.length > 0) {
-			return `<div class="wewrite-image-caption">${captions[0]}</div>`
+			return `<div class="smart-mp-image-caption">${captions[0]}</div>`
 		}
-		// [Fixed] Remove wewrite-codespan class to avoid forced dark theme background
+		// [Fixed] Remove smart-mp-codespan class to avoid forced dark theme background
 		// [Fixed] Escape HTML to prevent tag stripping (e.g. Array<Image>)
 		// [Enhancement] Inline styles for WeChat compatibility
 		const theme = this.plugin.settings.codeTheme || 'github';
@@ -51,7 +51,7 @@ export class CodespanRenderer extends WeWriteMarkedExtension {
 
 
 
-		return `<span class="wewrite-codespan" style="${style}">${escapeHtml(code)}</span>`;
+		return `<span class="smart-mp-codespan" style="${style}">${escapeHtml(code)}</span>`;
 	}
 
 

@@ -21,7 +21,7 @@ import {
 	Platform,
 } from "obsidian";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { PreviewRender } from "src/render/marked-extensions/extension";
 import {
 	uploadCanvas,
@@ -38,9 +38,9 @@ import { WechatClient } from "../wechat-api/wechat-client";
 import { MPArticleHeader } from "./mp-article-header";
 import { ThemeManager } from "../theme/theme-manager";
 import { ThemeSelector } from "../theme/theme-selector";
-import { WebViewModal } from "./webview";
+import { SmartMPWebViewModal } from "./webview";
 
-export const VIEW_TYPE_WEWRITE_PREVIEW = "wewrite-article-preview";
+export const VIEW_TYPE_SMART_MP_PREVIEW = "smart-mp-article-preview";
 export interface ElectronWindow extends Window {
 	WEBVIEW_SERVER_URL: string;
 }
@@ -65,7 +65,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	currentView!: EditorView;
 	observer: MutationObserver | null = null;
 	private wechatClient: WechatClient;
-	private plugin: WeWritePlugin;
+	private plugin: SmartMPPlugin;
 	private themeSelector: ThemeSelector;
 	private debouncedRender = debounce(() => {
 		if (this.plugin.settings.realTimeRender) {
@@ -105,7 +105,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	renderDiv!: HTMLElement;
 	elementMap: Map<string, HTMLElement | string> = new Map();
 	containerDiv: HTMLElement;
-	mpModal: WebViewModal;
+	mpModal: SmartMPWebViewModal;
 	isActive: boolean = false;
 	isMobileView: boolean = false;
 	renderPreviewer!: HTMLElement;
@@ -115,15 +115,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	private currentArticleStats = { totalWords: 0, readingTime: 0 };
 
 	getViewType(): string {
-		return VIEW_TYPE_WEWRITE_PREVIEW;
+		return VIEW_TYPE_SMART_MP_PREVIEW;
 	}
 	getDisplayText(): string {
-		return $t("views.previewer.wewrite-previewer");
+		return $t("views.previewer.smart-mp-previewer");
 	}
 	getIcon() {
-		return "pen-tool";
+		return "smart-mp-logo";
 	}
-	constructor(leaf: WorkspaceLeaf, plugin: WeWritePlugin) {
+	constructor(leaf: WorkspaceLeaf, plugin: SmartMPPlugin) {
 		super(leaf);
 		this.plugin = plugin;
 		this.wechatClient = WechatClient.getInstance(this.plugin);
@@ -234,23 +234,23 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		container.empty();
 
 		const mainDiv = container.createDiv({
-			cls: "wewrite-previewer-container",
+			cls: "smart-mp-previewer-container",
 		});
 
 		// Compact Toolbar Container
-		const toolbar = mainDiv.createDiv({ cls: "wewrite-previewer-toolbar" });
+		const toolbar = mainDiv.createDiv({ cls: "smart-mp-previewer-toolbar" });
 
 		// Theme Selector (Dropdown)
 		const themeSetting = new Setting(toolbar)
 			.addDropdown((dropdown: DropdownComponent) => {
 				void this.themeSelector.dropdown(dropdown);
 			})
-			.setClass("wewrite-toolbar-item");
+			.setClass("smart-mp-toolbar-item");
 
 		// Utility Buttons
-		toolbar.createDiv({ cls: "wewrite-toolbar-spacer" });
+		toolbar.createDiv({ cls: "smart-mp-toolbar-spacer" });
 
-		const buttonsDiv = toolbar.createDiv({ cls: "wewrite-toolbar-buttons" });
+		const buttonsDiv = toolbar.createDiv({ cls: "smart-mp-toolbar-buttons" });
 
 		new Setting(buttonsDiv)
 			.addExtraButton((button) => {
@@ -329,12 +329,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						button.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图");
 					});
 			})
-			.setClass("wewrite-toolbar-item");
+			.setClass("smart-mp-toolbar-item");
 
 		this.draftHeader = new MPArticleHeader(this.plugin, mainDiv);
 
 		// Article Stats Display (Word Count / Reading Time)
-		this.articleStats = mainDiv.createDiv({ cls: "wewrite-article-stats" });
+		this.articleStats = mainDiv.createDiv({ cls: "smart-mp-article-stats" });
 		this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
 
 		this.renderDiv = mainDiv.createDiv({ cls: "render-container" });
@@ -343,7 +343,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			cls: "render-previewer",
 		})
 		// 使用常规 DOM 容器，避免 Shadow DOM 带来的额外开销
-		this.containerDiv = this.renderPreviewer.createDiv({ cls: "wewrite-article" });
+		this.containerDiv = this.renderPreviewer.createDiv({ cls: "smart-mp-article" });
 		this.articleDiv = this.containerDiv.createDiv({ cls: "article-div" });
 	}
 	async processArticleForExport(progressNotice?: Notice, uploadImages: boolean = true): Promise<{ html: string; text: string } | null> {
@@ -502,7 +502,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		// Populate articleDiv with the rendered HTML
 		const articleSection = createEl("section", {
-			cls: "wewrite-article-content wewrite",
+			cls: "smart-mp-article-content smart-mp",
 		});
 		articleSection.appendChild(renderedDom);
 
@@ -567,19 +567,19 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	applyLayoutEnhancements(element: HTMLElement) {
 		// First-line indent
 		if (this.plugin.settings.firstLineIndent) {
-			this.containerDiv.addClass("wewrite-indent-enabled");
+			this.containerDiv.addClass("smart-mp-indent-enabled");
 		} else {
-			this.containerDiv.removeClass("wewrite-indent-enabled");
+			this.containerDiv.removeClass("smart-mp-indent-enabled");
 		}
 
 		// Code Theme Class
 		const codeTheme = this.plugin.settings.codeTheme || "github";
-		element.removeClass("wewrite-theme-github", "wewrite-theme-monokai", "wewrite-theme-atom-one-dark", "wewrite-theme-vs2015", "wewrite-theme-default");
-		element.addClass(`wewrite-theme-${codeTheme}`);
+		element.removeClass("smart-mp-theme-github", "smart-mp-theme-monokai", "smart-mp-theme-atom-one-dark", "smart-mp-theme-vs2015", "smart-mp-theme-default");
+		element.addClass(`smart-mp-theme-${codeTheme}`);
 
 		// Font Size
 		const fontSize = this.plugin.settings.fontSize || "15px";
-		this.containerDiv.style.setProperty("--wewrite-font-size", fontSize);
+		this.containerDiv.style.setProperty("--smart-mp-font-size", fontSize);
 		element.style.fontSize = fontSize;
 
 		// Wrap tables for mobile responsiveness
@@ -620,7 +620,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const hrs = element.querySelectorAll("hr");
 		hrs.forEach((hr) => {
 			const div = document.createElement("div");
-			div.className = "wewrite-hr-replacement";
+			div.className = "smart-mp-hr-replacement";
 			div.textContent = content;
 			hr.replaceWith(div);
 		});
@@ -630,11 +630,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	wrapTables(element: HTMLElement) {
 		const tables = element.querySelectorAll("table");
 		tables.forEach((table) => {
-			if (table.parentElement?.classList.contains("wewrite-table-container")) {
+			if (table.parentElement?.classList.contains("smart-mp-table-container")) {
 				return;
 			}
 			const wrapper = document.createElement("div");
-			wrapper.className = "wewrite-table-container";
+			wrapper.className = "smart-mp-table-container";
 			table.parentNode?.insertBefore(wrapper, table);
 			wrapper.appendChild(table);
 		});
@@ -656,13 +656,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 			if (
 				img.nextElementSibling &&
-				img.nextElementSibling.classList.contains("wewrite-caption")
+				img.nextElementSibling.classList.contains("smart-mp-caption")
 			) {
 				return;
 			}
 
 			const caption = document.createElement("span");
-			caption.className = "wewrite-caption";
+			caption.className = "smart-mp-caption";
 			caption.textContent = altText;
 
 			img.parentNode?.insertBefore(caption, img.nextSibling);
@@ -671,7 +671,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 	// Embed word count and reading time at the beginning of article
 	embedArticleStatsInContent(element: HTMLElement) {
-		const existingStats = element.querySelector(".wewrite-embedded-stats");
+		const existingStats = element.querySelector(".smart-mp-embedded-stats");
 		if (existingStats) {
 			existingStats.remove();
 		}
@@ -679,7 +679,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const { totalWords, readingTime } = this.currentArticleStats;
 
 		const statsDiv = document.createElement("section");
-		statsDiv.className = "wewrite-embedded-stats";
+		statsDiv.className = "smart-mp-embedded-stats";
 		statsDiv.createEl("p", {
 			text: `📖 全文约 ${totalWords} 字 · 预计阅读 ${readingTime} 分钟`,
 			attr: {
@@ -718,7 +718,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			}
 
 			const footnoteRef = document.createElement("sup");
-			footnoteRef.className = "wewrite-footnote-ref";
+			footnoteRef.className = "smart-mp-footnote-ref";
 			footnoteRef.textContent = `[${index}]`;
 			anchor.after(footnoteRef);
 
@@ -728,16 +728,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		if (footnotes.length > 0) {
 			const footnotesSection = document.createElement("section");
-			footnotesSection.className = "wewrite-footnotes";
+			footnotesSection.className = "smart-mp-footnotes";
 
 			const title = document.createElement("p");
-			title.className = "wewrite-footnotes-title";
+			title.className = "smart-mp-footnotes-title";
 			title.textContent = "🔗 参考链接";
 			footnotesSection.appendChild(title);
 
 			footnotes.forEach((fn, i) => {
 				const item = document.createElement("p");
-				item.className = "wewrite-footnote-item";
+				item.className = "smart-mp-footnote-item";
 
 				item.createSpan({ text: `[${i + 1}] ` });
 				item.createSpan({ text: fn.text });
@@ -802,7 +802,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		);
 		this.registerEvent(
 			this.app.workspace.on('layout-change', () => {
-				const isOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_WEWRITE_PREVIEW).length > 0;
+				const isOpen = this.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW).length > 0;
 				this.isActive = isOpen;
 			})
 		);
@@ -829,7 +829,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					this.registerEditorScroll();
 				} else {
 
-					this.isActive = leaf.view.getViewType() === VIEW_TYPE_WEWRITE_PREVIEW
+					this.isActive = leaf.view.getViewType() === VIEW_TYPE_SMART_MP_PREVIEW
 				}
 
 			}

@@ -1,5 +1,5 @@
 :root {
-	--image-border-radius: var(--wewrite-border-radius);
+	--image-border-radius: var(--smart-mp-border-radius);
 	--image-border-width: 0px;
 	--image-border-color: transparent;
 	--image-border-style: solid;
@@ -7,7 +7,7 @@
 	--image-caption-triangle: hidden;
 	--image-caption-triangle-width: 0rem;
 	--image-caption-margin-top: -1rem;
-	--image-caption-text-color: var(--wewrite-text-color);
+	--image-caption-text-color: var(--smart-mp-text-color);
 	--image-cation-font-size: 0.8rem;
 	--image-caption-font-weight: normal;
 	--image-caption-font-style: normal;
@@ -16,9 +16,9 @@
 	--image-caption-text-align: center;
 }
 
-.wewrite img:not(.wewrite-profile-card img) {
+.smart-mp img:not(.smart-mp-profile-card img) {
 	border-radius: var(--image-border-radius);
-	border-width: var(--image-border-width); 
+	border-width: var(--image-border-width);
 	border-style: var(--image-border-style);
 	border-color: var(--image-border-color);
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
@@ -32,7 +32,7 @@
 	/* 默认居中，可通过类控制 */
 	font-family: "Arial", sans-serif;
 	border-radius: var(--image-border-radius);
-	border-width: var(--image-border-width); 
+	border-width: var(--image-border-width);
 	border-style: var(--image-border-style);
 	border-color: var(--image-border-color);
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
@@ -87,7 +87,7 @@
 	margin-left: auto;
 }
 
-.wewrite .caption {
+.smart-mp .caption {
 	font-size: 0.9rem;
 	color: var(--image-border-color, #555);
 	position: relative;
@@ -96,7 +96,7 @@
 	top: var(--image-caption-margin-top, -2rem);
 }
 
-.wewrite .wewrite-image-caption {
+.smart-mp .smart-mp-image-caption {
 	font-size: var(--image-cation-font-size);
 	color: var(--image-caption-text-color);
 	font-weight: var(--image-caption-font-weight);

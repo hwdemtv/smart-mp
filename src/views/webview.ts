@@ -1,6 +1,6 @@
 import { App, Modal } from 'obsidian';
 
-export class WebViewModal extends Modal {
+export class SmartMPWebViewModal extends Modal {
     constructor(app: App) {
         super(app);
     }
@@ -8,9 +8,9 @@ export class WebViewModal extends Modal {
     onOpen() {
         const { contentEl } = this;
 
-        const iframe = createEl('iframe', {cls:'wewrite-webview-iframe'});
+        const iframe = createEl('iframe', { cls: 'smart-mp-webview-iframe' });
 
-        iframe.src = 'https://mp.weixin.qq.com/'; 
+        iframe.src = 'https://mp.weixin.qq.com/';
         contentEl.appendChild(iframe);
     }
 

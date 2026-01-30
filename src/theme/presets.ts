@@ -3,7 +3,7 @@ import { THEME_VARIABLES, generateCSSVariables } from './variables';
 export const THEME_PRESETS = {
     default: {
         name: '默认主题',
-        description: 'WeWrite 默认样式',
+        description: 'SmartMP 默认样式',
         variables: THEME_VARIABLES
     },
 

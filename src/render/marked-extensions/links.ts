@@ -6,9 +6,9 @@
  */
 
 import { MarkedExtension, Tokens } from "marked";
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 
-export class Links extends WeWriteMarkedExtension {
+export class Links extends SmartMPMarkedExtension {
 
     allLinks: string[] = [];
     prepare(): Promise<void> {
@@ -30,7 +30,7 @@ export class Links extends WeWriteMarkedExtension {
         const footLinks = dom.createEl('section', { cls: 'foot-links' });
         footLinks.createEl('hr', { cls: 'foot-links-separator' });
 
-        const title = footLinks.createEl('p', { cls: 'wewrite-footnotes-title' });
+        const title = footLinks.createEl('p', { cls: 'smart-mp-footnotes-title' });
         title.textContent = "🔗 参考链接";
 
         const ol = footLinks.createEl('ol');

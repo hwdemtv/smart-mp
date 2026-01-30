@@ -4,7 +4,7 @@ import { CachedMetadata, Notice, TFile, TFolder, requestUrl } from "obsidian";
 import postcss from "postcss";
 // import { combinedCss } from "src/assets/css/template-css";
 import { $t } from "src/lang/i18n";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { CSSMerger } from "./CssMerger";
 import { CSSCache } from "./css-cache";
 import { getPresetCSS, PresetName } from "./presets";
@@ -20,9 +20,9 @@ export class ThemeManager {
 	private cachedCssKey: string | null = null;
 
 	async downloadThemes() {
-		const baseUrlAlter = "https://raw.githubusercontent.com/ryfineZ/wewrite/master/themes/";
-		const baseUrl = "https://raw.githubusercontent.com/ryfineZ/wewrite/master/themes/";
-		const saveDir = this.plugin.settings.css_styles_folder || "/wewrite-custom-css";
+		const baseUrlAlter = "https://raw.githubusercontent.com/ryfineZ/SmartMP/master/themes/";
+		const baseUrl = "https://raw.githubusercontent.com/ryfineZ/SmartMP/master/themes/";
+		const saveDir = this.plugin.settings.css_styles_folder || "/smart-mp-custom-css";
 
 		// Create save directory if it doesn't exist
 		if (!this.plugin.app.vault.getAbstractFileByPath(saveDir)) {
@@ -97,17 +97,17 @@ export class ThemeManager {
 			new Notice($t('views.theme-manager.error-downloading-themes'));
 		}
 	}
-	private plugin: WeWritePlugin;
+	private plugin: SmartMPPlugin;
 	defaultCssRoot: postcss.Root;
 	themes: WeChatTheme[] = [];
 	// static template_css: string = combinedCss;
 
-	private constructor(plugin: WeWritePlugin) {
+	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 
 	}
 	private static instance: ThemeManager;
-	static getInstance(plugin: WeWritePlugin): ThemeManager {
+	static getInstance(plugin: SmartMPPlugin): ThemeManager {
 		if (!ThemeManager.instance) {
 			ThemeManager.instance = new ThemeManager(plugin);
 		}
@@ -218,17 +218,17 @@ export class ThemeManager {
 	background-color: var(--scrollbar-thumb-hover-bg);
 }
 
-.wewrite-article::-webkit-scrollbar-corner{
+.smart-mp-article::-webkit-scrollbar-corner{
 	background: transparent;
 }
 
-.wewrite-article pre::-webkit-scrollbar {
+.smart-mp-article pre::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 	background-color: var(--scrollbar-bg);
 }
 
-	.wewrite-article pre::-webkit-scrollbar-thumb {
+	.smart-mp-article pre::-webkit-scrollbar-thumb {
 	background-color: var(--scrollbar-thumb-bg);
     -webkit-border-radius: var(--radius-l);
     background-clip: padding-box;
@@ -237,11 +237,11 @@ export class ThemeManager {
     min-height: 45px;
 }
 
-.wewrite-article pre::-webkit-scrollbar-thumb:hover {
+.smart-mp-article pre::-webkit-scrollbar-thumb:hover {
 	background-color: var(--scrollbar-thumb-hover-bg);
 }
 
-.wewrite-article::-webkit-scrollbar-corner{
+.smart-mp-article::-webkit-scrollbar-corner{
 	background: transparent;
 }
 `);
@@ -329,13 +329,13 @@ export class ThemeManager {
 		}
 
 		// Optimization: Skip DOM traversal if same theme already applied
-		if (htmlRoot.dataset.wewriteThemeKey === cssKey) {
+		if (htmlRoot.dataset.SmartMPThemeKey === cssKey) {
 			console.debug('[ThemeManager] Skipping DOM application: Theme already present on root.');
 			return htmlRoot;
 		}
 
 		const node = this.cssMerger.applyStyleToElement(htmlRoot);
-		node.dataset.wewriteThemeKey = cssKey;
+		node.dataset.SmartMPThemeKey = cssKey;
 		return node;
 	}
 

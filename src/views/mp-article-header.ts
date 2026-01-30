@@ -10,7 +10,7 @@ import {
 	ToggleComponent,
 } from "obsidian";
 import { LocalDraftItem, LocalDraftManager } from "src/assets/draft-manager";
-import WeWritePlugin from "src/main";
+import SmartMPPlugin from "src/main";
 import { UrlUtils } from "src/utils/urls";
 import { fetchImageBlob } from "src/utils/utils";
 import { WechatClient } from "src/wechat-api/wechat-client";
@@ -27,7 +27,7 @@ export class MPArticleHeader {
 		}
 	}
 
-	private plugin: WeWritePlugin;
+	private plugin: SmartMPPlugin;
 	private cover_image: string | null;
 	private coverFrame: HTMLElement;
 	private activeLocalDraft: LocalDraftItem | undefined;
@@ -38,7 +38,7 @@ export class MPArticleHeader {
 	private _needOpenComment: ToggleComponent;
 	private _onlyFansCanComment: ToggleComponent;
 	private imageGenerateModal: ImageGenerateModal | undefined;
-	constructor(plugin: WeWritePlugin, containerEl: HTMLElement) {
+	constructor(plugin: SmartMPPlugin, containerEl: HTMLElement) {
 		this.plugin = plugin;
 		this.localDraftmanager = LocalDraftManager.getInstance(plugin);
 		this.BuildUI(containerEl);
@@ -113,10 +113,10 @@ export class MPArticleHeader {
 	}
 	private BuildUI(containerEl: HTMLElement) {
 		const container = containerEl.createEl("div", {
-			cls: "wewrite-article-header",
+			cls: "smart-mp-article-header",
 		});
 		const details = container.createEl("details");
-		details.createEl("summary", { text: $t("views.article-header.title"), cls: "wewrite-draft-header" });
+		details.createEl("summary", { text: $t("views.article-header.title"), cls: "smart-mp-draft-header" });
 
 		new Setting(details)
 			.setName($t("views.article-header.article-title"))
@@ -249,7 +249,7 @@ export class MPArticleHeader {
 						}
 						if (this._digest.value !== undefined && this._digest.value) {
 							const prompt = this._digest.value.trim()
-							if (prompt){
+							if (prompt) {
 								this.imageGenerateModal.prompt = prompt;
 							}
 						}
@@ -322,7 +322,7 @@ export class MPArticleHeader {
 
 		return coverframe;
 	}
-	
+
 	setCoverImage(url: string | null) {
 		while (this.coverFrame.firstChild) {
 			this.coverFrame.firstChild.remove();
@@ -353,7 +353,7 @@ export class MPArticleHeader {
 				img.height * scale
 			);
 
-			
+
 
 			this.coverFrame.appendChild(canvas);
 		};
@@ -364,12 +364,12 @@ export class MPArticleHeader {
 		}
 		if (this._digest.value !== undefined && this._digest.value) {
 			const prompt = this._digest.value.trim()
-			if (prompt){
-			this.imageGenerateModal.prompt = prompt;
+			if (prompt) {
+				this.imageGenerateModal.prompt = prompt;
+			}
 		}
+		this.imageGenerateModal.open();
 	}
-	this.imageGenerateModal.open();
-}
 	resetImage() {
 		this.setCoverImageXY(0, 0);
 	}
@@ -457,7 +457,7 @@ export class MPArticleHeader {
 			this._onlyFansCanComment.setValue(false);
 			this.cover_image = "";
 		}
-		
+
 		this.setCoverImageXY(Number(x), Number(y));
 		this.plugin.messageService.sendMessage(
 			"draft-title-updated",

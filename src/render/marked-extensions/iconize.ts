@@ -3,13 +3,13 @@
  */
 import { MarkedExtension, Tokens } from "marked";
 import { sanitizeHTMLToDom } from 'obsidian';
-import { WeWriteMarkedExtension } from "./extension";
+import { SmartMPMarkedExtension } from "./extension";
 import { serializeElement } from "src/utils/utils";
 import { $t } from "src/lang/i18n";
 
 const iconsRegex = /:(.*?):/;
 const iconsRegexTokenizer = /^:(.*?):/;
-export class IconizeRender extends WeWriteMarkedExtension {
+export class IconizeRender extends SmartMPMarkedExtension {
     iconizeIndex: number = 0;
     icon?: {
         api?: {

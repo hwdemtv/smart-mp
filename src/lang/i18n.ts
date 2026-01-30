@@ -1,5 +1,5 @@
 /**
- * i18n module for WeWrite plugin
+ * i18n module for SmartMP plugin
  */
 import i18n from "i18next";
 import { moment } from "obsidian";
@@ -11,9 +11,15 @@ declare global {
 		$t: (key: string, options?: string[]) => string;
 	}
 }
+const getLanguage = () => {
+	const lng = moment.locale().toLowerCase();
+	if (lng.startsWith("zh")) return "zh";
+	return "en";
+};
+
 void i18n.init({
 	debug: false,
-	lng: moment.locale(), //obsidian language
+	lng: getLanguage(),
 	fallbackLng: "en",
 	interpolation: {
 		escapeValue: true,

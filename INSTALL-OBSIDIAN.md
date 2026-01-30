@@ -1,6 +1,6 @@
-## WeWrite+ 手动安装（本地包）
+## smart-mp+ 手动安装（本地包）
 
-> 当前包插件 ID：`wewrite-plus`（可与原 WeWrite 共存）
+> 当前包插件 ID：`smart-mp-plus`（可与原 smart-mp 共存）
 
 ### 1. 准备插件文件
 构建产物位于仓库根目录：
@@ -10,18 +10,18 @@
 
 ### 2. 复制到 Vault 插件目录
 1. 打开你的 Obsidian Vault 路径，例如 `<你的库>/.obsidian/plugins/`。
-2. 在 `plugins` 下创建目录 `wewrite-plus`（保持与 manifest 中的 id 一致）。
-3. 将上述 3 个文件复制到 `…/.obsidian/plugins/wewrite-plus/`：
+2. 在 `plugins` 下创建目录 `smart-mp-plus`（保持与 manifest 中的 id 一致）。
+3. 将上述 3 个文件复制到 `…/.obsidian/plugins/smart-mp-plus/`：
    - 不需要 `node_modules`、源码或其他文件。
    - 如果已存在旧版同名目录，先删除/备份旧的 `main.js`/`manifest.json`/`styles.css` 后再覆盖。
 
 ### 3. 启用插件
 1. 打开 Obsidian 设置 → 第三方插件，关闭安全模式。
-2. 在第三方插件列表中启用 WeWrite Dev。
-3. 若同时保留原 WeWrite，可分别启用/停用；若替换原版，请先停用原版。
+2. 在第三方插件列表中启用 smart-mp Dev。
+3. 若同时保留原 smart-mp，可分别启用/停用；若替换原版，请先停用原版。
 
 ### 4. 主题获取与选择
-- 下载主题：在 WeWrite 设置中点击“下载主题”，会从 `https://raw.githubusercontent.com/ryfineZ/wewrite/master/themes/` 拉取主题文件到你的主题目录（默认 `wewrite-css-styles`）。已包含 NoteToMP 主题。
+- 下载主题：在 smart-mp 设置中点击“下载主题”，会从 `https://raw.githubusercontent.com/ryfineZ/smart-mp/master/themes/` 拉取主题文件到你的主题目录（默认 `smart-mp-css-styles`）。已包含 NoteToMP 主题。
 - 手动放置：也可将 `themes` 目录中的 md 主题文件拷贝到 Vault 的主题目录，重新打开设置下拉选择即可。
 
 ### 5. 常用操作

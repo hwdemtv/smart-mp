@@ -7,7 +7,7 @@
   --hr-margin: 1em 0;
 }
 
-.wewrite hr {
+.smart-mp hr {
 	border-bottom: var(--hr-height, 1px) solid var(--hr-color, #eaeaea);
 	border-bottom: none;
 	border-left: none;
@@ -16,24 +16,24 @@
 	margin-bottom: 20px;
 }
 
-.wewrite .foot-links hr {
+.smart-mp .foot-links hr {
 	margin-top: 2rem;
 	margin-bottom: 0.5rem;
 }
 
-.wewrite .foot-links {
+.smart-mp .foot-links {
 	font-size: var(--footnote-font-size, 12px);
 	color: var(--footnote-color, #a0a0a0);
 }
 
 /* footnote */
-.wewrite .footnote-id {
+.smart-mp .footnote-id {
 	color: var(--wechat-footnote-text-color, #999);
 	margin-right: 0.5em;
 
 }
 
-.wewrite .footnote {
+.smart-mp .footnote {
 	font-size: 0.9em;
 	font-weight: 300;
 	margin-left: 0.5em;
