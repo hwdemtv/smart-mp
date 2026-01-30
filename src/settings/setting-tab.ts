@@ -89,7 +89,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		navContainer.style.paddingBottom = '10px';
 		navContainer.style.gap = '20px';
 
-		const generalTab = navContainer.createEl('div', { text: 'General / Formatter', cls: 'wewrite-nav-tab' });
+		const generalTab = navContainer.createEl('div', { text: '通用 / 排版', cls: 'wewrite-nav-tab' });
 		generalTab.style.cursor = 'pointer';
 		generalTab.style.fontWeight = this.activeTab === 'general' ? 'bold' : 'normal';
 		generalTab.style.color = this.activeTab === 'general' ? 'var(--text-normal)' : 'var(--text-muted)';
@@ -100,7 +100,7 @@ export class WeWriteSettingTab extends PluginSettingTab {
 			this.display();
 		});
 
-		const llmTab = navContainer.createEl('div', { text: 'AI & LLM', cls: 'wewrite-nav-tab' });
+		const llmTab = navContainer.createEl('div', { text: 'AI / 大模型', cls: 'wewrite-nav-tab' });
 		llmTab.style.cursor = 'pointer';
 		llmTab.style.fontWeight = this.activeTab === 'llm' ? 'bold' : 'normal';
 		llmTab.style.color = this.activeTab === 'llm' ? 'var(--text-normal)' : 'var(--text-muted)';
