@@ -20,8 +20,8 @@ export class ThemeManager {
 	private cachedCssKey: string | null = null;
 
 	async downloadThemes() {
-		const baseUrlAlter = "https://raw.githubusercontent.com/hwdemtv/smart-mp-/main/themes/";
-		const baseUrl = "https://raw.githubusercontent.com/hwdemtv/smart-mp-/main/themes/";
+		const baseUrlAlter = "https://raw.githubusercontent.com/hwdemtv/smart-mp/main/themes/";
+		const baseUrl = "https://raw.githubusercontent.com/hwdemtv/smart-mp/main/themes/";
 		const saveDir = this.plugin.settings.css_styles_folder || "/smart-mp-custom-css";
 
 		// Create save directory if it doesn't exist
