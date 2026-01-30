@@ -43,6 +43,7 @@ export type WeWriteSetting = {
     scrollSync?: boolean;
     previewer_wxname?: string;
     custom_theme?: string;
+    themePreset?: string;
     codeTheme?: "github" | "dracula" | "monokai" | "atom-one-dark" | "vs2015" | "default";
     codeLineNumber: boolean;
     showCodeMacHeader?: boolean;

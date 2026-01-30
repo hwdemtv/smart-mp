@@ -21,38 +21,38 @@ const mathjax_options = {
   em: 16,
   ex: 8,
   containerWidth: 1280,
-//   display: true
+  //   display: true
 }
 
 export function parseMath(math: string): string {
-    
+
   const node = mathjax_document.convert(math, mathjax_options)
-  
-  return new XMLSerializer().serializeToString(node)
+
+  return adaptor.outerHTML(node)
 }
 
 const inlineRule = /\$(.*)\$/g // /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\1/;
 const blockRule = /\$\$(?!<\$\$)([\s\S]*?)\$\$/g;  // /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
 
 export function parseHTML(html: string): string {
-    let matches = html.match(blockRule)
-    if (matches) {
-        matches.forEach(match => {
-            const math = match.replace(/\$/g, '')
-            const svg = parseMath(math)
-            html = html.replace(match, svg)
-        })
-    }
-    
-    matches = html.match(inlineRule)
-    if (matches) {
-      matches.forEach(match => {
-        const math = match.replace(/\$/g, '')
-        const svg = parseMath(math)
-        html = html.replace(match, svg)
-      })
-    }
-    return html
+  let matches = html.match(blockRule)
+  if (matches) {
+    matches.forEach(match => {
+      const math = match.replace(/\$/g, '')
+      const svg = parseMath(math)
+      html = html.replace(match, svg)
+    })
   }
 
-  
+  matches = html.match(inlineRule)
+  if (matches) {
+    matches.forEach(match => {
+      const math = match.replace(/\$/g, '')
+      const svg = parseMath(math)
+      html = html.replace(match, svg)
+    })
+  }
+  return html
+}
+
+

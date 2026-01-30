@@ -321,4 +321,21 @@ theme_name: NoteToMP Maple
     padding: 0;
     background: transparent;
 }
+
+/* 高亮文本样式 */
+.wewrite mark, .wewrite .highlight {
+  background-color: #ffeb3b !important;
+  color: #333 !important;
+  padding: 0 2px !important;
+  border-radius: 3px !important;
+}
+
+/* 分隔符样式 */
+.wewrite-hr-replacement {
+  margin: 30px 0 !important;
+  height: 2px !important;
+  background: linear-gradient(to right, transparent, #555, transparent) !important;
+  font-size: 0 !important;
+  border: none !important;
+}
 ```

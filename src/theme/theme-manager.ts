@@ -6,6 +6,8 @@ import postcss from "postcss";
 import { $t } from "src/lang/i18n";
 import WeWritePlugin from "src/main";
 import { CSSMerger } from "./CssMerger";
+import { CSSCache } from "./css-cache";
+import { getPresetCSS, PresetName } from "./presets";
 
 export type WeChatTheme = {
 	name: string;
@@ -104,9 +106,21 @@ export class ThemeManager {
 		this.plugin = plugin;
 
 	}
+	private static instance: ThemeManager;
 	static getInstance(plugin: WeWritePlugin): ThemeManager {
-		return new ThemeManager(plugin);
+		if (!ThemeManager.instance) {
+			ThemeManager.instance = new ThemeManager(plugin);
+		}
+		return ThemeManager.instance;
+	}
 
+	public async reloadTheme() {
+		this.cssMerger = null;
+		this.cachedCssKey = null;
+		// Also clear cache for current content? 
+		// Best handled by caller (HotReloader) or here? 
+		// HotReloader knows WHICH file changed. ThemeManager gets 'customCSS' which is content.
+		// So clearing ThemeManager state is enough to force re-fetch and re-merge.
 	}
 
 	async loadThemes() {
@@ -119,80 +133,68 @@ export class ThemeManager {
 		return this.themes;
 	}
 	public cleanCSS(css: string): string {
+		// Remove code block markers if present
+		css = css.replace(/```[cC][Ss]{2}\s*|\s*```/g, '').trim();
 
-		css = css.replace(/```[cC][Ss]{2}\s*|\s*```/g, '').trim()
+		// Preserve CSS variables, only strip comments
 		const reg_multiple_line_comments = /\/\*[\s\S]*?\*\//g;
 		const reg_single_line_comments = /\/\/.*/g;
-		const reg_whitespace = /\s+/g;
-		const reg_invisible_chars = /[\u200B\u00AD\uFEFF\u00A0]/g;
 
 		let cleanedCSS = css
 			.replace(reg_multiple_line_comments, '')
-			.replace(reg_single_line_comments, '')
-			.replace(reg_whitespace, ' ')
-			.replace(reg_invisible_chars, '');
+			.replace(reg_single_line_comments, '');
 
+		// Keep original formatting for PostCSS robustness
 		return cleanedCSS.trim();
 	}
 	private async extractCSSblocks(path: string) {
 		const result: string[] = []
 		const file = this.plugin.app.vault.getFileByPath(path);
-		if (!file) {
-			return ''
+		if (!file) return '';
+
+		const cache = this.plugin.app.metadataCache.getFileCache(file);
+		if (!cache?.sections) {
+			console.debug(`[ThemeManager] No sections found in cache for ${path}`);
+			return '';
 		}
-		const cache: CachedMetadata | null = this.plugin.app.metadataCache.getFileCache(file);
-		if (!cache?.sections) return ''
+
 		const content = await this.plugin.app.vault.read(file);
 
 		for (const section of cache.sections) {
-			if (section.type === "code" ) {
+			if (section.type === "code") {
 				const rawBlock = content.substring(
 					section.position.start.offset,
 					section.position.end.offset
 				);
-				if  (!/^```css/i.test(rawBlock)) continue;
-				// const cleaned = rawBlock.replace(/^```css\s*/, "").replace(/```$/, "").trim();
-				const first = rawBlock.indexOf('\n');
-				const last = rawBlock.lastIndexOf('\n');
-				const cleaned = rawBlock.substring(first + 1, last).trim();
-				result.push(cleaned);
+
+				// Be extremely strict: skip the first and last lines (the backticks)
+				const lines = rawBlock.split('\n');
+				if (lines.length > 2 && lines[0].toLowerCase().includes('```css')) {
+					const codeOnly = lines.slice(1, -1).join('\n').trim();
+					if (codeOnly) result.push(codeOnly);
+				}
 			}
 		}
-		// console.log('result=>', result);
-		
-		return result.join('\n')
 
+		const finalCss = result.join('\n\n');
+		console.debug(`[ThemeManager] Extracted CSS from ${path}: blocks=${result.length}, chars=${finalCss.length}`);
+		return finalCss;
 	}
-	public async getThemeContent(path: string) {
-		const file = this.plugin.app.vault.getFileByPath(path);
-		if (!file) {
-			// return ThemeManager.template_css; //DEFAULT_STYLE;
-			return ''
+
+	public async getCSS() {
+		// 1. Get Preset CSS
+		const presetName = (this.plugin.settings.themePreset as PresetName) || 'default';
+		const presetCSS = getPresetCSS(presetName);
+
+		// 2. Get Custom Theme CSS
+		let custom_css = ''
+		if (this.plugin.settings.custom_theme !== undefined && this.plugin.settings.custom_theme) {
+			custom_css = await this.extractCSSblocks(this.plugin.settings.custom_theme)
 		}
-		const fileContent = await this.plugin.app.vault.cachedRead(file);
 
-		const reg_css_block = /```[cC][Ss]{2}\s*([\s\S]+?)\s*```/gs;
-		// const reg_css_block = /```css\s*([\s\S]*?)```/g
-
-		const cssBlocks: string[] = [];
-		let match
-		while ((match = reg_css_block.exec(fileContent)) !== null) {
-			cssBlocks.push(this.cleanCSS(match[1].trim()));
-		}
-			console.debug('cssBlocks=>', cssBlocks);
-
-		return cssBlocks.join('\n');
-
-	}
-		public async getCSS() {
-			let custom_css = '' //this.defaultCssRoot.toString() //''
-			if (this.plugin.settings.custom_theme !== undefined && this.plugin.settings.custom_theme) {
-				// custom_css = await this.getThemeContent(this.plugin.settings.custom_theme)
-				custom_css = await this.extractCSSblocks(this.plugin.settings.custom_theme)
-			}
-
-		return custom_css
-
+		const final = `${presetCSS}\n\n/* --- Theme CSS Start --- */\n${custom_css}`;
+		console.debug(`[ThemeManager] Final Combined CSS (Sample): ${final.substring(0, 50)}...${final.substring(final.length - 50)}`);
+		return final;
 	}
 	public getShadowStleSheet() {
 		const sheet = new CSSStyleSheet();
@@ -286,19 +288,60 @@ export class ThemeManager {
 
 	public async applyTheme(htmlRoot: HTMLElement) {
 		const customCss = await this.getCSS();
+
+		// Enhanced check for CSS variables in the pulled content
+		console.log(`[ThemeManager] Applying theme (Length: ${customCss.length}, Has variables: ${customCss.includes('--')})`);
+		if (customCss.length > 0) {
+			console.debug(`[ThemeManager] CSS Preview: ${customCss.substring(0, 50)}...`);
+		}
+
 		const cssKey = customCss;
+		const cache = CSSCache.getInstance();
+		const cachedState = cache.get(cssKey);
+
 		if (!this.cssMerger || this.cachedCssKey !== cssKey) {
 			this.cssMerger = new CSSMerger();
-			await this.cssMerger.init(customCss);
+
+			if (cachedState) {
+				// Cache Hit: Restore state instantly
+				this.cssMerger.restoreState(cachedState.state);
+				console.debug(`[ThemeManager] Theme Cache Hit.`);
+			} else {
+				// Cache Miss: Perform expensive init
+				await this.cssMerger.init(customCss);
+				// Cache the resulting state
+				const mergerState = this.cssMerger.getState();
+				cache.set(cssKey, null as any, mergerState.vars, mergerState);
+				console.debug(`[ThemeManager] Theme Initialized & Cached. Variables found: ${mergerState.vars.size}`);
+			}
+
+			console.log('[ThemeManager] Active Variables Summary:',
+				Array.from(this.cssMerger.vars.entries()).filter(([key]) =>
+					key.includes('b08d55') || key.includes('D4AF37') || key.includes('1e1e1e') || key.includes('font') || key.includes('highlight') || key.includes('mark')
+				)
+			);
+
+			// Diagnostic check for highlight rules
+			const hasHighlightRules = Array.from(this.cssMerger.rules.keys()).some(s => s.includes('highlight') || s.includes('mark'));
+			console.log(`[ThemeManager] Theme contains highlight/mark rules: ${hasHighlightRules}`);
+
 			this.cachedCssKey = cssKey;
 		}
-		// 如果已经应用过相同主题则跳过，减少重复遍历
+
+		// Optimization: Skip DOM traversal if same theme already applied
 		if (htmlRoot.dataset.wewriteThemeKey === cssKey) {
+			console.debug('[ThemeManager] Skipping DOM application: Theme already present on root.');
 			return htmlRoot;
 		}
+
 		const node = this.cssMerger.applyStyleToElement(htmlRoot);
 		node.dataset.wewriteThemeKey = cssKey;
 		return node;
+	}
 
+	onPluginUnload() {
+		// Clean up caches
+		CSSCache.getInstance().clear();
+		CSSMerger.clearCaches();
 	}
 }

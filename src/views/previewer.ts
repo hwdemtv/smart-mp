@@ -170,6 +170,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				void this.applyCustomThemeChange(theme);
 			}
 		);
+		this.plugin.messageService.registerListener(
+			"theme-reloaded",
+			() => {
+				console.debug("[Previewer] Hot reload triggered");
+				void this.renderDraft();
+			}
+		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);
 		void this.loadComponents();
 		return Promise.resolve();
@@ -393,50 +400,57 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 	async sendArticleToDraftBox() {
 		const notice = new Notice("开始处理文章...", 0);
-		const result = await this.processArticleForExport(notice);
-		if (!result) {
-			notice.hide();
-			return;
-		}
-
-		notice.setMessage("正在发送到草稿箱...");
-
-		const activeDraft = this.draftHeader.getActiveLocalDraft();
-		if (!activeDraft) {
-			new Notice('无法获取当前草稿信息', 5000);
-			return;
-		}
-
-		const media_id = await this.wechatClient.sendArticleToDraftBox(
-			activeDraft,
-			result.html
-		);
-
-		if (!media_id) {
-			new Notice('发送草稿失败，请检查控制台错误日志', 5000);
-			return;
-		}
-
-		if (media_id && this.plugin.settings.selectedMPAccount) {
-			this.draftHeader.updateDraftDraftId(media_id);
-			const news_item = await this.wechatClient.getDraftById(
-				this.plugin.settings.selectedMPAccount,
-				media_id
-			);
-			if (news_item) {
-				open(news_item[0].url);
-				const item = {
-					media_id: media_id,
-					content: {
-						news_item: news_item,
-					},
-					update_time: Date.now(),
-				};
-				this.plugin.messageService.sendMessage(
-					"draft-item-updated",
-					item
-				);
+		try {
+			const result = await this.processArticleForExport(notice);
+			if (!result) {
+				return;
 			}
+
+			notice.setMessage("正在发送到草稿箱...");
+
+			const activeDraft = this.draftHeader.getActiveLocalDraft();
+			if (!activeDraft) {
+				new Notice('无法获取当前草稿信息', 5000);
+				return;
+			}
+
+			const media_id = await this.wechatClient.sendArticleToDraftBox(
+				activeDraft,
+				result.html
+			);
+
+			if (!media_id) {
+				new Notice('发送草稿失败，请检查控制台错误日志', 5000);
+				return;
+			}
+
+			if (media_id && this.plugin.settings.selectedMPAccount) {
+				this.draftHeader.updateDraftDraftId(media_id);
+				const news_item = await this.wechatClient.getDraftById(
+					this.plugin.settings.selectedMPAccount,
+					media_id
+				);
+				if (news_item) {
+					open(news_item[0].url);
+					const item = {
+						media_id: media_id,
+						content: {
+							news_item: news_item,
+						},
+						update_time: Date.now(),
+					};
+					this.plugin.messageService.sendMessage(
+						"draft-item-updated",
+						item
+					);
+				}
+				new Notice("发送到草稿箱成功！", 3000);
+			}
+		} catch (error) {
+			console.error("发送失败:", error);
+			new Notice(`发送发生异常: ${error}`, 5000);
+		} finally {
+			notice.hide();
 		}
 	}
 	public getArticleContent() {
@@ -585,9 +599,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.processHR(element);
 
 		// Link footnotes conversion (should be last as it modifies links)
-		if (this.plugin.settings.linkFootnotes) {
-			this.convertLinksToFootnotes(element);
-		}
+		// if (this.plugin.settings.linkFootnotes) {
+		// 	this.convertLinksToFootnotes(element);
+		// }
 	}
 
 	// Process Horizontal Rules
@@ -666,7 +680,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		const statsDiv = document.createElement("section");
 		statsDiv.className = "wewrite-embedded-stats";
-		statsDiv.innerHTML = `<p style="text-align: center; color: #999; font-size: 14px; margin-bottom: 1.5em;">📖 全文约 <strong>${totalWords}</strong> 字 · 预计阅读 <strong>${readingTime}</strong> 分钟</p>`;
+		statsDiv.createEl("p", {
+			text: `📖 全文约 ${totalWords} 字 · 预计阅读 ${readingTime} 分钟`,
+			attr: {
+				style: "text-align: center; color: #999; font-size: 14px; margin-bottom: 1.5em;"
+			}
+		});
 
 		if (element.firstChild) {
 			element.insertBefore(statsDiv, element.firstChild);
@@ -719,7 +738,46 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			footnotes.forEach((fn, i) => {
 				const item = document.createElement("p");
 				item.className = "wewrite-footnote-item";
-				item.innerHTML = `[${i + 1}] ${fn.text}: <a href="${fn.url}">${fn.url}</a>`;
+
+				item.createSpan({ text: `[${i + 1}] ` });
+				item.createSpan({ text: fn.text });
+				item.createSpan({ text: ": " });
+
+				const url = fn.url;
+				let isSafe = false;
+
+				try {
+					// 允许协议相对路径 (//example.com)
+					if (url.startsWith('//')) {
+						isSafe = true;
+					} else {
+						// 尝试解析 URL
+						const urlObj = new URL(url);
+						// 获取协议并移除冒号
+						const protocol = urlObj.protocol.slice(0, -1).toLowerCase();
+						// 允许的安全协议列表
+						const ALLOWED_PROTOCOLS = ['http', 'https', 'mailto', 'obsidian'];
+						if (ALLOWED_PROTOCOLS.includes(protocol)) {
+							isSafe = true;
+						}
+					}
+				} catch (e) {
+					// 如果 new URL() 抛错，说明可能不是标准 URL（由于前面也没匹配 //，这里视为不安全或未知）
+					// 为安全起见默认视为不安全，不生成链接
+					isSafe = false;
+				}
+
+				if (isSafe) {
+					const link = item.createEl("a", {
+						href: url,
+						text: url
+					});
+					link.setAttr("target", "_blank");
+					link.setAttr("rel", "noopener noreferrer");
+				} else {
+					item.createSpan({ text: url });
+				}
+
 				footnotesSection.appendChild(item);
 			});
 

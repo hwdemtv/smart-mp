@@ -199,63 +199,27 @@
 }
 
 .wewrite h1::before {
-	content: '';
-	display: inline-block;
-	width: 4px;
-	height: 1em;
-	background-color: #0078d4;
-	margin-right: 10px;
-	vertical-align: middle;
+	content: none !important;
+	display: none !important;
 }
 
 .wewrite h1::after {
-	content: '';
-	display: inline-block;
-	width: 4px;
-	height: 1em;
-	background-color: #0078d4;
-	margin-right: 10px;
-	vertical-align: middle;
+	content: none !important;
+	display: none !important;
 }
 
-.wewrite h2::before {
-	content: "";
-}
-
-.wewrite h2::after {
-	content: "";
-}
-
-.wewrite h3::before {
-	content: "";
-}
-
-.wewrite h3::after {
-	content: "";
-}
-
-.wewrite h4::before {
-	content: "";
-}
-
-.wewrite h4::after {
-	content: "";
-}
-
-.wewrite h5::before {
-	content: "";
-}
-
-.wewrite h5::after {
-	content: "";
-}
-
-.wewrite h6::before {
-	content: "";
-}
-
+.wewrite h2::before,
+.wewrite h2::after,
+.wewrite h3::before,
+.wewrite h3::after,
+.wewrite h4::before,
+.wewrite h4::after,
+.wewrite h5::before,
+.wewrite h5::after,
+.wewrite h6::before,
 .wewrite h6::after {
-	content: "";
+	content: none !important;
+	display: none !important;
 }
 
 

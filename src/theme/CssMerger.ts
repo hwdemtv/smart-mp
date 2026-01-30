@@ -144,20 +144,101 @@ export class CSSMerger {
 	private static cacheHits = 0;
 	private static cacheMisses = 0;
 
+	// Base CSS State Cache
+	private static BASE_STATE_CACHE: {
+		rules: Rules;
+		vars: Map<string, string>;
+		keyedRules: Map<string, string[]>;
+		universalRules: string[];
+	} | null = null;
+
+	// Clear Static Caches
+	static clearCaches() {
+		CSSMerger.AST_CACHE.clear();
+		CSSMerger.BASE_STATE_CACHE = null;
+		CSSMerger.cacheHits = 0;
+		CSSMerger.cacheMisses = 0;
+	}
+
 	async init(customCSS: string) {
-		await this.buildBaseCSS();
-		try {
-			const ast = (await postcss().process(customCSS, { from: undefined })).root;
-			this.pickVariables(ast, this.vars);
-			this.pickRules(ast, this.rules);
-			this.buildRuleIndex();
-		} catch (e) {
-			new Notice($t('render.failed-to-parse-custom-css', [e]));
-			console.error(e);
+		// Restore Base State (deep copy)
+		if (CSSMerger.BASE_STATE_CACHE) {
+			this.rules = new Map();
+			CSSMerger.BASE_STATE_CACHE.rules.forEach((rule, selector) => this.rules.set(selector, new Map(rule)));
+			this.vars = new Map(CSSMerger.BASE_STATE_CACHE.vars);
+			this.keyedRules = new Map(CSSMerger.BASE_STATE_CACHE.keyedRules);
+			this.universalRules = [...CSSMerger.BASE_STATE_CACHE.universalRules];
+		} else {
+			await this.buildBaseCSS();
 		}
 
+		if (customCSS && customCSS.trim()) {
+			// Sanitize: strip zero-width characters, NBSP, and normalize newlines
+			const sanitized = customCSS.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, " ").replace(/\r\n/g, "\n");
+
+			try {
+				// Use postcss.parse for faster synchronous parsing on the combined string
+				const ast = postcss.parse(sanitized);
+				this.pickVariables(ast, this.vars);
+				this.pickRules(ast, this.rules);
+				this.buildRuleIndex();
+			} catch (e: any) {
+				const errorMsg = `[CssMerger] CSS Parser Error: ${e.message}`;
+				console.error(errorMsg);
+				if (e.line) {
+					const lines = sanitized.split('\n');
+					console.error(`[CssMerger] Failed at Line ${e.line}: "${lines[e.line - 1]?.trim()}"`);
+				}
+				console.error('[CssMerger] Full Sanitized Input Sample (Lines 180-200):', sanitized.split('\n').slice(179, 201).join('\n'));
+				new Notice($t('render.failed-to-parse-custom-css', [e]));
+			}
+		} else {
+			this.buildRuleIndex();
+		}
+	}
+
+	// New method to load from cache directly
+	loadFromCache(baseRules: Rules, baseVars: Map<string, string>, customCSS: string) {
+		// Deep copy base rules/vars to avoid mutation affecting cache
+		this.rules = new Map(baseRules);
+		this.vars = new Map(baseVars);
+		// Re-parse custom CSS (usually small) or we could cache combined state?
+		// For Phase 1, let's just optimize the Base CSS loading which is the bottleneck.
+		// Actually, the cache key in ThemeManager is 'customCss' content. master cache handles "Merged State".
+	}
+
+	// Method to extract current state for caching
+	getState() {
+		return {
+			rules: this.rules,
+			vars: this.vars,
+			keyedRules: this.keyedRules,
+			universalRules: this.universalRules
+		}
+	}
+
+	restoreState(state: any) {
+		// Deep copy rules: new Map for the outer collection AND each inner rule Map
+		this.rules = new Map();
+		state.rules.forEach((rule: Map<string, any>, selector: string) => {
+			this.rules.set(selector, new Map(rule));
+		});
+
+		this.vars = new Map(state.vars);
+		this.keyedRules = new Map(state.keyedRules);
+		this.universalRules = [...state.universalRules];
 	}
 	async buildBaseCSS() {
+		// Check Static Cache
+		if (CSSMerger.BASE_STATE_CACHE) {
+			console.debug('[CssMerger] Base State Cache hit!');
+			this.rules = new Map(CSSMerger.BASE_STATE_CACHE.rules);
+			this.vars = new Map(CSSMerger.BASE_STATE_CACHE.vars);
+			this.keyedRules = new Map(CSSMerger.BASE_STATE_CACHE.keyedRules);
+			this.universalRules = [...CSSMerger.BASE_STATE_CACHE.universalRules];
+			return;
+		}
+
 		this.vars.clear();
 		this.rules.clear();
 		for (const css of baseCSS) {
@@ -178,11 +259,31 @@ export class CSSMerger {
 			this.pickRules(ast, this.rules);
 		}
 		this.buildRuleIndex();
+
+		// Cache the built state (Deep copy rules to avoid pollution)
+		const rulesCopy = new Map();
+		this.rules.forEach((rule, selector) => {
+			rulesCopy.set(selector, new Map(rule));
+		});
+
+		CSSMerger.BASE_STATE_CACHE = {
+			rules: rulesCopy,
+			vars: new Map(this.vars),
+			keyedRules: new Map(this.keyedRules),
+			universalRules: [...this.universalRules]
+		};
+
+		console.log('[CssMerger] Base State Cache Saved - variables:',
+			Array.from(CSSMerger.BASE_STATE_CACHE.vars.entries()).filter(([key]) =>
+				key.includes('b08d55') || key.includes('D4AF37') || key.includes('1e1e1e')
+			)
+		);
+
 		console.debug(`[CssMerger] Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
 		const MAX_DEPTH = 10; // 防止无限循环
-		const varRegex = /var\(\s*--([\w-]+)(?:\s*,\s*((?:\((?:[^()]|\([^()]*\))*\)|[^)\s]|[\s\S])*?))?\s*\)/g;
+		const varRegex = /var\(\s*--([\w-]+)(?:\s*,\s*((?:(?:\([^()]*\))|[^)\s])*?))?\s*\)/g;
 		let result = value;
 		let replaced: boolean;
 
@@ -214,18 +315,20 @@ export class CSSMerger {
 	private pickRules(root: postcss.Root, rules: Rules): void {
 		root.walkRules(rule => {
 			if (rule.selector !== ':root') {
-				let selectedRule = rules.get(rule.selector);
-				if (!selectedRule) {
-					selectedRule = new Map();
-					rules.set(rule.selector, selectedRule);
-				}
-				rule.walkDecls(decl => {
-					const baseDecl = selectedRule.get(decl.prop);
-
-					if (baseDecl === undefined || !baseDecl.important || decl.important) {
-						selectedRule.set(decl.prop, decl);
+				// Split multi-selectors (e.g., "h1::before, h1::after") to handle each pseudo-element correctly
+				rule.selectors.forEach(selector => {
+					let selectedRule = rules.get(selector);
+					if (!selectedRule) {
+						selectedRule = new Map();
+						rules.set(selector, selectedRule);
 					}
-				})
+					rule.walkDecls(decl => {
+						const baseDecl = selectedRule.get(decl.prop);
+						if (baseDecl === undefined || !baseDecl.important || decl.important) {
+							selectedRule.set(decl.prop, decl);
+						}
+					})
+				});
 			}
 		})
 	}
@@ -234,7 +337,16 @@ export class CSSMerger {
 			if (rule.selector === ':root') {
 				rule.walkDecls(decl => {
 					if (decl.prop.startsWith('--')) {
+						// Validate variable name format
+						if (!/^[a-zA-Z0-9-]+$/.test(decl.prop.substring(2))) {
+							console.warn(`[CssMerger] Potentially invalid variable name format: ${decl.prop}`);
+						}
+
+						// Validation passed
+						// Logic Update: Always set/overwrite the variable to support CSS cascading (Last wins)
+						// This allows Custom CSS (loaded later) to override Base CSS.
 						vars.set(decl.prop, decl.value);
+						// console.log(`[CssMerger] Set variable: ${decl.prop} = ${decl.value}`);
 					}
 				});
 			}
@@ -242,9 +354,9 @@ export class CSSMerger {
 	}
 
 	private normalizeSelector(selector: string) {
-		const pseudoMatch = selector.match(/::(before|after)/);
+		const pseudoMatch = selector.match(/::?(before|after)/);
 		const pseudo = pseudoMatch ? pseudoMatch[1] as 'before' | 'after' : null;
-		const baseSelector = pseudo ? selector.replace(/::(before|after)/g, '') : selector;
+		const baseSelector = pseudo ? selector.replace(/::?(before|after)/g, '') : selector;
 		return { baseSelector, pseudo };
 	}
 
@@ -271,6 +383,11 @@ export class CSSMerger {
 
 		while (stack.length > 0) {
 			const currentNode = stack.pop()!;
+
+			// Highlight element diagnostic
+			if (currentNode.tagName === 'MARK' || currentNode.classList.contains('highlight')) {
+				console.debug(`[CssMerger] Identified highlight element: <${currentNode.tagName}> content: "${currentNode.textContent?.substring(0, 20)}..."`);
+			}
 
 			// Resolve variables in existing inline styles first
 			const existingStyle = currentNode.getAttribute('style');
@@ -309,7 +426,17 @@ export class CSSMerger {
 					if (currentNode.matches(baseSelector)) {
 						let target = currentNode;
 						if (pseudo) {
+							const displayDecl = rule.get('display');
 							const contentDecl = rule.get('content');
+
+							// Correctly handle display: none or content: none to HIDE base pseudo-elements
+							if (displayDecl?.value === 'none' || contentDecl?.value === 'none') {
+								const attr = `data-wewrite-pseudo-${pseudo}`;
+								const existing = currentNode.querySelector(`[${attr}]`);
+								if (existing) existing.remove();
+								return; // Break out of this specific rule application
+							}
+
 							target = this.ensurePseudoElement(currentNode, pseudo, contentDecl?.value);
 						}
 						rule.forEach((decl, prop) => {

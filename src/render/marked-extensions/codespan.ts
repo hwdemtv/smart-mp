@@ -8,6 +8,7 @@
 
 
 import { Tokens } from "marked";
+import { escapeHtml } from "../../utils/utils";
 import { WeWriteMarkedExtension } from "./extension";
 export class CodespanRenderer extends WeWriteMarkedExtension {
 	showLineNumber: boolean;
@@ -20,7 +21,7 @@ export class CodespanRenderer extends WeWriteMarkedExtension {
 		const regex = /^wwcap:\s*(.*)$/gim;
 		const captions: string[] = [];
 		let match: RegExpExecArray | null;
-		
+
 		while ((match = regex.exec(input)) !== null) {
 			captions.push(match[1].trim());
 		}
@@ -34,7 +35,23 @@ export class CodespanRenderer extends WeWriteMarkedExtension {
 		if (captions.length > 0) {
 			return `<div class="wewrite-image-caption">${captions[0]}</div>`
 		}
-		return `<span class="wewrite-codespan">${code}</span>`;
+		// [Fixed] Remove wewrite-codespan class to avoid forced dark theme background
+		// [Fixed] Escape HTML to prevent tag stripping (e.g. Array<Image>)
+		// [Enhancement] Inline styles for WeChat compatibility
+		const theme = this.plugin.settings.codeTheme || 'github';
+		let style = 'padding: .2em .4em; border-radius: 4px; font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; font-size: .85em; margin: 0 .2em;';
+
+		// @ts-ignore
+		if (theme === 'github' || theme === 'github-light') {
+			style += 'background-color: rgba(27,31,35,0.05); color: #24292e;';
+		} else {
+			// One Dark / Default
+			style += 'background-color: #282c34; color: #e5c07b;';
+		}
+
+
+
+		return `<span class="wewrite-codespan" style="${style}">${escapeHtml(code)}</span>`;
 	}
 
 

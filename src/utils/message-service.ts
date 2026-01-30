@@ -38,7 +38,9 @@ export type MSG_TYPE =
   'custom-theme-folder-changed' |
   'image-generated' |
   'show-spinner' |
-  'hide-spinner'
+  'show-spinner' |
+  'hide-spinner' |
+  'theme-reloaded'
 
 
 

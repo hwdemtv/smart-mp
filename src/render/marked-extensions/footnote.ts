@@ -59,7 +59,7 @@ export class Footnote extends WeWriteMarkedExtension {
                     },
                     renderer: (token) => {
                         if (token.type === 'footnoteMark') {
-                            return `<a>${token.text}<sup>【${token.id}】</sup></a>`
+                            return `<sup>【${token.id}】</sup>`
                         }
                     }
                 }

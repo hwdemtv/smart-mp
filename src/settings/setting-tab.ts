@@ -74,35 +74,74 @@ export class WeWriteSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	activeTab: 'general' | 'llm' = 'general';
+
 	display(): void {
 		const { containerEl } = this;
 
 		containerEl.empty();
-		this.createWeChatSettings(containerEl);
-		this.creatCSSStyleSetting(containerEl);
-		this.createAiChatSettings(containerEl);
-		this.createAiDrawSettings(containerEl);
-		new Setting(containerEl)
-			.setName($t("settings.import-export-wewrite-account"))
-			.setHeading()
-			.setDesc($t("settings.import-or-export-your-account-info-for-b"))
-			.setClass("wewrite-import-export-config")
-			.addExtraButton((button) => {
-				button
-					.setIcon("upload")
-					.setTooltip($t("settings.import-account-info"))
-					.onClick(() => {
-						this.importSettings();
-					});
-			})
-			.addExtraButton((button) => {
-				button
-					.setIcon("download")
-					.setTooltip($t("settings.export-account-info"))
-					.onClick(() => {
-						void this.exportSettings();
-					});
-			});
+
+		// Tab Navigation
+		const navContainer = containerEl.createDiv({ cls: 'wewrite-settings-nav' });
+		navContainer.style.display = 'flex';
+		navContainer.style.marginBottom = '20px';
+		navContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
+		navContainer.style.paddingBottom = '10px';
+		navContainer.style.gap = '20px';
+
+		const generalTab = navContainer.createEl('div', { text: 'General / Formatter', cls: 'wewrite-nav-tab' });
+		generalTab.style.cursor = 'pointer';
+		generalTab.style.fontWeight = this.activeTab === 'general' ? 'bold' : 'normal';
+		generalTab.style.color = this.activeTab === 'general' ? 'var(--text-normal)' : 'var(--text-muted)';
+		generalTab.style.borderBottom = this.activeTab === 'general' ? '2px solid var(--interactive-accent)' : 'none';
+
+		generalTab.onClickEvent(() => {
+			this.activeTab = 'general';
+			this.display();
+		});
+
+		const llmTab = navContainer.createEl('div', { text: 'AI & LLM', cls: 'wewrite-nav-tab' });
+		llmTab.style.cursor = 'pointer';
+		llmTab.style.fontWeight = this.activeTab === 'llm' ? 'bold' : 'normal';
+		llmTab.style.color = this.activeTab === 'llm' ? 'var(--text-normal)' : 'var(--text-muted)';
+		llmTab.style.borderBottom = this.activeTab === 'llm' ? '2px solid var(--interactive-accent)' : 'none';
+
+		llmTab.onClickEvent(() => {
+			this.activeTab = 'llm';
+			this.display();
+		});
+
+		// Render Content
+		if (this.activeTab === 'general') {
+			this.createWeChatSettings(containerEl);
+			this.creatCSSStyleSetting(containerEl);
+
+			// Import/Export also moved here for now
+			new Setting(containerEl)
+				.setName($t("settings.import-export-wewrite-account"))
+				.setHeading()
+				.setDesc($t("settings.import-or-export-your-account-info-for-b"))
+				.setClass("wewrite-import-export-config")
+				.addExtraButton((button) => {
+					button
+						.setIcon("upload")
+						.setTooltip($t("settings.import-account-info"))
+						.onClick(() => {
+							this.importSettings();
+						});
+				})
+				.addExtraButton((button) => {
+					button
+						.setIcon("download")
+						.setTooltip($t("settings.export-account-info"))
+						.onClick(() => {
+							void this.exportSettings();
+						});
+				});
+		} else {
+			this.createAiChatSettings(containerEl);
+			this.createAiDrawSettings(containerEl);
+		}
 	}
 	async exportSettings() {
 		try {
@@ -266,7 +305,28 @@ export class WeWriteSettingTab extends PluginSettingTab {
 						}
 					});
 			});
+
+		new Setting(frame)
+			.setName("显示图片说明")
+			.setDesc("自动将图片的 Alt 文本转换为下方的说明文字")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showImageCaptions || false)
+					.onChange(async (value) => {
+						this.plugin.settings.showImageCaptions = value;
+						await this.plugin.saveSettings();
+
+						// Rebuild debounce for active previewer
+						const leaves = this.app.workspace.getLeavesOfType("wewrite-article-preview");
+						for (const leaf of leaves) {
+							if (leaf.view instanceof PreviewPanel) {
+								(leaf.view as any).renderDraft();
+							}
+						}
+					});
+			});
 	}
+
 	newMPAccountInfo() {
 		let n = 0;
 		let newName = $t("settings.new-account");
@@ -836,10 +896,11 @@ export class WeWriteSettingTab extends PluginSettingTab {
 
 		new Setting(mpFrame)
 			.setName($t("settings.use-center-token-server"))
-			.setDesc($t("settings.if-your-device-cannot-get-static-pubic-i"))
+			.setDesc(($t("settings.if-your-device-cannot-get-static-pubic-i") || "") + " (功能已暂时关闭，请待自建服务器后开启)")
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.plugin.settings.useCenterToken)
+					.setValue(false) // Force false in UI
+					.setDisabled(true) // Disable interaction
 					.onChange((value) => {
 						this.plugin.settings.useCenterToken = value;
 						void this.plugin.saveSettings();

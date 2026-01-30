@@ -14,9 +14,9 @@ declare global {
 void i18n.init({
 	debug: false,
 	lng: moment.locale(), //obsidian language
-	fallbackLng: "en", 
+	fallbackLng: "en",
 	interpolation: {
-		escapeValue: false, 
+		escapeValue: true,
 	},
 	resources: {
 		en: {
@@ -27,11 +27,21 @@ void i18n.init({
 		},
 	},
 });
+
+function escapeHtml(unsafe: string): string {
+	return unsafe
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
 export function $t(key: string, options?: string[]) {
 	let result = i18n.t(key);
 	if (options !== undefined) {
 		for (let i = 0; i < options.length; i++) {
-			result = result.replace(`{${i}}`, options[i]);
+			result = result.replace(`{${i}}`, escapeHtml(options[i]));
 		}
 	}
 	return result;

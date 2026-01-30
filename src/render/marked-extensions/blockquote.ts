@@ -95,13 +95,14 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 	}
 
 	async rendererBlockquote(token: Tokens.Blockquote) {
-		const textContent = token.text || normalizeBlockquoteText(token.raw || "");
-		const parsedText = await this.marked.parseInline(textContent);
-		const text = parsedText.replace(/\n/gm, "<br>").trim();
-		return `<blockquote dir="auto"><span class="icon-pin"></span><div class="blockquote-inner">${text}</div></blockquote>`;
+		// Use marked.parser directly on child tokens to avoid infinite recursion
+		// Based on project types, this.marked.parser is the parsing function for block tokens
+		const body = this.marked.parser(token.tokens || []);
+		return `<blockquote dir="auto">${body}</blockquote>`;
 	}
 
 	async rendererCallout(token: Tokens.Blockquote) {
+		// Callouts are usually at the top level of a blockquote, so we need to handle the title
 		const rawText = token.text || normalizeBlockquoteText(token.raw || "");
 		const callout = matchCallout(rawText);
 		if (!callout) {
@@ -115,10 +116,6 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 			const bodyText = rawText.slice(index + 1).trim();
 			if (bodyText) {
 				body = await this.marked.parse(bodyText);
-			}
-			if (!body && bodyText) {
-				const inline = await this.marked.parseInline(bodyText);
-				body = inline.replace(/\n/gm, "<br>");
 			}
 		}
 		const info = calloutIcons.get(calloutType) || calloutIcons.get("note");
@@ -136,10 +133,9 @@ export class BlockquoteRenderer extends WeWriteMarkedExtension {
 				const blockquote = token as Tokens.Blockquote;
 				const raw = blockquote.raw || "";
 				const rawText = normalizeBlockquoteText(raw);
-				if (!blockquote.text && rawText) {
-					blockquote.text = rawText;
-				}
-				const matched = matchCallout(rawText || blockquote.text);
+
+				// Only hijack if it's a Callout, otherwise let default blockquote rendering occur
+				const matched = matchCallout(rawText);
 				if (matched) {
 					token.html = await this.rendererCallout(blockquote);
 				} else {

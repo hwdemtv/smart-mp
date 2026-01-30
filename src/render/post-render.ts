@@ -49,6 +49,10 @@ export function svgToPng(svgData: string): Promise<Blob> {
         img.src = objectUrl;
     });
 }
+// Helper to clean up dataUrl for WeChat compatibility (if needed) or debug
+function cleanDataURL(dataUrl: string): string {
+    return dataUrl;
+}
 
 function dataURLtoBlob(dataUrl: string): Blob {
     const parts = dataUrl.split(';base64,');
@@ -77,7 +81,9 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
 
     const uploadPromises = svgs.map(async (svg) => {
         const svgString = serializeElement(svg);
-        if (svgString.length < 1000) {
+        // 之前的阈值 1000 太高，导致简单的 Icon (300-500 chars) 被跳过
+        // 调整为 150 以允许大多数合法的小图标，同时过滤极短的空 SVG
+        if (svgString.length < 150) {
             console.warn('[uploadSVGs] SVG too small, skipping:', svgString.length);
             return Promise.resolve();
         }
@@ -299,11 +305,19 @@ export async function convertAssetsToDataURLs(
                     svg.replaceWith(img);
                     resolve();
                 };
-                reader.onerror = reject;
+                reader.onerror = () => {
+                    reject(new Error('FileReader error'));
+                };
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('[convertAssetsToDataURLs] SVG conversion failed:', error);
+            console.error('[convertAssetsToDataURLs] SVG conversion failed. Replacing with error placeholder.', error);
+            // Fallback: simple text to avoid "Image paste failed" error blocking the whole article
+            const placeholder = document.createElement('div');
+            placeholder.style.border = '1px dashed red';
+            placeholder.style.padding = '10px';
+            placeholder.innerText = `⚠️ SVG 图片转换失败`;
+            svg.replaceWith(placeholder);
         } finally {
             updateProgress();
         }
@@ -344,8 +358,36 @@ export async function convertAssetsToDataURLs(
             });
         } catch (error) {
             console.error(`[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
+            // Replace broken image with a text placeholder to avoid WeChat "paste failed" error
+            const placeholder = document.createElement('span');
+            placeholder.style.color = 'red';
+            placeholder.style.fontSize = '12px';
+            placeholder.innerText = `[图片加载失败]`;
+            img.replaceWith(placeholder);
         } finally {
             updateProgress();
         }
     }));
+
+    // 4. Final Sanitize: Remove any remaining images with invalid sources (file://, app://, etc.)
+    // These will definitively cause "Image paste failed" in WeChat
+    const remainingImages = Array.from(root.querySelectorAll('img'));
+    remainingImages.forEach(img => {
+        const src = img.getAttribute('src');
+        if (!src || (!src.startsWith('http') && !src.startsWith('data:'))) {
+            console.warn(`[convertAssetsToDataURLs] Removing invalid image src after processing: ${src}`);
+            const placeholder = document.createElement('span');
+            placeholder.style.border = '1px solid #eee';
+            placeholder.style.backgroundColor = '#f5f5f5';
+            placeholder.style.padding = '4px 8px';
+            placeholder.style.color = '#666';
+            placeholder.style.fontSize = '12px';
+            placeholder.style.borderRadius = '4px';
+            // Try to be helpful with the filename if possible
+            const name = src ? src.split('/').pop() : 'Invalid Image';
+            placeholder.innerText = `[无效图片: ${name}]`;
+            img.replaceWith(placeholder);
+        }
+    });
+
 }

@@ -1,15 +1,15 @@
 /* Callout Styles */
 
 :root {
-    --callout-background-color: rgba(8, 109, 221, 0.1);
-	--callout-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --callout-background-color: var(--callout-color, var(--background-secondary, rgba(8, 109, 221, 0.1)));
+    --callout-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     --callout-border-color: rgba(8, 109, 221, 0.25);
-	--callout-border-radius: var(--wewrite-border-radius, 4px);
-	--callout-border-width: 0px;
+    --callout-border-radius: var(--wewrite-border-radius, 4px);
+    --callout-border-width: 0px;
     --callout-icon-color: rgba(8, 109, 221, 0.5);
     --callout-icon-size: 1.25em;
     --callout-icon-margin: 0.25em;
-	--cursor: pointer;
+    --cursor: pointer;
 }
 
 .wewrite-callout {
@@ -24,7 +24,7 @@
 }
 
 .wewrite-callout:not(.admonition).drop-shadow {
-    box-shadow: var(--callout-box-shadow, 0 4px 8px  rgba(0, 0, 0, 0.2));
+    box-shadow: var(--callout-box-shadow, 0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
 .wewrite-callout:not(.admonition) .no-title {
@@ -53,7 +53,7 @@
 
 .wewrite-callout {
     background-color: var(--callout-background-color, rgba(8, 109, 221, 0.1));
-    box-shadow: var(--callout-box-shadow, 0 4px 8px  rgba(0, 0, 0, 0.2));
+    box-shadow: var(--callout-box-shadow, 0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
 
@@ -64,6 +64,7 @@
 .wewrite-callout[data-callout="summary"] {
     background-color: rgba(0, 191, 188, 0.1);
 }
+
 .wewrite-callout[data-callout="abstract"],
 .wewrite-callout[data-callout="tldr"] {
     background-color: rgba(0, 176, 255, 0.1);
@@ -130,7 +131,7 @@
 }
 
 /* title start */
-.wewrite-callout.is-collapsible  {
+.wewrite-callout.is-collapsible {
     cursor: var(--cursor);
 }
 
@@ -146,10 +147,11 @@
 }
 
 
-.wewrite-callout[data-callout="summary"] .callout-title  {
+.wewrite-callout[data-callout="summary"] .callout-title {
     color: rgb(0, 191, 188);
 }
-.wewrite-callout[data-callout="abstract"] .callout-title ,
+
+.wewrite-callout[data-callout="abstract"] .callout-title,
 .wewrite-callout[data-callout="tldr"] .callout-title {
     color: rgb(0, 176, 255);
 }
@@ -166,37 +168,37 @@
     color: rgb(8, 191, 188);
 }
 
-.wewrite-callout[data-callout="tip"] .callout-title ,
+.wewrite-callout[data-callout="tip"] .callout-title,
 .wewrite-callout[data-callout="hint"] .callout-title {
     color: rgb(8, 191, 188);
 }
 
-.wewrite-callout[data-callout="success"] .callout-title ,
-.wewrite-callout[data-callout="check"] .callout-title ,
+.wewrite-callout[data-callout="success"] .callout-title,
+.wewrite-callout[data-callout="check"] .callout-title,
 .wewrite-callout[data-callout="done"] .callout-title {
     color: rgb(8, 185, 78);
 
 }
 
-.wewrite-callout[data-callout="question"] .callout-title ,
-.wewrite-callout[data-callout="help"] .callout-title ,
+.wewrite-callout[data-callout="question"] .callout-title,
+.wewrite-callout[data-callout="help"] .callout-title,
 .wewrite-callout[data-callout="faq"] .callout-title {
     color: rgb(236, 117, 0);
 }
 
-.wewrite-callout[data-callout="warning"] .callout-title ,
-.wewrite-callout[data-callout="caution"] .callout-title ,
+.wewrite-callout[data-callout="warning"] .callout-title,
+.wewrite-callout[data-callout="caution"] .callout-title,
 .wewrite-callout[data-callout="attention"] .callout-title {
     color: rgb(236, 117, 0);
 }
 
-.wewrite-callout[data-callout="failure"] .callout-title ,
-.wewrite-callout[data-callout="fail"] .callout-title ,
+.wewrite-callout[data-callout="failure"] .callout-title,
+.wewrite-callout[data-callout="fail"] .callout-title,
 .wewrite-callout[data-callout="missing"] .callout-title {
     color: rgb(233, 49, 71);
 }
 
-.wewrite-callout[data-callout="danger"]  .callout-title ,
+.wewrite-callout[data-callout="danger"] .callout-title,
 .wewrite-callout[data-callout="error"] .callout-title {
     color: rgb(233, 49, 71);
 }
@@ -209,15 +211,15 @@
     color: rgb(120, 82, 238);
 }
 
-.wewrite-callout[data-callout="quote"] .callout-title ,
-.wewrite-callout[data-callout="cite"]  .callout-title {
+.wewrite-callout[data-callout="quote"] .callout-title,
+.wewrite-callout[data-callout="cite"] .callout-title {
     color: rgb(158, 158, 158);
 }
 
 /* title end */
 .callout-content {
     overflow-x: auto;
-    padding: 0; 
+    padding: 0;
     background-color: transparent;
 }
 
@@ -234,14 +236,14 @@
 
 
 .callout-title-inner {
-    font-weight: 600; 
-    color: inherit; 
+    font-weight: 600;
+    color: inherit;
 }
 
 .callout-fold {
     display: flex;
     align-items: center;
-    padding-inline-end: 8px; 
+    padding-inline-end: 8px;
 }
 
 
@@ -252,4 +254,3 @@
 .callout-fold.is-collapsed .svg-icon {
     transform: rotate(-1 * -1 * 90deg);
 }
-

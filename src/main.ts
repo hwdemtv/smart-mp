@@ -43,6 +43,8 @@ import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
 import { PreviewPanel, VIEW_TYPE_WEWRITE_PREVIEW } from "./views/previewer";
 import { WechatClient } from "./wechat-api/wechat-client";
 import { Spinner } from "./views/spinner";
+import { ThemeHotReloader } from "./theme/hot-reloader";
+import { ThemeManager } from "./theme/theme-manager";
 
 const DEFAULT_SETTINGS: WeWriteSetting = {
 	mpAccounts: [],
@@ -86,6 +88,7 @@ export default class WeWritePlugin extends Plugin {
 	resourceManager = ResourceManager.getInstance(this);
 	active: boolean = false;
 	spinner: Spinner;
+	themeHotReloader: ThemeHotReloader;
 
 	async saveThemeFolder() {
 		const config = {
@@ -899,6 +902,7 @@ export default class WeWritePlugin extends Plugin {
 	}
 	async onload() {
 		this.initDB();
+		console.log("WeWrite+ Version: 1.1.7-Deployment-Fix-v21");
 		this.messageService = new MessageService();
 		await this.loadSettings();
 		this.wechatClient = WechatClient.getInstance(this);
@@ -986,7 +990,11 @@ export default class WeWritePlugin extends Plugin {
 			this.app.workspace.offref(this.editorChangeListener);
 		}
 		// this.spinnerEl.remove();
+		// this.spinnerEl.remove();
 		this.spinner.unload();
+		if (this.themeHotReloader) this.themeHotReloader.stopWatching();
+		ThemeManager.getInstance(this).onPluginUnload();
+
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof PreviewPanel) {
 				leaf.detach();

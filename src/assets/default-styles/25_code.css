@@ -1,21 +1,21 @@
 /* code section */
 
 :root {
-	--code-container-background-color: #282c34;
+	--code-container-background-color: var(--code-background, #282c34);
 	/*#1E1E1E;*/
-	--code-section-background-color: #282c34;
-	--code-color: #abb2bf;
-	--code-comment-color: #5c6370;
-	--code-keyword-color: #c678dd;
-	--code-name-color: #e06c75;
-	--code-literal-color: #56b6c2;
-	--code-string-color: #98c379;
-	--code-variable-color: #d19a66;
+	--code-section-background-color: var(--code-background, #282c34);
+	--code-color: var(--code-normal, #abb2bf);
+	--code-comment-color: var(--code-comment, #5c6370);
+	--code-keyword-color: var(--code-keyword, #c678dd);
+	--code-name-color: var(--code-tag, #e06c75);
+	--code-literal-color: var(--code-value, #56b6c2);
+	--code-string-color: var(--code-string, #98c379);
+	--code-variable-color: var(--code-property, #d19a66);
 	--code-symbol-color: #61aeee;
 	--code-class-color: #e6c07b;
 	--code-line-height: 1.6;
 	--code-line-color: rgb(253, 247, 247);
-	--code-font-size: 0.9rem;
+	--code-font-size: var(--code-size, 0.9rem);
 	--code-padding: 8px;
 	--code-border-radius: 6px;
 	--code-banner-display: inline-block;
@@ -87,7 +87,7 @@
 	padding-bottom: var(--code-padding, 8px);
 	position: relative;
 	overflow: hidden;
-	background: var(--code-section-background-color, #282c34) !important;
+	background: var(--code-section-background-color, #282c34);
 	display: flex;
 	flex-direction: column;
 	flex-shrink: 0;

@@ -39,8 +39,8 @@ export type LocalDraftItem = {
 }
 
 export const initDraftDB = () => {
-	const db = new PouchDB('wewrite-local-drafts');
-	return  db;
+    const db = new PouchDB('wewrite-local-drafts');
+    return db;
 }
 export class LocalDraftManager {
     private plugin: WeWritePlugin;
@@ -62,24 +62,60 @@ export class LocalDraftManager {
         const accountName = this.plugin.settings.selectedMPAccount;
         if (accountName !== undefined && accountName) {
             const f = this.plugin.app.workspace.getActiveFile()
-			
+
             if (f) {
                 draft = await this.getDraft(accountName, f.path)
-				
+
+                // [Sync] Sync Frontmatter to Draft Properties
+                const cache = this.plugin.app.metadataCache.getCache(f.path);
+                const frontmatter = cache?.frontmatter;
+                let needSave = false;
+
+                // Initialize draft structure if new
                 if (draft === undefined) {
                     draft = {
                         accountName: accountName,
                         notePath: f.path,
-                        title: f.basename,
+                        title: f.basename, // Default title
                         _id: accountName + f.path
                     }
-                    await this.setDraft(draft)
-
+                    // Will save later
+                    needSave = true;
                 }
-				if (draft.title.trim() === ''){
-					draft.title = f.basename
-					await this.setDraft(draft)
-				}
+
+                if (frontmatter) {
+                    // 1. Title / 标题
+                    // Prioritize '标题', then 'title', then fallback to existing draft title or basename
+                    const fmTitle = frontmatter['标题'] || frontmatter['title'];
+                    if (fmTitle && draft.title !== fmTitle) {
+                        draft.title = fmTitle;
+                        needSave = true;
+                    }
+
+                    // 2. Author / 作者
+                    const fmAuthor = frontmatter['作者'] || frontmatter['author'];
+                    if (fmAuthor && draft.author !== fmAuthor) {
+                        draft.author = fmAuthor;
+                        needSave = true;
+                    }
+
+                    // 3. Digest / 摘要
+                    const fmDigest = frontmatter['摘要'] || frontmatter['digest'];
+                    if (fmDigest && draft.digest !== fmDigest) {
+                        draft.digest = fmDigest;
+                        needSave = true;
+                    }
+                }
+
+                // Ensure title is never empty
+                if (!draft.title || draft.title.trim() === '') {
+                    draft.title = f.basename;
+                    needSave = true;
+                }
+
+                if (needSave) {
+                    await this.setDraft(draft);
+                }
             }
         }
         return draft
@@ -140,23 +176,23 @@ export class LocalDraftManager {
                     if (error.status === 404) {
                         // New document
                         return this.db.put(doc)
-							.then(() => resolve(true))
-							.catch(err => {
-								console.error('Error creating new draft:', err);
-								const reason =
-									err instanceof Error
-										? err
-										: new Error(String(err));
-								reject(reason);
-							});
-					}
-					console.error('Error checking existing draft:', error);
-					const reason =
-						error instanceof Error
-							? error
-							: new Error(String(error));
-					reject(reason);
-				});
+                            .then(() => resolve(true))
+                            .catch(err => {
+                                console.error('Error creating new draft:', err);
+                                const reason =
+                                    err instanceof Error
+                                        ? err
+                                        : new Error(String(err));
+                                reject(reason);
+                            });
+                    }
+                    console.error('Error checking existing draft:', error);
+                    const reason =
+                        error instanceof Error
+                            ? error
+                            : new Error(String(error));
+                    reject(reason);
+                });
         });
     }
 }

@@ -185,7 +185,7 @@ export class Embed extends WeWriteMarkedExtension {
 		return parts.join("/");
 	}
 	getImagePath(path: string) {
-		if (path.startsWith("http")) {
+		if (path.startsWith("http") || path.startsWith("app://") || path.startsWith("data:")) {
 			return path;
 		}
 		const file = this.searchFile(path);
@@ -527,28 +527,69 @@ export class Embed extends WeWriteMarkedExtension {
 	}
 
 	async renderExcalidrawAsync(token: Tokens.Generic) {
-		if (!this.isPluginInstlled("obsidian-excalidraw-plugin")) {
-			return false;
-		}
-		// define default failed
-		token.html = $t("render.excalidraw-failed");
-
 		const href = token.href;
 		const index = this.excalidrawIndex;
 		this.excalidrawIndex++;
 
-		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
+		// Attempt 1: Try using ExcalidrawAutomate API (Direct SVG Generation)
+		// This bypasses the need for the element to be rendered in the DOM
+		try {
+			// @ts-ignore
+			let ea = window.ExcalidrawAutomate;
 
-		// [Critical Fix] Ensure previewEl exists
-		if (!renderer.previewEl) {
-			console.error(`[Excalidraw] Fatal error: previewEl is null. Make sure ObsidianMarkdownRenderer.render() is called.`);
-			token.html = `<section class="excalidraw-fallback" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
-				<p style="margin: 0 0 5px 0;">⚠️ Excalidraw 渲染需要预览功能支持</p>
-				<a href="${href}" class="internal-link" style="color: #0366d6;">点击查看: ${href}</a>
-			</section>`;
-			return;
+			// Fallback: Try to get from plugin instance
+			if (!ea) {
+				// @ts-ignore
+				const plugin = this.plugin.app.plugins.getPlugin("obsidian-excalidraw-plugin");
+				if (plugin) {
+					ea = plugin.excalidrawAutomate;
+				}
+			}
+
+			if (ea) {
+				const linkText = href.split('|')[0];
+				const file = this.plugin.app.metadataCache.getFirstLinkpathDest(linkText, '');
+				if (file) {
+					// We need to reset the API to ensure clean state
+					// ea.reset(); // reset() might be too aggressive if shared, but usually safe for one-off generation
+					const svg = await ea.createSVG(file.path, true, undefined, undefined, undefined, undefined);
+					if (svg) {
+						// Remove width/height attributes to allow responsive scaling
+						svg.removeAttribute('width');
+						svg.removeAttribute('height');
+						svg.style.width = '100%';
+						svg.style.height = 'auto';
+
+						const serializer = new XMLSerializer();
+						const svgString = serializer.serializeToString(svg);
+
+						// Direct embedding of SVG for better compatibility and styling
+						// This avoids base64 encoding issues and allows CSS to work on SVG
+						token.html = `<section class="excalidraw" style="width: 100%;">${svgString}</section>`;
+						console.debug(`[Excalidraw] Rendered via ExcalidrawAutomate API (Direct SVG): ${href}`);
+						return;
+					} else {
+						console.warn(`[Excalidraw] ExcalidrawAutomate.createSVG returned null for ${file.path}`);
+					}
+				} else {
+					console.warn(`[Excalidraw] File not found for link: ${linkText}`);
+				}
+			} else {
+				console.warn("[Excalidraw] ExcalidrawAutomate API not found. Is 'Excalidraw Scripts' enabled?");
+				// Start attempting to enable it if possible? Use specific command?
+			}
+		} catch (e) {
+			console.error(`[Excalidraw] ExcalidrawAutomate API failed:`, e);
 		}
 
+		// Attempt 2: Fallback to DOM Scraping (Original Logic)
+		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
+
+		// Ensure previewEl exists
+		if (!renderer.previewEl) {
+			token.html = $t("render.excalidraw-failed");
+			return;
+		}
 
 		// 1. Try to find with default selector
 		let root = renderer.queryElement(index, "div.excalidraw-svg") ||
@@ -574,13 +615,28 @@ export class Embed extends WeWriteMarkedExtension {
 			}
 		}
 
+		// 3. Fallback: Search globally in the temp container (or body) if local context failed
 		if (!root) {
-			console.error(`[Excalidraw] render error: root is null after retries`, {
-				index,
+			const allExcalidraws = document.body.querySelectorAll('.excalidraw-svg, .excalidraw');
+			if (allExcalidraws.length > index) {
+				root = allExcalidraws[index] as HTMLElement;
+				console.debug(`[Excalidraw] Found element via global search at index ${index}`);
+			}
+		}
+
+		// 4. Final failure handling
+		if (!root) {
+			const unrenderedEmbed = renderer.previewEl?.querySelector(`span.internal-embed[src*="${href.split('|')[0]}"]`);
+
+			console.error(`[Excalidraw] All render attempts failed for index ${index}`, {
 				href,
-				previewExists: !!renderer.previewEl,
-				elementCount: renderer.previewEl?.querySelectorAll(".excalidraw-svg, .excalidraw").length
+				unrenderedEmbedFound: !!unrenderedEmbed,
 			});
+			// Don't overwrite token.html if we failed, maybe previous content is better?
+			// Actually, if we failed, we should probably verify if we are indeed running inside Obsidian with Excalidraw enabled
+			if (!this.isPluginInstlled("obsidian-excalidraw-plugin")) {
+				token.html = $t("render.excalidraw-plugin-not-installed");
+			}
 			return;
 		}
 
@@ -594,10 +650,10 @@ export class Embed extends WeWriteMarkedExtension {
 			}
 			const dataUrl = await renderer.domToImage(root);
 
-			token.html = `<section class="excalidraw" ><img src="${dataUrl}" class="exclaidraw-image" ></section>`;
-			console.debug(`[Excalidraw] Success:`, href);
+			token.html = `<section class="excalidraw"><img src="${dataUrl}" class="exclaidraw-image"></section>`;
+			console.debug(`[Excalidraw] Success via DOM:`, href);
 		} catch (e) {
-			console.error(`[Excalidraw] render error:`, e);
+			console.error(`[Excalidraw] DOM render error:`, e);
 		}
 	}
 	async renderMarkdownEmbedAsync(token: Tokens.Generic) {

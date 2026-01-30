@@ -32,6 +32,12 @@ export class WechatClient {
 	}
 
 	public async requestToken(retryCount = 0): Promise<string | null> {
+		// [Safety] Temporarily disabled until private server is set up
+		console.log("Center token server is temporarily disabled.");
+		new Notice($t("wechat-api.center-token-disabled-manual") || "中心令牌功能已暂时关闭。");
+		return null;
+
+		/*
 		const url = "https://wewrite.3thinking.cn/mp_token";
 		if (retryCount > 3) {
 			console.error("Failed to refresh token after 3 attempts");
@@ -112,6 +118,7 @@ export class WechatClient {
 			);
 			return null;
 		}
+		*/
 	}
 
 	private getHeaders() {

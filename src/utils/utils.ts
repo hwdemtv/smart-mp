@@ -1,5 +1,15 @@
 import { requestUrl } from "obsidian";
 
+
+export function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 export function areObjectsEqual(obj1: unknown, obj2: unknown): boolean {
     if (obj1 === obj2) return true;
 
@@ -184,7 +194,15 @@ function cleanAttributes(el: HTMLElement): void {
         // 3. [Security] XSS protection for URL attributes
         if ((attrName === 'href' || attrName === 'src')) {
             const value = attr.value.trim().toLowerCase();
-            if (value.startsWith('javascript:') || value.startsWith('vbscript:') || (value.startsWith('data:') && !value.startsWith('data:image/'))) {
+            // Block scripting, data-non-image, and local file protocols (app/file)
+            if (
+                value.startsWith('javascript:') ||
+                value.startsWith('vbscript:') ||
+                value.startsWith('file:') ||
+                value.startsWith('app:') ||
+                (value.startsWith('data:') && !value.startsWith('data:image/'))
+            ) {
+                console.warn(`[WeWrite] Removed unsafe/local protocol in ${attrName}: ${value.substring(0, 50)}...`);
                 el.removeAttribute(attr.name);
             }
         }

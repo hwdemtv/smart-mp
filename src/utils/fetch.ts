@@ -23,11 +23,17 @@ function normalizeBody(body: unknown): string | ArrayBuffer | undefined {
 }
 
 export const obsidianFetch: ObsidianFetch = async (url, init) => {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+
   const method = init?.method ?? 'GET';
   const headers = init?.headers as Record<string, string> | undefined;
 
   const body = normalizeBody(init?.body);
   const urlString = resolveUrlString(url);
+
+  console.debug(`[${requestId}] Fetch started: ${urlString}`);
+
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -43,6 +49,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
 
   return await requestUrl(param).then(
     (res) => {
+      console.debug(`[${requestId}] Fetch completed in ${Date.now() - startTime}ms: ${urlString}`);
       return {
         ok: res.status >= 200 && res.status < 300,
         status: res.status,
@@ -54,6 +61,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
       } as Response;
     },
   ).catch((e) => {
+    console.error(`[${requestId}] Fetch failed after ${Date.now() - startTime}ms: ${urlString}`, e);
     return {
       ok: false,
       status: 500,
@@ -67,14 +75,22 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
 };
 
 function resolveUrlString(url: RequestInfo | URL): string {
+  let urlString = '';
   if (typeof url === 'string') {
-    return url;
+    urlString = url;
+  } else if (url instanceof URL) {
+    urlString = url.toString();
+  } else if (url instanceof Request) {
+    urlString = url.url;
+  } else {
+    throw new Error('Unsupported request url type');
   }
-  if (url instanceof URL) {
-    return url.toString();
+
+  // Security Check: Block dangerous protocols
+  const protocol = urlString.split(':')[0].toLowerCase();
+  if (['file', 'blob', 'app', 'javascript', 'vbscript', 'data'].includes(protocol)) {
+    throw new Error(`Unsupported protocol: ${protocol}:`);
   }
-  if (url instanceof Request) {
-    return url.url;
-  }
-  throw new Error('Unsupported request url type');
+
+  return urlString;
 }

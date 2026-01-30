@@ -1,6 +1,6 @@
-:root{
-	--codespan-color: #e5c07b;
-	--codespan-background-color: #282c34;
+:root {
+	--codespan-color: var(--code-normal, #d1711c);
+	--codespan-background-color: var(--code-background, rgba(0, 0, 0, 0.05));
 	--codespan-padding: 2px 4px;
 	--codespan-border-radius: 4px;
 	--codespan-font-size: 0.9rem;

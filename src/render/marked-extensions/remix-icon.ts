@@ -25,19 +25,19 @@ export class RemixIconRenderer extends WeWriteMarkedExtension {
 			return '<span>remix icon not found </span>';
 		}
 		this.remixIndex++
-		return serializeElement(root);
+		return root.outerHTML;
 	}
 
 
 
-	markedExtension():MarkedExtension {
+	markedExtension(): MarkedExtension {
 		return {
 			extensions: [{
 				name: 'remixIcon',
 				level: 'inline',
 				start: (str: string) => {
 					const match = str.match(remixIconRegex);
-					if (match){
+					if (match) {
 						return match.index
 					}
 				},

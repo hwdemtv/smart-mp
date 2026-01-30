@@ -23,37 +23,66 @@ export class Image extends WeWriteMarkedExtension {
 	}
 
 	processImage(dom: HTMLElement) {
-		// Collect operations to minimize layout thrashing
-		const operations: Array<() => void> = [];
-		const imgEls = dom.querySelectorAll('img')
+		try {
+			// Collect operations to minimize layout thrashing
+			const operations: Array<() => void> = [];
+			const imgEls = dom.querySelectorAll('img');
+			const errors: Error[] = [];
 
-		for (let i = 0; i < imgEls.length; i++) {
-			const currentImg = imgEls[i]
-			const classNames = currentImg.getAttribute('class')?.split(' ')
+			for (let i = 0; i < imgEls.length; i++) {
+				try {
+					const currentImg = imgEls[i];
+					const classNames = currentImg.getAttribute('class')?.split(' ');
 
-			if (classNames?.includes('wewrite-avatar-image')) {
-				continue
+					if (classNames?.includes('wewrite-avatar-image')) {
+						continue;
+					}
+
+					const title = currentImg.getAttribute('title');
+					const alt = currentImg.getAttribute('alt-text');
+					const caption = title || alt || '';
+
+					operations.push(() => {
+						const parent = currentImg.parentNode;
+						if (!parent) return;
+
+						const fragment = document.createDocumentFragment();
+						const figureEl = fragment.createEl('figure', { cls: 'image-with-caption' });
+
+						if (caption) {
+							const captionRow = figureEl.createEl('div', { cls: 'image-caption-row' });
+							// captionRow.createEl('div', { cls: 'triangle' }); // Removed based on potentially simpler structure preference or previous context logic
+							// Re-adding structure as it appeared in original but cleaner:
+							const triangle = document.createElement('div');
+							triangle.className = 'triangle';
+							captionRow.appendChild(triangle);
+
+							const ficCaptionEl = document.createElement('figcaption');
+							ficCaptionEl.className = 'image-caption';
+							ficCaptionEl.textContent = caption;
+							captionRow.appendChild(ficCaptionEl);
+						}
+
+						parent.insertBefore(figureEl, currentImg);
+						figureEl.prepend(currentImg);
+					});
+				} catch (imgError) {
+					console.warn(`[WeWrite] Skipped image ${i} due to error:`, imgError);
+					errors.push(imgError instanceof Error ? imgError : new Error(String(imgError)));
+				}
 			}
 
-			const title = currentImg.getAttribute('title')
-			const alt = currentImg.getAttribute('alt-text')
-			const caption = title || alt || ''
-
-			// Defer DOM writes
-			operations.push(() => {
-				const figureEl = createEl('figure', { cls: 'image-with-caption' })
-				currentImg.parentNode?.insertBefore(figureEl, currentImg)
-				figureEl.appendChild(currentImg)
-				if (caption) {
-					const captionRow = figureEl.createEl('div', { cls: 'image-caption-row' })
-					captionRow.createEl('div', { cls: 'triangle' })
-					captionRow.createEl('figcaption', { cls: 'image-caption', text: caption })
+			// Batch execute DOM updates
+			operations.forEach(op => {
+				try {
+					op();
+				} catch (domError) {
+					console.error("[WeWrite] DOM operation failed:", domError);
 				}
 			});
+		} catch (error) {
+			console.error("Error processing images:", error);
 		}
-
-		// Execute all DOM writes in one batch
-		operations.forEach(op => op());
 	}
 	postprocess(dom: HTMLElement): Promise<HTMLElement> {
 		this.processImage(dom);
@@ -102,7 +131,7 @@ export class Image extends WeWriteMarkedExtension {
 				// 2. If not in vault or not found, try to use app://local/ for absolute paths
 				// This allows loading external images if Obsidian permissions allow
 				// On Windows, app://local/D:/path...
-				// return `app://local/${filePath}`;
+				return `app://local/${filePath}`;
 			}
 
 			const decodedPath = decodeURIComponent(path);
@@ -139,7 +168,7 @@ export class Image extends WeWriteMarkedExtension {
 					// 安全检查：确保 token.href 存在
 					if (!token.href) {
 						console.warn('[Image Extension] Missing href for image:', token.text);
-						return `<img src="" alt="${token.text || ''}" />`;
+						return `<img src="" alt="${token.text || ''}" class="wewrite-image-fallback" />`;
 					}
 					const resolvedSrc = getImagePath(token.href);
 					console.log('[Image Extension] Original:', token.href, '→ Resolved:', resolvedSrc);

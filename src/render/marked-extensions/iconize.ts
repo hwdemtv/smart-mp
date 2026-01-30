@@ -48,8 +48,8 @@ export class IconizeRender extends WeWriteMarkedExtension {
             });
             // rootSpan.innerHTML = iconObject.svgElement; 
 
-			rootSpan.appendChild(sanitizeHTMLToDom( iconObject.svgElement))
-            return serializeElement(rootSpan);
+            rootSpan.appendChild(sanitizeHTMLToDom(iconObject.svgElement))
+            return rootSpan.outerHTML;
         }
         return `<span>${iconName}${$t('render.render-failed')}</span>`
     }

@@ -96,11 +96,16 @@ theme_name: NoteToMP MWeb Solarized Light
   padding: 0;
   border: 0;
 }
+:root {
+  --blockquote-background-color: #fcf9f2;
+}
+
 .wewrite blockquote {
   display: block;
   padding-left: 0.8em;
   border-left: 0.2em solid rgb(165, 104, 18);
   color: rgb(50, 62, 69);
+  background-color: var(--blockquote-background-color, #fcf9f2);
 }
 .wewrite blockquote > :first-child {
   margin-top: 0;
@@ -247,5 +252,22 @@ theme_name: NoteToMP MWeb Solarized Light
 }
 .wewrite .code-section ul > li {
   text-align: right;
+}
+
+/* 高亮文本样式 */
+.wewrite mark, .wewrite .highlight {
+  background-color: #ffeb3b !important;
+  color: #333 !important;
+  padding: 0 2px !important;
+  border-radius: 3px !important;
+}
+
+/* 分隔符样式 */
+.wewrite-hr-replacement {
+  margin: 30px 0 !important;
+  height: 2px !important;
+  background: linear-gradient(to right, transparent, #268bd2, transparent) !important;
+  font-size: 0 !important;
+  border: none !important;
 }
 ```

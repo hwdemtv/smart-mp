@@ -120,7 +120,58 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			'hljs-subst': '#abb2bf' // Standard text color for variable substitution
 		};
 
-		// TODO: Implement dynamic theme loading if needed, for now using One Dark as base for high contrast
+		// Github Theme (Light)
+		const githubThemeColorMap: Record<string, string> = {
+			'hljs-comment': '#6a737d',
+			'hljs-quote': '#6a737d',
+			'hljs-variable': '#e36209',
+			'hljs-template-variable': '#e36209',
+			'hljs-tag': '#22863a',
+			'hljs-name': '#22863a',
+			'hljs-selector-id': '#6f42c1',
+			'hljs-selector-class': '#6f42c1',
+			'hljs-regexp': '#032f62',
+			'hljs-deletion': '#b31d28',
+			'hljs-number': '#005cc5',
+			'hljs-built_in': '#005cc5',
+			'hljs-builtin-name': '#6f42c1',
+			'hljs-literal': '#005cc5',
+			'hljs-type': '#24292e',
+			'hljs-params': '#24292e',
+			'hljs-meta': '#24292e',
+			'hljs-link': '#032f62',
+			'hljs-attribute': '#6f42c1',
+			'hljs-string': '#032f62',
+			'hljs-symbol': '#005cc5',
+			'hljs-bullet': '#735c0f',
+			'hljs-addition': '#22863a',
+			'hljs-title': '#6f42c1',
+			'hljs-section': '#005cc5',
+			'hljs-keyword': '#d73a49',
+			'hljs-selector-tag': '#22863a',
+			'hljs-emphasis': '#24292e',
+			'hljs-strong': '#24292e',
+			'hljs-attr': '#005cc5',
+			'hljs-operator': '#d73a49',
+			'hljs-class': '#6f42c1',
+			'hljs-function': '#6f42c1',
+			'hljs-property': '#005cc5',
+			'hljs-subst': '#24292e'
+		};
+
+		let currentThemeMap = themeColorMap;
+		let bg = '#282c34';
+		let color = '#abb2bf';
+		let headerBg = '#21252b';
+
+		// @ts-ignore
+		if (theme === 'github' || theme === 'github-light') {
+			currentThemeMap = githubThemeColorMap;
+			bg = '#f6f8fa';
+			color = '#24292e';
+			headerBg = '#e1e4e8';
+		}
+
 
 		// Convert hljs classes to inline styles with !important
 		highlighted = highlighted.replace(/<span class="([^"]+)">/g, (match, classString) => {
@@ -131,6 +182,10 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 			for (const className of classes) {
 				if (themeColorMap[className]) {
 					styles.push(`color:${themeColorMap[className]} !important`);
+				} else if (theme === 'github' && !themeColorMap[className]) {
+					// For github theme, if no color map found, try not to apply style or use default text color
+					// Actually, if we use github theme, we should have a map for it.
+					// But if fallback to "no style", default text color will be used which is good for github light.
 				}
 				if (className === 'hljs-strong') {
 					styles.push(`font-weight:bold !important`);
@@ -151,13 +206,10 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 		});
 
 		// Basic Code Block Styles
-		const bg = '#282c34';
-		const color = '#abb2bf';
 		const codeStyle = `background:${bg} !important;color:${color} !important;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:6px !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0.5em 0 !important;`;
 
 		let codeSection = '';
 		if (this.plugin.settings.showCodeMacHeader !== false && lang) {
-			const headerBg = '#21252b';
 			const headerStyle = `background:${headerBg};padding:4px 12px;display:flex;align-items:center;gap:6px;border-radius:6px 6px 0 0;`;
 			const dotStyle = 'width:8px;height:8px;border-radius:50%;display:inline-block;';
 			const labelStyle = 'margin-left:auto;font-size:11px;color:#6a737d;font-weight:bold;text-transform:uppercase;';
@@ -461,28 +513,28 @@ export class CodeRenderer extends WeWriteMarkedExtension {
 				level: 'block',
 
 				renderer: (token: Tokens.Generic) => {
-					// if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
-					// 	return token.html
-					// }
-					// else 
-					if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
-						return this.renderCharts(token);
-					}
-					else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
-						return this.renderWewriteProfile(token);
-					}
-					else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
+					if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
 						return token.html
 					}
+					else
+						if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
+							return this.renderCharts(token);
+						}
+						else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
+							return this.renderWewriteProfile(token);
+						}
+						else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
+							return token.html
+						}
 					return this.codeRenderer(token.text, token.lang);
 				},
 			}
 			],
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
-				// if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
-				// 	await this.renderMermaidAsync(token);
-				// }
+				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
+					await this.renderMermaidAsync(token);
+				}
 				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'wewrite-profile') {
 					// await this.renderProfileAsync(token); 
 					// No async profile renderer found, assuming synchronous renderer handles it or no async work needed.

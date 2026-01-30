@@ -62,17 +62,17 @@ export class ObsidianMarkdownRenderer {
             if (/^\s*>+\s*\[!/m.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
             }
-            // if (/```\s*mermaid/i.test(markdown)) {
-            //     waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
-            // }
-            // if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
-            //     waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
-            // }
+            if (/```\s*mermaid/i.test(markdown)) {
+                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
+            }
+            if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
+                waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
+            }
 
             // General buffer wait only if we waited on dynamic content
             if (waiters.length > 0) {
                 // Slight buffer for rendering stability if we had complex elements
-                waiters.push(new Promise(resolve => setTimeout(resolve, 300)));
+                waiters.push(new Promise(resolve => setTimeout(resolve, 100)));
             } else {
                 // No complex elements - minimal buffer
                 waiters.push(new Promise(resolve => setTimeout(resolve, 50)));
@@ -98,7 +98,7 @@ export class ObsidianMarkdownRenderer {
             return null
         }
         const nodes = this.previewEl.querySelectorAll<HTMLElement>(query)
-        if (nodes.length < index) {
+        if (index >= nodes.length) {
             return null
         }
         return nodes[index]
