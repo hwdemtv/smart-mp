@@ -8,6 +8,7 @@ import {
 	Notice,
 	PluginSettingTab,
 	Setting,
+	setIcon,
 } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { ThemeManager } from "src/theme/theme-manager";
@@ -20,6 +21,7 @@ import {
 	WeChatAccountInfo,
 	SmartMPSetting,
 } from "./smart-mp-setting";
+import { LLMProvider, LLMProviderType, LLMModel } from "./llm-types";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
 
 interface FileSystemFileHandle {
@@ -76,6 +78,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 	activeTab: 'general' | 'llm' = 'general';
 	private expandedSections: Set<string> = new Set();
+	private expandedModelSections: Set<string> = new Set();
 	private initialAssistantPrompts: Record<string, string> = {};
 	private isFirstDisplay = true;
 
@@ -497,156 +500,704 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 	createAiChatSettings(container: HTMLElement) {
 		const frame = this.createCollapsibleFrame(container, $t("settings.text-llm"));
-		// new Setting(frame).setName($t("settings.text-llm")).setHeading();
 
-		const selectAiChatSetting = new Setting(frame)
-			.setName($t("settings.select-account"))
-			.setDesc($t("settings.choose-the-llm-account-to-modify"));
-
-		this.aiChatAccountContainer = frame.createDiv({
-			cls: "smart-mp-account-info-content",
-		});
-
-		selectAiChatSetting.addDropdown((dropdown) => {
-			this.aiChatAccountDropdown = dropdown;
-			dropdown.selectEl.empty();
-			this.plugin.settings.chatAccounts.forEach((account) => {
-				dropdown.addOption(
-					account.accountName,
-					account.accountName
-				);
-			});
-			dropdown
-				.setValue(this.plugin.settings.selectedChatAccount || "")
-				.onChange((value) => {
-					this.plugin.settings.selectedChatAccount = value;
-					this.updateAIChatSettings(
-						value,
-						this.aiChatAccountContainer
-					);
-					void this.plugin.saveSettings();
-				});
-		})
-			.addExtraButton((button) => {
-				button
-					.setIcon("plus")
-					.setTooltip($t("settings.create-new-chat-llm-account"))
-					.onClick(() => {
-						this.newAIChatAccount();
+		// 1. Global Selection (Default Provider & Model)
+		new Setting(frame)
+			.setName($t("settings.llm-provider.default-provider"))
+			.addDropdown(dropdown => {
+				const providers = this.plugin.settings.llmProviders || [];
+				providers.forEach(p => dropdown.addOption(p.id, p.name));
+				dropdown.setValue(this.plugin.settings.selectedLLMProviderId || "")
+					.onChange(async val => {
+						this.plugin.settings.selectedLLMProviderId = val;
+						// Auto-select first model of the new provider
+						const p = providers.find(p => p.id === val);
+						if (p && p.models.length > 0) {
+							this.plugin.settings.selectedLLMModelId = p.models[0].id;
+						} else {
+							this.plugin.settings.selectedLLMModelId = "";
+						}
+						await this.plugin.saveSettings();
+						this.display();
 					});
 			});
-		this.updateAIChatSettings(
-			this.plugin.settings.selectedChatAccount,
-			this.aiChatAccountContainer
-		);
+
+		new Setting(frame)
+			.setName($t("settings.llm-provider.default-model"))
+			.addDropdown(dropdown => {
+				const providers = this.plugin.settings.llmProviders || [];
+				const currentProvider = providers.find(p => p.id === this.plugin.settings.selectedLLMProviderId);
+				if (currentProvider) {
+					currentProvider.models.forEach(m => dropdown.addOption(m.id, m.name));
+					dropdown.setValue(this.plugin.settings.selectedLLMModelId || "")
+						.onChange(async val => {
+							this.plugin.settings.selectedLLMModelId = val;
+							await this.plugin.saveSettings();
+						});
+				}
+			});
+
+		// 2. Add Provider Dropdown
+		const providerHeader = new Setting(frame)
+			.setName($t("settings.llm-provider.manage-providers"))
+			.setHeading();
+
+		// Add provider dropdown
+		providerHeader.addDropdown(dropdown => {
+			dropdown.addOption("", "➕ " + ($t("settings.llm-provider.add-provider") || "添加服务商"));
+			dropdown.addOption("deepseek", "🐋 DeepSeek");
+			dropdown.addOption("openai", "🤖 OpenAI");
+			dropdown.addOption("ollama", "🦙 Ollama");
+			dropdown.addOption("glm", "🔮 智谱 AI (GLM)");
+			dropdown.addOption("siliconflow", "💎 硅基流动");
+			dropdown.addOption("qwen", "☁️ 通义千问");
+			dropdown.addOption("moonshot", "🌙 月之暗面");
+			dropdown.addOption("gemini", "✨ Google Gemini");
+			dropdown.addOption("custom", "⚙️ " + ($t("settings.llm-provider.add-custom")?.replace("+ ", "") || "自定义"));
+			dropdown.setValue("");
+			dropdown.onChange(val => {
+				if (val) {
+					this.createProviderFromPreset(val as "deepseek" | "openai" | "ollama" | "glm" | "siliconflow" | "qwen" | "moonshot" | "gemini" | "custom");
+					dropdown.setValue(""); // Reset dropdown
+					this.display();
+				}
+			});
+		});
+
+		// 3. Provider List
+		this.renderProviderList(frame);
 	}
 
-	updateAIChatSettings(
-		accountName: string | undefined,
-		container: HTMLElement
-	) {
-		const account = this.plugin.getChatAIAccount(accountName);
-		if (account === undefined) {
-			this.newAIChatAccount();
-			return;
-		}
-		container.empty();
+	renderProviderList(container: HTMLElement) {
+		const providers = this.plugin.settings.llmProviders || [];
+		providers.forEach((provider, index) => {
+			const wrapper = container.createDiv({ cls: 'smart-mp-provider-wrapper' });
+			wrapper.style.border = '1px solid var(--background-modifier-border)';
+			wrapper.style.marginBottom = '10px';
+			wrapper.style.borderRadius = '5px';
+			wrapper.style.overflow = 'hidden';
 
-		new Setting(container)
-			.setName($t("settings.account-name"))
-			.addText((text) =>
-				text.setValue(account.accountName).onChange((value) => {
-					value = value.trim();
-					if (value !== account.accountName) {
-						account.accountName = value;
-						this.plugin.settings.selectedChatAccount = value;
-						void this.plugin.saveSettings();
-						this.updateAIChatOptions();
+			// Collapsible Header
+			const headerEl = wrapper.createDiv({ cls: 'smart-mp-provider-header' });
+			headerEl.style.display = 'flex';
+			headerEl.style.alignItems = 'center';
+			headerEl.style.justifyContent = 'space-between';
+			headerEl.style.padding = '10px';
+			headerEl.style.cursor = 'pointer';
+			headerEl.style.backgroundColor = 'var(--background-secondary)';
+
+			// Left side: chevron + icon + name + model count
+			const leftSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-left' });
+			leftSide.style.display = 'flex';
+			leftSide.style.alignItems = 'center';
+			leftSide.style.gap = '8px';
+
+			const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron' });
+			chevron.innerHTML = '▶';
+			chevron.style.transition = 'transform 0.2s';
+			chevron.style.fontSize = '10px';
+
+			// Provider type icon
+			const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon' });
+			iconSpan.style.fontSize = '16px';
+			switch (provider.type) {
+				case LLMProviderType.DeepSeek:
+					iconSpan.innerHTML = '🐋';
+					iconSpan.title = 'DeepSeek';
+					break;
+				case LLMProviderType.OpenAI:
+					iconSpan.innerHTML = '🤖';
+					iconSpan.title = 'OpenAI';
+					break;
+				case LLMProviderType.Ollama:
+					iconSpan.innerHTML = '🦙';
+					iconSpan.title = 'Ollama';
+					break;
+				case LLMProviderType.GLM:
+					iconSpan.innerHTML = '🔮';
+					iconSpan.title = '智谱 AI';
+					break;
+				case LLMProviderType.SiliconFlow:
+					iconSpan.innerHTML = '💎';
+					iconSpan.title = '硅基流动';
+					break;
+				case LLMProviderType.Qwen:
+					iconSpan.innerHTML = '☁️';
+					iconSpan.title = '通义千问';
+					break;
+				case LLMProviderType.Moonshot:
+					iconSpan.innerHTML = '🌙';
+					iconSpan.title = '月之暗面';
+					break;
+				case LLMProviderType.Gemini:
+					iconSpan.innerHTML = '✨';
+					iconSpan.title = 'Google Gemini';
+					break;
+				default:
+					iconSpan.innerHTML = '⚙️';
+					iconSpan.title = 'Custom';
+			}
+
+			const nameSpan = leftSide.createSpan({ text: provider.name });
+			nameSpan.style.fontWeight = '500';
+
+			const countSpan = leftSide.createSpan({ text: `(${provider.models.length} Models)` });
+			countSpan.style.color = 'var(--text-muted)';
+			countSpan.style.fontSize = '12px';
+
+			// Right side: buttons (sorting, duplicate, delete)
+			const rightSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-right' });
+			rightSide.style.display = 'flex';
+			rightSide.style.gap = '4px';
+			rightSide.style.alignItems = 'center';
+
+			// Move Up button
+			if (index > 0) {
+				const upBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+				setIcon(upBtn, "arrow-up");
+				upBtn.title = $t("settings.assistant.move-up");
+				upBtn.style.background = 'none';
+				upBtn.style.border = 'none';
+				upBtn.style.cursor = 'pointer';
+				upBtn.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					const list = this.plugin.settings.llmProviders!;
+					[list[index - 1], list[index]] = [list[index], list[index - 1]];
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			}
+
+			// Move Down button
+			if (index < providers.length - 1) {
+				const downBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+				setIcon(downBtn, "arrow-down");
+				downBtn.title = $t("settings.assistant.move-down");
+				downBtn.style.background = 'none';
+				downBtn.style.border = 'none';
+				downBtn.style.cursor = 'pointer';
+				downBtn.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					const list = this.plugin.settings.llmProviders!;
+					[list[index + 1], list[index]] = [list[index], list[index + 1]];
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			}
+
+			// Duplicate button
+			const dupBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+			setIcon(dupBtn, "copy");
+			dupBtn.title = $t("settings.llm-provider.duplicate") || 'Duplicate';
+			dupBtn.style.background = 'none';
+			dupBtn.style.border = 'none';
+			dupBtn.style.cursor = 'pointer';
+			dupBtn.addEventListener('click', async (e) => {
+				e.stopPropagation();
+				const newProvider: LLMProvider = {
+					...provider,
+					id: crypto.randomUUID(),
+					name: provider.name + ' (Copy)',
+					models: provider.models.map(m => ({ ...m }))
+				};
+				this.plugin.settings.llmProviders?.push(newProvider);
+				this.expandedSections.add(newProvider.id);
+				await this.plugin.saveSettings();
+				this.display();
+			});
+
+			// Delete button
+			const deleteBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+			setIcon(deleteBtn, "trash-2");
+			deleteBtn.title = $t("settings.llm-provider.delete-confirm") || 'Delete Provider';
+			deleteBtn.style.background = 'none';
+			deleteBtn.style.border = 'none';
+			deleteBtn.style.cursor = 'pointer';
+			deleteBtn.addEventListener('click', async (e) => {
+				e.stopPropagation();
+				const confirmMsg = $t("settings.llm-provider.delete-confirm") || `确定要删除 ${provider.name} 吗？`;
+				const confirm = window.confirm(confirmMsg.replace("{{name}}", provider.name));
+				if (confirm) {
+					const wasSelected = this.plugin.settings.selectedLLMProviderId === provider.id;
+					this.plugin.settings.llmProviders = this.plugin.settings.llmProviders?.filter(p => p.id !== provider.id);
+					if (wasSelected) {
+						if (this.plugin.settings.llmProviders && this.plugin.settings.llmProviders.length > 0) {
+							this.plugin.settings.selectedLLMProviderId = this.plugin.settings.llmProviders[0].id;
+							this.plugin.settings.selectedLLMModelId = this.plugin.settings.llmProviders[0].models[0]?.id || "";
+						} else {
+							this.plugin.settings.selectedLLMProviderId = "";
+							this.plugin.settings.selectedLLMModelId = "";
+						}
 					}
-				})
-			);
+					await this.plugin.saveSettings();
+					this.display();
+				}
+			});
 
-		new Setting(container)
-			.setName($t("settings.llm-access-base-url"))
-			.addText((text) =>
-				text.setValue(account.baseUrl).onChange((value) => {
-					account.baseUrl = value;
-					void this.plugin.saveSettings();
-				})
-			);
+			// Details section (collapsible)
+			const detailsEl = wrapper.createDiv({ cls: 'smart-mp-provider-details' });
+			detailsEl.style.padding = '10px';
 
-		new Setting(container)
-			.setName($t("settings.llm-access-api-key"))
-			.addText((text) =>
-				text.setValue(account.apiKey).onChange((value) => {
-					account.apiKey = value;
-					void this.plugin.saveSettings();
-				})
-			);
+			// Check if this provider should be expanded (e.g., newly added)
+			const shouldExpand = this.expandedSections.has(provider.id);
+			detailsEl.style.display = shouldExpand ? 'block' : 'none';
+			chevron.style.transform = shouldExpand ? 'rotate(90deg)' : 'rotate(0deg)';
 
-		new Setting(container)
-			.setName($t("settings.llm-model-to-be-used"))
-			.addText((text) =>
-				text.setValue(account.model).onChange((value) => {
-					account.model = value;
-					void this.plugin.saveSettings();
-				})
-			);
+			// Toggle collapse on header click
+			headerEl.addEventListener('click', () => {
+				const isCollapsed = detailsEl.style.display === 'none';
+				detailsEl.style.display = isCollapsed ? 'block' : 'none';
+				chevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+				// Track expanded state
+				if (isCollapsed) {
+					this.expandedSections.add(provider.id);
+				} else {
+					this.expandedSections.delete(provider.id);
+				}
+			});
 
+			// Render details content
+			this.renderProviderDetails(provider, detailsEl);
+		});
+	}
+
+	renderProviderDetails(provider: LLMProvider, container: HTMLElement) {
+		const unnamedProvider = $t("settings.llm-provider.unnamed-provider") || "Unnamed Provider";
+
+		// Name
 		new Setting(container)
-			.setName($t("settings.llm-system-prompt"))
-			.setDesc($t("settings.llm-system-prompt-desc"))
-			.setClass("smart-mp-setting-textarea")
-			.addTextArea((text) =>
-				text
-					.setPlaceholder("你是一个得力的助手...")
-					.setValue(account.systemPrompt || "")
-					.onChange((value) => {
-						account.systemPrompt = value;
+			.setName($t("settings.llm-provider.provider-name"))
+			.addText(text => {
+				text.setValue(provider.name)
+					.setPlaceholder(unnamedProvider)
+					.onChange(async v => {
+						provider.name = v || unnamedProvider;
+						await this.plugin.saveSettings();
+					});
+				// Update header on blur
+				text.inputEl.addEventListener('blur', () => {
+					if (!provider.name || provider.name.trim() === '') {
+						provider.name = unnamedProvider;
+						text.setValue(provider.name);
 						void this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(container)
-			.setName($t("settings.delete-account"))
-			.setClass("danger-extra-button")
-			.addExtraButton((button) => {
-				button.setIcon("trash-2").onClick(() => {
-					const accountToDelete =
-						this.plugin.settings.selectedChatAccount;
-					this.plugin.settings.chatAccounts =
-						this.plugin.settings.chatAccounts.filter(
-							(a) => a.accountName !== accountToDelete
-						);
-					const account = this.plugin.settings.chatAccounts[0];
-					void this.plugin.saveSettings();
-					if (account !== undefined) {
-						this.plugin.settings.selectedChatAccount =
-							account.accountName;
-						this.updateAIChatOptions();
-						this.updateAIChatSettings(
-							account.accountName,
-							this.aiChatAccountContainer
-						);
-						void this.plugin.saveSettings();
-					} else {
-						this.newAIChatAccount();
 					}
+					this.display();
 				});
 			});
-	}
-	updateAIChatOptions() {
-		this.aiChatAccountDropdown.selectEl.options.length = 0;
-		this.plugin.settings.chatAccounts.forEach((account) => {
-			this.aiChatAccountDropdown.addOption(
-				account.accountName,
-				account.accountName
-			);
+
+		// Base URL
+		new Setting(container)
+			.setName($t("settings.llm-provider.base-url"))
+			.addText(text => text.setValue(provider.baseUrl).setPlaceholder("https://api.openai.com/v1").onChange(async v => {
+				provider.baseUrl = v;
+				await this.plugin.saveSettings();
+			}));
+
+		// API Key with Test button
+		const apiKeySetting = new Setting(container)
+			.setName($t("settings.llm-provider.api-key"))
+			.addText(text => text.setPlaceholder("sk-...").setValue(provider.apiKey).onChange(async v => {
+				provider.apiKey = v;
+				await this.plugin.saveSettings();
+			}));
+
+		// Test Connection button
+		apiKeySetting.addButton(btn => btn
+			.setButtonText("🔗 Test")
+			.setTooltip("Test API connection")
+			.onClick(async () => {
+				if (!provider.baseUrl) {
+					new Notice("❌ Base URL is required");
+					return;
+				}
+				btn.setButtonText("⏳...");
+				btn.setDisabled(true);
+				try {
+					const OpenAI = (await import("openai")).default;
+					const openai = new OpenAI({
+						baseURL: provider.baseUrl,
+						apiKey: provider.apiKey || "dummy",
+						dangerouslyAllowBrowser: true,
+					});
+					const models = await openai.models.list();
+					new Notice(`✅ 连接成功！发现 ${models.data.length} 个模型`);
+				} catch (error: any) {
+					console.error("API Test failed:", error);
+					new Notice(`❌ 连接失败: ${error.message || error}`);
+				} finally {
+					btn.setButtonText("🔗 Test");
+					btn.setDisabled(false);
+				}
+			}));
+
+		// System Prompt
+		new Setting(container)
+			.setName($t("settings.llm-provider.system-prompt"))
+			.setDesc($t("settings.llm-provider.system-prompt-desc"))
+			.setClass("smart-mp-setting-textarea")
+			.addTextArea(text => text
+				.setPlaceholder("You are a helpful assistant...")
+				.setValue(provider.systemPrompt || "")
+				.onChange(async v => {
+					provider.systemPrompt = v;
+					await this.plugin.saveSettings();
+				}));
+
+		// Models Section (Collapsible)
+		const modelsWrapper = container.createDiv({ cls: 'smart-mp-models-wrapper' });
+
+		// Models Header (clickable to collapse)
+		const modelsHeader = modelsWrapper.createDiv({ cls: 'smart-mp-models-header' });
+		modelsHeader.style.display = 'flex';
+		modelsHeader.style.alignItems = 'center';
+		modelsHeader.style.gap = '8px';
+		modelsHeader.style.cursor = 'pointer';
+		modelsHeader.style.padding = '5px 0';
+
+		const modelsChevron = modelsHeader.createSpan({ cls: 'smart-mp-chevron' });
+		modelsChevron.innerHTML = '▶';
+		modelsChevron.style.transition = 'transform 0.2s';
+		modelsChevron.style.fontSize = '10px';
+
+		const modelsTitle = modelsHeader.createSpan({ text: $t("settings.llm-provider.models") });
+		modelsTitle.style.fontWeight = '500';
+
+		const modelsCount = modelsHeader.createSpan({ text: `(${provider.models.length})` });
+		modelsCount.style.color = 'var(--text-muted)';
+		modelsCount.style.fontSize = '12px';
+
+		// Add Model button
+		const addModelBtn = modelsHeader.createEl('button', { cls: 'clickable-icon' });
+		setIcon(addModelBtn, "plus");
+		addModelBtn.title = 'Add Model';
+		addModelBtn.style.marginLeft = 'auto';
+		addModelBtn.style.background = 'none';
+		addModelBtn.style.border = 'none';
+		addModelBtn.style.cursor = 'pointer';
+		addModelBtn.addEventListener('click', async (e) => {
+			e.stopPropagation();
+			provider.models.push({
+				id: "new-model",
+				name: "New Model",
+				enabled: true,
+				type: 'chat'
+			});
+			await this.plugin.saveSettings();
+			this.expandedModelSections.add(provider.id);
+			this.display();
 		});
-		this.aiChatAccountDropdown.setValue(
-			this.plugin.settings.selectedChatAccount ?? ""
-		);
+
+		// Fetch Models button
+		const fetchModelsBtn = modelsHeader.createEl('button', { cls: 'clickable-icon' });
+		setIcon(fetchModelsBtn, "refresh-cw");
+		fetchModelsBtn.title = $t("settings.llm-provider.fetch-models") || 'Fetch Models from API';
+		fetchModelsBtn.style.background = 'none';
+		fetchModelsBtn.style.border = 'none';
+		fetchModelsBtn.style.cursor = 'pointer';
+		fetchModelsBtn.style.marginLeft = '4px';
+		fetchModelsBtn.addEventListener('click', async (e) => {
+			e.stopPropagation();
+			if (!provider.baseUrl) {
+				new Notice("❌ Base URL is required");
+				return;
+			}
+			setIcon(fetchModelsBtn, "hourglass");
+			fetchModelsBtn.style.pointerEvents = 'none';
+			try {
+				const OpenAI = (await import("openai")).default;
+				const openai = new OpenAI({
+					baseURL: provider.baseUrl,
+					apiKey: provider.apiKey || "dummy",
+					dangerouslyAllowBrowser: true,
+				});
+				const response = await openai.models.list();
+				const existingIds = new Set(provider.models.map(m => m.id));
+				let addedCount = 0;
+				for (const model of response.data) {
+					if (!existingIds.has(model.id)) {
+						provider.models.push({
+							id: model.id,
+							name: model.id,
+							enabled: true,
+							type: 'chat'
+						});
+						addedCount++;
+					}
+				}
+				await this.plugin.saveSettings();
+				new Notice(`✅ 获取成功！新增 ${addedCount} 个模型`);
+				// Auto-expand models list
+				this.expandedModelSections.add(provider.id);
+				this.display();
+			} catch (error: any) {
+				console.error("Fetch models failed:", error);
+				new Notice(`❌ 获取失败: ${error.message || error}`);
+			} finally {
+				setIcon(fetchModelsBtn, "refresh-cw");
+				fetchModelsBtn.style.pointerEvents = 'auto';
+			}
+		});
+
+		// Models List (collapsible content)
+		const modelsListEl = modelsWrapper.createDiv({ cls: 'smart-mp-models-list' });
+
+		// Check expanded state
+		const isModelsExpanded = this.expandedModelSections.has(provider.id);
+		modelsListEl.style.display = isModelsExpanded ? 'block' : 'none';
+		modelsChevron.style.transform = isModelsExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
+
+		modelsListEl.style.paddingLeft = '18px';
+
+		// Toggle collapse on header click
+		modelsHeader.addEventListener('click', () => {
+			const isCollapsed = modelsListEl.style.display === 'none';
+			modelsListEl.style.display = isCollapsed ? 'block' : 'none';
+			modelsChevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+
+			if (isCollapsed) {
+				this.expandedModelSections.add(provider.id);
+			} else {
+				this.expandedModelSections.delete(provider.id);
+			}
+		});
+
+		// Models List Header (only if models exist)
+		if (provider.models.length > 0) {
+			const headerEl = modelsListEl.createDiv({ cls: 'smart-mp-model-header' });
+			headerEl.style.display = 'flex';
+			headerEl.style.gap = '10px';
+			headerEl.style.padding = '0 0 5px 0'; // Match Setting padding roughly
+			headerEl.style.color = 'var(--text-muted)';
+			headerEl.style.fontSize = '12px';
+			headerEl.style.fontWeight = '500';
+			headerEl.style.marginTop = '10px'; // Space from provider header
+
+			const idHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-id-header") || "Model ID" });
+			idHeader.style.flex = '1';
+			idHeader.style.paddingLeft = '5px'; // Align with input text visually
+
+			const nameHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-name-header") || "Display Name" });
+			nameHeader.style.flex = '1';
+			nameHeader.style.paddingLeft = '5px';
+
+			// Spacer for controls (Toggle + Delete)
+			// Toggle is roughly 40px, Delete is roughly 30px, plus gaps
+			const spacer = headerEl.createSpan();
+			spacer.style.width = '70px';
+		}
+
+		// Models List Items
+		provider.models.forEach((model, idx) => {
+			const modelSetting = new Setting(modelsListEl)
+				.setClass("smart-mp-model-item");
+
+			// Remove unused info element to maximize space
+			modelSetting.infoEl.remove();
+
+			// Use full width for control element with flex layout
+			modelSetting.controlEl.style.width = '100%';
+			modelSetting.controlEl.style.justifyContent = 'flex-start';
+			modelSetting.controlEl.style.gap = '10px';
+
+			modelSetting.addText(text => {
+				text.setPlaceholder($t("settings.llm-provider.model-id-placeholder"))
+					.setValue(model.id)
+					.setDisabled(false)
+					.onChange(async v => {
+						model.id = v;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.style.width = '100%';
+				text.inputEl.style.flex = '1';
+				text.inputEl.style.minWidth = '100px';
+			});
+
+			modelSetting.addText(text => {
+				text.setPlaceholder($t("settings.llm-provider.model-name-placeholder"))
+					.setValue(model.name)
+					.onChange(async v => {
+						model.name = v;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.style.width = '100%';
+				text.inputEl.style.flex = '1';
+				text.inputEl.style.minWidth = '100px';
+			});
+
+			modelSetting.addToggle(toggle => toggle.setTooltip("Enable/Disable").setValue(model.enabled).onChange(async v => {
+				model.enabled = v;
+				await this.plugin.saveSettings();
+			}));
+
+			modelSetting.addExtraButton(btn => btn.setIcon("trash-2").onClick(async () => {
+				const wasSelected = this.plugin.settings.selectedLLMModelId === model.id;
+				provider.models.splice(idx, 1);
+
+				// If we deleted the selected model, switch to the first available one or clear it
+				if (wasSelected) {
+					if (provider.models.length > 0) {
+						this.plugin.settings.selectedLLMModelId = provider.models[0].id;
+					} else {
+						this.plugin.settings.selectedLLMModelId = "";
+					}
+				}
+
+				await this.plugin.saveSettings();
+				this.display();
+			}));
+		});
 	}
+
+	createNewProvider() {
+		if (!this.plugin.settings.llmProviders) this.plugin.settings.llmProviders = [];
+		this.plugin.settings.llmProviders.push({
+			id: crypto.randomUUID(),
+			type: LLMProviderType.Custom,
+			name: "Custom Provider (自定义)",
+			baseUrl: "",
+			apiKey: "",
+			models: [{ id: 'gpt-3.5-turbo', name: 'GPT-3.5', enabled: true, type: 'chat' }],
+			enabled: true
+		});
+		void this.plugin.saveSettings();
+	}
+
+	createProviderFromPreset(preset: "deepseek" | "openai" | "ollama" | "glm" | "siliconflow" | "qwen" | "moonshot" | "gemini" | "custom") {
+		if (!this.plugin.settings.llmProviders) this.plugin.settings.llmProviders = [];
+
+		let provider: LLMProvider;
+
+		if (preset === "deepseek") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.DeepSeek,
+				name: "DeepSeek",
+				baseUrl: "https://api.deepseek.com/v1",
+				apiKey: "",
+				models: [
+					{ id: 'deepseek-chat', name: 'DeepSeek Chat', enabled: true, type: 'chat' },
+					{ id: 'deepseek-coder', name: 'DeepSeek Coder', enabled: true, type: 'chat' },
+					{ id: 'deepseek-reasoner', name: 'DeepSeek R1', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "openai") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.OpenAI,
+				name: "OpenAI",
+				baseUrl: "https://api.openai.com/v1",
+				apiKey: "",
+				models: [
+					{ id: 'gpt-4o', name: 'GPT-4o', enabled: true, type: 'chat' },
+					{ id: 'gpt-4o-mini', name: 'GPT-4o Mini', enabled: true, type: 'chat' },
+					{ id: 'gpt-4-turbo', name: 'GPT-4 Turbo', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "ollama") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.Ollama,
+				name: "Ollama (Local)",
+				baseUrl: "http://localhost:11434/v1",
+				apiKey: "",
+				models: [
+					{ id: 'llama3.2', name: 'Llama 3.2', enabled: true, type: 'chat' },
+					{ id: 'deepseek-r1:8b', name: 'DeepSeek R1 8B', enabled: true, type: 'chat' },
+					{ id: 'qwen2.5:7b', name: 'Qwen 2.5 7B', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "glm") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.GLM,
+				name: "智谱 AI (GLM)",
+				baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+				apiKey: "",
+				models: [
+					{ id: 'glm-4-plus', name: 'GLM-4 Plus', enabled: true, type: 'chat' },
+					{ id: 'glm-4-flash', name: 'GLM-4 Flash', enabled: true, type: 'chat' },
+					{ id: 'glm-4v-plus', name: 'GLM-4V Plus (视觉)', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "siliconflow") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.SiliconFlow,
+				name: "硅基流动 (SiliconFlow)",
+				baseUrl: "https://api.siliconflow.cn/v1",
+				apiKey: "",
+				models: [
+					{ id: 'deepseek-ai/DeepSeek-V3', name: 'DeepSeek V3', enabled: true, type: 'chat' },
+					{ id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen2.5 72B', enabled: true, type: 'chat' },
+					{ id: 'Pro/deepseek-ai/DeepSeek-R1', name: 'DeepSeek R1', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "qwen") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.Qwen,
+				name: "通义千问 (Qwen)",
+				baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+				apiKey: "",
+				models: [
+					{ id: 'qwen-max', name: 'Qwen Max', enabled: true, type: 'chat' },
+					{ id: 'qwen-plus', name: 'Qwen Plus', enabled: true, type: 'chat' },
+					{ id: 'qwen-turbo', name: 'Qwen Turbo', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "moonshot") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.Moonshot,
+				name: "月之暗面 (Moonshot)",
+				baseUrl: "https://api.moonshot.cn/v1",
+				apiKey: "",
+				models: [
+					{ id: 'moonshot-v1-8k', name: 'Moonshot 8K', enabled: true, type: 'chat' },
+					{ id: 'moonshot-v1-32k', name: 'Moonshot 32K', enabled: true, type: 'chat' },
+					{ id: 'moonshot-v1-128k', name: 'Moonshot 128K', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else if (preset === "gemini") {
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.Gemini,
+				name: "Google Gemini",
+				baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+				apiKey: "",
+				models: [
+					{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', enabled: true, type: 'chat' },
+					{ id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', enabled: true, type: 'chat' },
+					{ id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', enabled: true, type: 'chat' }
+				],
+				enabled: true
+			};
+		} else {
+			// Custom
+			provider = {
+				id: crypto.randomUUID(),
+				type: LLMProviderType.Custom,
+				name: "Custom Provider (自定义)",
+				baseUrl: "",
+				apiKey: "",
+				models: [{ id: 'model-id', name: 'Model Name', enabled: true, type: 'chat' }],
+				enabled: true
+			};
+		}
+
+		this.plugin.settings.llmProviders.push(provider);
+		// Auto-expand the newly added provider
+		this.expandedSections.add(provider.id);
+		void this.plugin.saveSettings();
+	}
+
 	updateAIDrawOptions() {
 		this.aiDrawAccountDropdown.selectEl.options.length = 0;
 		this.plugin.settings.drawAccounts.forEach((account) => {
@@ -660,38 +1211,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		);
 	}
 
-	newAIChatAccount() {
-		let n = this.plugin.settings.chatAccounts.length + 1;
-		let newName = $t("settings.new-chat-llm-account");
-		while (true) {
-			const account = this.plugin.settings.chatAccounts.find(
-				(account: AIChatAccountInfo) => account.accountName === newName
-			);
-			if (account === undefined || account === null) {
-				break;
-			}
-			n += 1;
-			newName = $t("settings.new-chat-llm-account") + "-" + n;
-		}
-		const newAccount = {
-			accountName: newName,
-			baseUrl: "",
-			apiKey: "",
-			model: "",
-		};
-		this.plugin.settings.chatAccounts.push(newAccount);
-		// this.aiChatAccountDropdown.addOption(newName, newName);
-		this.aiChatAccountDropdown.selectEl.options.length = 0;
-		this.plugin.settings.chatAccounts.forEach((account) => {
-			this.aiChatAccountDropdown.addOption(
-				account.accountName,
-				account.accountName
-			);
-		});
-		this.aiChatAccountDropdown.setValue(newName);
-		this.plugin.settings.selectedChatAccount = newAccount.accountName;
-		this.updateAIChatSettings(newName, this.aiChatAccountContainer);
-	}
+
 
 	// 新增 createAiDrawAccount 方法
 	newAiDrawAccount() {
@@ -1102,6 +1622,51 @@ export class SmartMPSettingTab extends PluginSettingTab {
 								void this.plugin.saveSettings();
 							})
 					);
+
+				// Per-Assistant Model Selection
+				const modelSectionHeader = new Setting(content)
+					.setName($t("settings.llm-provider.default-provider") + " / " + $t("settings.llm-provider.default-model"))
+					.setDesc("选择此助手使用的服务商和模型（留空则使用全局默认）");
+
+				const providers = this.plugin.settings.llmProviders || [];
+
+				// Provider dropdown
+				modelSectionHeader.addDropdown(dropdown => {
+					dropdown.addOption("", "-- 使用全局默认 --");
+					providers.forEach(p => dropdown.addOption(p.id, p.name));
+					dropdown.setValue(assistant.providerId || "");
+					dropdown.onChange(async (val) => {
+						assistant.providerId = val || undefined;
+						// Auto-select first model of new provider
+						if (val) {
+							const selectedProvider = providers.find(p => p.id === val);
+							if (selectedProvider && selectedProvider.models.length > 0) {
+								assistant.modelId = selectedProvider.models[0].id;
+							} else {
+								assistant.modelId = undefined;
+							}
+						} else {
+							assistant.modelId = undefined;
+						}
+						await this.plugin.saveSettings();
+						this.display();
+					});
+				});
+
+				// Model dropdown (only if custom provider is selected)
+				if (assistant.providerId) {
+					const selectedProvider = providers.find(p => p.id === assistant.providerId);
+					if (selectedProvider) {
+						modelSectionHeader.addDropdown(dropdown => {
+							selectedProvider.models.forEach(m => dropdown.addOption(m.id, m.name));
+							dropdown.setValue(assistant.modelId || "");
+							dropdown.onChange(async (val) => {
+								assistant.modelId = val || undefined;
+								await this.plugin.saveSettings();
+							});
+						});
+					}
+				}
 
 				// Restore Button
 				new Setting(content)

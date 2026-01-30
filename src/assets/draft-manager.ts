@@ -11,6 +11,7 @@ import PouchDB from 'pouchdb';
 import PouchDBFind from 'pouchdb-find';
 import { areObjectsEqual } from "src/utils/utils";
 import { $t } from "src/lang/i18n";
+import { UrlUtils } from "src/utils/urls";
 PouchDB.plugin(PouchDBFind);
 
 
@@ -104,6 +105,39 @@ export class LocalDraftManager {
                     if (fmDigest && draft.digest !== fmDigest) {
                         draft.digest = fmDigest;
                         needSave = true;
+                    }
+
+                    // 4. Cover Check / 封面
+                    const fmCover = frontmatter['封面'] || frontmatter['cover'] || frontmatter['cover_image'];
+                    if (fmCover) {
+                        let coverPath = fmCover;
+                        // Handle [[wikilink]]
+                        const wikiMatch = fmCover.match(/^\[\[(.*?)\]\]$/);
+                        if (wikiMatch) {
+                            coverPath = wikiMatch[1];
+                            if (coverPath.includes('|')) coverPath = coverPath.split('|')[0];
+                        }
+
+                        // Resolve file
+                        const file = this.plugin.app.metadataCache.getFirstLinkpathDest(coverPath, f.path);
+                        if (file) {
+                            const urlUtils = new UrlUtils(this.plugin.app);
+                            try {
+                                const displayUrl = await urlUtils.getDisplayUrl(file);
+                                if (displayUrl && draft.cover_image_url !== displayUrl) {
+                                    draft.cover_image_url = displayUrl;
+                                    needSave = true;
+                                }
+                            } catch (e) {
+                                console.error("Failed to read cover image", e);
+                            }
+                        } else if (String(fmCover).startsWith("http")) {
+                            // Remote URL
+                            if (draft.cover_image_url !== fmCover) {
+                                draft.cover_image_url = fmCover;
+                                needSave = true;
+                            }
+                        }
                     }
                 }
 

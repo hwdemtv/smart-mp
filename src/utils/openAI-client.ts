@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { $t } from "src/lang/i18n";
 import SmartMPPlugin from "src/main";
 import { SmartMPSetting } from "src/settings/smart-mp-setting";
+import { LLMProvider } from "src/settings/llm-types";
 import { DeepSeekResult } from "../types/types";
 import prompt from "./prompt.json";
 import { buildPrompt, Prompt } from "./ai-client";
@@ -25,7 +26,18 @@ export class OpenAIClient {
 		return OpenAIClient.instance;
 	}
 
-	private getMessages(key: string, defaultTemplate: any, content: string, account: any): ChatCompletionMessage[] {
+	private getCurrentProvider(): LLMProvider | undefined {
+		return this.settings.llmProviders?.find(p => p.id === this.settings.selectedLLMProviderId);
+	}
+
+	private getCurrentModelId(provider: LLMProvider): string {
+		if (this.settings.selectedLLMModelId) {
+			return this.settings.selectedLLMModelId;
+		}
+		return provider.models.length > 0 ? provider.models[0].id : "gpt-3.5-turbo";
+	}
+
+	private getMessages(key: string, defaultTemplate: any, content: string, provider: LLMProvider): ChatCompletionMessage[] {
 		const customTemplate = this.settings.customPrompts?.[key];
 		let messages: any[];
 
@@ -39,8 +51,8 @@ export class OpenAIClient {
 			messages[1].content = messages[1].content.replace("{{content}}", content);
 		}
 
-		if (account.systemPrompt) {
-			return [{ role: "system", content: account.systemPrompt }, ...messages] as ChatCompletionMessage[];
+		if (provider.systemPrompt) {
+			return [{ role: "system", content: provider.systemPrompt }, ...messages] as ChatCompletionMessage[];
 		}
 		return messages as ChatCompletionMessage[];
 	}
@@ -48,56 +60,76 @@ export class OpenAIClient {
 	public async getModelList(
 		name: string | undefined = undefined
 	): Promise<string[]> {
-		// return ["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"];
-		const openai = this.getChatAI(name);
+		const openai = this.getChatAI();
 		if (!openai) {
 			return [];
 		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
+		try {
+			const models = await openai.models.list();
+			return models.data.map((model) => model.id);
+		} catch (e) {
+			console.error("Failed to list models", e);
 			return [];
 		}
-		const models = await openai.models.list();
-		return models.data.map((model) => model.id);
 	}
 	public async generateSummary(content: string): Promise<string | null> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return "";
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return "";
-		}
-		const messages = this.getMessages("summary", prompt.summary, content, account);
+		if (!openai) return "";
+		const provider = this.getCurrentProvider();
+		if (!provider) return "";
+
+		const messages = this.getMessages("summary", prompt.summary, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus", //"deepseek-chat",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
-			max_tokens: 100,
+			max_tokens: 1000,
 			temperature: 0.7,
 		});
 		return completion.choices[0].message.content;
 	}
 
+	public async generateTitle(content: string): Promise<string[]> {
+		const openai = this.getChatAI();
+		if (!openai) return [];
+		const provider = this.getCurrentProvider();
+		if (!provider) return [];
+
+		// Truncate content to avoid context limit (3000 chars is usually enough for title gen)
+		const truncatedContent = content.length > 3000 ? content.slice(0, 3000) + "..." : content;
+		// @ts-ignore - headline is newly added
+		const messages = this.getMessages("headline", prompt.headline, truncatedContent, provider);
+
+		const completion = await openai.chat.completions.create({
+			model: this.getCurrentModelId(provider),
+			messages: messages,
+			max_tokens: 2000,
+			temperature: 0.8, // Slightly higher temperature for creativity
+		});
+
+		const result = completion.choices[0].message.content;
+		if (!result) return [];
+
+		// Parse result: split by newline, filter empty, trim
+		return result.split('\n')
+			.map(line => line.trim())
+			.filter(line => line.length > 0)
+			// Remove common list prefixes if AI ignored instructions
+			.map(line => line.replace(/^[\d\-\.\*]+[\.\s]*/, ''))
+			.filter(line => line.length > 0);
+	}
+
 	public async proofContent(content: string): Promise<DeepSeekResult | null> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return null;
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return null;
-		}
+		if (!openai) return null;
+		const provider = this.getCurrentProvider();
+		if (!provider) return null;
 
-		const messages = this.getMessages("proofread", prompt.proofread, content, account);
+		const messages = this.getMessages("proofread", prompt.proofread, content, provider);
 
 		try {
 			const completion = await openai.chat.completions.create({
-				model: account.model || "qwen-plus",
+				model: this.getCurrentModelId(provider),
 				messages: messages,
 				response_format: { type: "json_object" },
 				max_tokens: 8192,
@@ -147,18 +179,14 @@ export class OpenAIClient {
 		content: string
 	): Promise<DeepSeekResult | null> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return null;
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return null;
-		}
-		const messages = this.getMessages("polish", prompt.polish, content, account);
+		if (!openai) return null;
+		const provider = this.getCurrentProvider();
+		if (!provider) return null;
+
+		const messages = this.getMessages("polish", prompt.polish, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 8192,
 			temperature: 0.7,
@@ -171,46 +199,53 @@ export class OpenAIClient {
 		};
 	}
 
-	private getChatAI(name: string | undefined = undefined): OpenAI | null {
-		const account = this.plugin.getChatAIAccount(name);
-		if (!account) {
+	private getChatAI(): OpenAI | null {
+		const provider = this.getCurrentProvider();
+		if (!provider) {
 			new Notice($t("settings.no-chat-account-selected"));
 			return null;
 		}
-		if (account.baseUrl === undefined || !account.baseUrl) {
+		if (!provider.baseUrl) {
 			new Notice($t("utils.no-ai-server-url-given"));
 			return null;
 		}
-		if (account.apiKey === undefined || !account.apiKey) {
-			new Notice($t("utils.no-ai-server-key-given"));
-			return null;
+
+		// Some providers/proxies don't need API Key (e.g. local Ollama sometimes?), but better enforce providing something or handle it.
+		// For consistency, we warn if missing.
+		// For OpenAI official API, key is required.
+		// For other providers (e.g. local Ollama), key might be optional.
+		let finalApiKey = provider.apiKey;
+		if (!finalApiKey) {
+			if (provider.baseUrl.includes("openai.com")) {
+				new Notice($t("utils.no-ai-server-key-given"));
+				return null;
+			}
+			// For local/custom providers, use a dummy key to satisfy OpenAI SDK
+			finalApiKey = "dummy";
 		}
+
 		const openai = new OpenAI({
 			'fetch': async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
 				const response = await obsidianFetch(url, init);
 				return response;
 			},
 			dangerouslyAllowBrowser: true,
-			baseURL: account.baseUrl,
-			apiKey: account.apiKey,
+			baseURL: provider.baseUrl,
+			apiKey: finalApiKey,
 		});
 		return openai;
 	}
 
 	public async generateMermaid(content: string): Promise<string> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return "";
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return "";
-		}
-		const messages = this.getMessages("mermaid", prompt.mermaid, content, account);
+		if (!openai) return "";
+		const provider = this.getCurrentProvider();
+		if (!provider) return "";
+
+		const messages = this.getMessages("mermaid", prompt.mermaid, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 1000,
 			temperature: 0.7,
@@ -220,18 +255,14 @@ export class OpenAIClient {
 
 	public async generateLaTeX(content: string): Promise<string> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return "";
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return "";
-		}
-		const messages = this.getMessages("latex", prompt.latex, content, account);
+		if (!openai) return "";
+		const provider = this.getCurrentProvider();
+		if (!provider) return "";
+
+		const messages = this.getMessages("latex", prompt.latex, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 1000,
 			temperature: 0.7,
@@ -241,19 +272,14 @@ export class OpenAIClient {
 
 	public async synonym(content: string): Promise<string[]> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return [];
-		}
+		if (!openai) return [];
+		const provider = this.getCurrentProvider();
+		if (!provider) return [];
 
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return [];
-		}
-		const messages = this.getMessages("synonyms", prompt.synonyms, content, account);
+		const messages = this.getMessages("synonyms", prompt.synonyms, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 200,
 			temperature: 0.7,
@@ -269,21 +295,15 @@ export class OpenAIClient {
 		sourceLang: string = "English",
 		targetLang: string = "Chinese"
 	): Promise<string> {
-		console.debug('translateText in openAI');
-
 		const openai = this.getChatAI();
-		if (!openai) {
-			return "";
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			new Notice($t("settings.no-chat-account-selected"));
-			return "";
-		}
-		const messages = this.getMessages("translate", prompt.translate, content, account);
+		if (!openai) return "";
+		const provider = this.getCurrentProvider();
+		if (!provider) return "";
+
+		const messages = this.getMessages("translate", prompt.translate, content, provider);
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 4096,
 			temperature: 0.7,
@@ -294,17 +314,13 @@ export class OpenAIClient {
 
 	public async generateCustom(promptTemplate: string, content: string): Promise<string> {
 		const openai = this.getChatAI();
-		if (!openai) {
-			return "";
-		}
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
-			return "";
-		}
+		if (!openai) return "";
+		const provider = this.getCurrentProvider();
+		if (!provider) return "";
 
 		const messages: any[] = [];
-		if (account.systemPrompt) {
-			messages.push({ role: "system", content: account.systemPrompt });
+		if (provider.systemPrompt) {
+			messages.push({ role: "system", content: provider.systemPrompt });
 		}
 		messages.push({
 			role: "user",
@@ -312,11 +328,66 @@ export class OpenAIClient {
 		});
 
 		const completion = await openai.chat.completions.create({
-			model: account.model || "qwen-plus",
+			model: this.getCurrentModelId(provider),
 			messages: messages,
 			max_tokens: 8192,
 			temperature: 0.7,
 		});
 		return completion.choices[0].message.content || "";
+	}
+
+	/**
+	 * Generate custom content using a specific provider and model (for per-assistant model selection)
+	 */
+	public async generateCustomWithModel(promptTemplate: string, content: string, provider: LLMProvider, modelId: string): Promise<string> {
+		const openai = this.getChatAIForProvider(provider);
+		if (!openai) return "";
+
+		const messages: any[] = [];
+		if (provider.systemPrompt) {
+			messages.push({ role: "system", content: provider.systemPrompt });
+		}
+		messages.push({
+			role: "user",
+			content: promptTemplate.replace("{{content}}", content)
+		});
+
+		const completion = await openai.chat.completions.create({
+			model: modelId,
+			messages: messages,
+			max_tokens: 8192,
+			temperature: 0.7,
+		});
+		return completion.choices[0].message.content || "";
+	}
+
+	/**
+	 * Get OpenAI client for a specific provider
+	 */
+	private getChatAIForProvider(provider: LLMProvider): OpenAI | null {
+		if (!provider.baseUrl) {
+			new Notice($t("utils.no-ai-server-url-given"));
+			return null;
+		}
+
+		let finalApiKey = provider.apiKey;
+		if (!finalApiKey) {
+			if (provider.baseUrl.includes("openai.com")) {
+				new Notice($t("utils.no-ai-server-key-given"));
+				return null;
+			}
+			finalApiKey = "dummy";
+		}
+
+		const openai = new OpenAI({
+			'fetch': async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+				const response = await obsidianFetch(url, init);
+				return response;
+			},
+			dangerouslyAllowBrowser: true,
+			baseURL: provider.baseUrl,
+			apiKey: finalApiKey,
+		});
+		return openai;
 	}
 }

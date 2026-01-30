@@ -11,6 +11,7 @@
 - **Perfect Preview**: Built-in standard WeChat Official Account rendering engine, what you see in Obsidian preview is exactly what you get on mobile.
 - **Mobile Simulator**: One-click toggle for Mobile View (375px) to check mobile reading experience in real-time.
 - **Style Isolation**: Uses Shadow DOM / CSS Namespace technology to ensure preview styles are not affected by Obsidian themes.
+- **Real-time Word Count**: Real-time display of word count and estimated reading time at the bottom of the preview panel.
 
 ### 🤖 AI Writing Copilot
 - **Content Polishing**: One-click AI polishing for selected text to improve writing style and readability.
@@ -23,6 +24,7 @@
 - **Code Block Beautification**: Mac-style code blocks supporting multiple highlighting themes and language display.
 - **Image Captions**: Automatically extracts Markdown image `Alt` text and converts it into WeChat-style centered gray captions.
 - **Artistic Dividers**: Supports various styles of dividers.
+- **Reading Progress**: Optionally embed a "~X words / Est. Y min read" tip at the beginning of the article.
 
 ### 🚀 One-Click Publish
 - **Seamless Sync**: Sync text and images to WeChat Draft Box with one click, no copy-pasting required.

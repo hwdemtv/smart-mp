@@ -34,7 +34,6 @@ export class WechatClient {
 
 	public async requestToken(retryCount = 0): Promise<string | null> {
 		// [Safety] Temporarily disabled until private server is set up
-		console.log("Center token server is temporarily disabled.");
 		new Notice($t("wechat-api.center-token-disabled-manual") || "中心令牌功能已暂时关闭。");
 		return null;
 
@@ -455,7 +454,6 @@ export class WechatClient {
 			// return result; // 返回上传结果
 			this.plugin.hideSpinner()
 			const resData = response.json;
-			console.log('[uploadMaterial] Response:', JSON.stringify(resData, null, 2));
 			if (resData.errcode === undefined || resData.errcode == 0) {
 				this.plugin.messageService.sendMessage(
 					(type + "-item-updated") as MSG_TYPE,

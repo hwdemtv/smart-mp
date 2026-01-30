@@ -3,11 +3,11 @@
 ## 📱 公众号账号配置
 
 ### 1. 基础信息配置
-SmartMP 需要连接到您的微信公众号后台以发布文章。请在微信公众平台 (mp.weixin.qq.com) 获取以下信息填入插件设置：
+SmartMP 需要连接到您的微信公众号后台以发布文章。请访问 [微信开放平台](https://developers.weixin.qq.com/platform/login?redirect=%2Fconsole%2Fproduct%2Fmp%2Fwxb300f42c143c4693%3Ftab1%3DbasicInfo%26tab2%3Ddev) 获取以下信息填入插件设置：
 
 - **公众号名称**: 用于在插件内区分不同账号。
-- **AppID**: 开发 -> 基本配置 -> 公众号开发信息 -> AppID。
-- **AppSecret**: 开发 -> 基本配置 -> 公众号开发信息 -> AppSecret。
+- **AppID**: 基础信息 -> AppID。
+- **AppSecret**: 基础信息 -> 开发密钥 -> AppSecret。
 
 > **注意**: AppSecret 仅在生成或重置时显示一次，请务必妥善保存。
 
@@ -16,8 +16,8 @@ SmartMP 需要连接到您的微信公众号后台以发布文章。请在微信
 
 1. **获取本机公网 IP**: 插件设置页面会自动检测并在 "Current IP" 处显示您的公网 IP。
 2. **添加到白名单**:
-   - 登录微信公众平台。
-   - 开发 -> 基本配置 -> IP白名单 -> 修改。
+   - 访问上述链接登录。
+   - 基础信息 -> API IP白名单 -> 配置/修改。
    - 将插件显示的 IP 地址填入并保存。
 
 

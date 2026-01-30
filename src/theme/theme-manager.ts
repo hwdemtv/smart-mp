@@ -5,6 +5,7 @@ import postcss from "postcss";
 // import { combinedCss } from "src/assets/css/template-css";
 import { $t } from "src/lang/i18n";
 import SmartMPPlugin from "src/main";
+import { Logger } from "../utils/logger";
 import { CSSMerger } from "./CssMerger";
 import { CSSCache } from "./css-cache";
 import { getPresetCSS, PresetName } from "./presets";
@@ -35,15 +36,15 @@ export class ThemeManager {
 			if (response.status === 200) {
 				// The URL is valid, use it
 				url = baseUrl;
-				console.debug(`Using GitHub URL: ${url}`);
+				Logger.debug('ThemeManager', `Using GitHub URL: ${url}`);
 			} else {
 				// The URL is not valid, use the alternative URL
-				console.debug(`status error, Using Gitee URL: ${baseUrlAlter}`);
+				Logger.debug('ThemeManager', `status error, Using Gitee URL: ${baseUrlAlter}`);
 				url = baseUrlAlter;
 			}
 		}).catch((error) => {
 			// The URL is not valid, use the alternative URL
-			console.debug(`exception, Using Gitee URL: ${baseUrlAlter}`);
+			Logger.debug('ThemeManager', `exception, Using Gitee URL: ${baseUrlAlter}`);
 			url = baseUrlAlter;
 		});
 
@@ -154,7 +155,7 @@ export class ThemeManager {
 
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
 		if (!cache?.sections) {
-			console.debug(`[ThemeManager] No sections found in cache for ${path}`);
+			Logger.debug('ThemeManager', `No sections found in cache for ${path}`);
 			return '';
 		}
 
@@ -177,7 +178,7 @@ export class ThemeManager {
 		}
 
 		const finalCss = result.join('\n\n');
-		console.debug(`[ThemeManager] Extracted CSS from ${path}: blocks=${result.length}, chars=${finalCss.length}`);
+		Logger.debug('ThemeManager', `Extracted CSS from ${path}: blocks=${result.length}, chars=${finalCss.length}`);
 		return finalCss;
 	}
 
@@ -193,7 +194,7 @@ export class ThemeManager {
 		}
 
 		const final = `${presetCSS}\n\n/* --- Theme CSS Start --- */\n${custom_css}`;
-		console.debug(`[ThemeManager] Final Combined CSS (Sample): ${final.substring(0, 50)}...${final.substring(final.length - 50)}`);
+		Logger.perf('ThemeManager', `Final Combined CSS: ${final.length} chars`);
 		return final;
 	}
 	public getShadowStleSheet() {
@@ -289,12 +290,6 @@ export class ThemeManager {
 	public async applyTheme(htmlRoot: HTMLElement) {
 		const customCss = await this.getCSS();
 
-		// Enhanced check for CSS variables in the pulled content
-		console.log(`[ThemeManager] Applying theme (Length: ${customCss.length}, Has variables: ${customCss.includes('--')})`);
-		if (customCss.length > 0) {
-			console.debug(`[ThemeManager] CSS Preview: ${customCss.substring(0, 50)}...`);
-		}
-
 		const cssKey = customCss;
 		const cache = CSSCache.getInstance();
 		const cachedState = cache.get(cssKey);
@@ -305,32 +300,19 @@ export class ThemeManager {
 			if (cachedState) {
 				// Cache Hit: Restore state instantly
 				this.cssMerger.restoreState(cachedState.state);
-				console.debug(`[ThemeManager] Theme Cache Hit.`);
 			} else {
 				// Cache Miss: Perform expensive init
 				await this.cssMerger.init(customCss);
 				// Cache the resulting state
 				const mergerState = this.cssMerger.getState();
 				cache.set(cssKey, null as any, mergerState.vars, mergerState);
-				console.debug(`[ThemeManager] Theme Initialized & Cached. Variables found: ${mergerState.vars.size}`);
 			}
-
-			console.log('[ThemeManager] Active Variables Summary:',
-				Array.from(this.cssMerger.vars.entries()).filter(([key]) =>
-					key.includes('b08d55') || key.includes('D4AF37') || key.includes('1e1e1e') || key.includes('font') || key.includes('highlight') || key.includes('mark')
-				)
-			);
-
-			// Diagnostic check for highlight rules
-			const hasHighlightRules = Array.from(this.cssMerger.rules.keys()).some(s => s.includes('highlight') || s.includes('mark'));
-			console.log(`[ThemeManager] Theme contains highlight/mark rules: ${hasHighlightRules}`);
 
 			this.cachedCssKey = cssKey;
 		}
 
 		// Optimization: Skip DOM traversal if same theme already applied
 		if (htmlRoot.dataset.SmartMPThemeKey === cssKey) {
-			console.debug('[ThemeManager] Skipping DOM application: Theme already present on root.');
 			return htmlRoot;
 		}
 

@@ -17,6 +17,7 @@ import { WechatClient } from "src/wechat-api/wechat-client";
 import { MaterialMeidaItem } from "src/wechat-api/wechat-types";
 import { ImageGenerateModal } from "../modals/image-generate-modal";
 import { ResourceManager } from "src/assets/resource-manager";
+import { TitleSuggestModal } from "src/modals/title-suggest-modal";
 
 import { $t } from "src/lang/i18n";
 
@@ -120,6 +121,14 @@ export class MPArticleHeader {
 
 		new Setting(details)
 			.setName($t("views.article-header.article-title"))
+			.addExtraButton((button) => {
+				button
+					.setIcon("sparkles")
+					.setTooltip("AI 标题推荐")
+					.onClick(async () => {
+						await this.generateTitleRecommendation();
+					});
+			})
 			.addText((text) => {
 				this._title = text;
 				text.setPlaceholder(
@@ -132,6 +141,7 @@ export class MPArticleHeader {
 							"draft-title-updated",
 							value
 						);
+						void this.updateFrontmatterTitle(value);
 					}
 				});
 			});
@@ -176,6 +186,10 @@ export class MPArticleHeader {
 				void this.localDraftmanager.setDraft(this.activeLocalDraft);
 			}
 		};
+		this._digest.onchange = (event: Event) => {
+			const target = event.target as HTMLTextAreaElement;
+			void this.updateFrontmatterDigest(target.value);
+		};
 
 		this.coverFrame = this.createCoverFrame(details);
 
@@ -208,6 +222,7 @@ export class MPArticleHeader {
 				});
 			});
 	}
+
 	async generateDigest() {
 		if (!this.plugin.aiClient) {
 			new Notice($t("ai.no-llm"));
@@ -230,8 +245,100 @@ export class MPArticleHeader {
 			this._digest.value = summary;
 			this.activeLocalDraft.digest = summary;
 			void this.localDraftmanager.setDraft(this.activeLocalDraft);
+			void this.updateFrontmatterDigest(summary);
 		}
 		this.plugin.hideSpinner();
+	}
+
+
+	async updateFrontmatterTitle(content: string) {
+		if (!this.activeLocalDraft?.notePath) return;
+		const file = this.plugin.app.vault.getAbstractFileByPath(this.activeLocalDraft.notePath);
+		if (file instanceof TFile) {
+			try {
+				await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					if (frontmatter['title'] !== undefined) {
+						frontmatter['title'] = content;
+					} else {
+						frontmatter['标题'] = content;
+					}
+				});
+			} catch (e) {
+				console.error("Failed to update frontmatter title", e);
+			}
+		}
+	}
+
+	async generateTitleRecommendation() {
+		if (!this.plugin.aiClient) {
+			new Notice($t("ai.no-llm"));
+			return;
+		}
+		if (this.activeLocalDraft?.notePath === undefined) {
+			new Notice($t("views.article-header.no-active-note"));
+			return;
+		}
+
+		this.plugin.showSpinner("正在生成爆款标题...");
+		try {
+			const md = await this.plugin.app.vault.adapter.read(this.activeLocalDraft.notePath);
+			const titles = await this.plugin.aiClient.generateTitle(md);
+
+			if (titles && titles.length > 0) {
+				new TitleSuggestModal(this.plugin.app, titles, this._title.getValue(), (selectedTitle) => {
+					this._title.setValue(selectedTitle);
+					if (this.activeLocalDraft !== undefined) {
+						this.activeLocalDraft.title = selectedTitle;
+						void this.localDraftmanager.setDraft(this.activeLocalDraft);
+						this.plugin.messageService.sendMessage("draft-title-updated", selectedTitle);
+						void this.updateFrontmatterTitle(selectedTitle);
+					}
+				}, async (titles) => {
+					// onSave callback - 保存到 frontmatter 而非正文
+					if (this.activeLocalDraft?.notePath) {
+						const file = this.plugin.app.vault.getAbstractFileByPath(this.activeLocalDraft.notePath);
+						if (file instanceof TFile) {
+							try {
+								await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+									frontmatter['推荐标题'] = titles;
+								});
+								new Notice("已保存所有候选标题到笔记属性");
+							} catch (e) {
+								console.error("Failed to save titles to frontmatter", e);
+								new Notice("保存标题失败");
+							}
+						}
+					}
+				}).open();
+			} else {
+				new Notice("未能生成有效标题，请重试");
+			}
+		} catch (e) {
+			console.error(e);
+			new Notice("生成标题失败");
+		} finally {
+			this.plugin.hideSpinner();
+		}
+	}
+
+	async updateFrontmatterDigest(content: string) {
+		if (!this.activeLocalDraft?.notePath) return;
+		const file = this.plugin.app.vault.getAbstractFileByPath(this.activeLocalDraft.notePath);
+		if (file instanceof TFile) {
+			try {
+				await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					// Check which key exists, prioritise updating existing key
+					if (frontmatter['digest'] !== undefined) {
+						frontmatter['digest'] = content;
+					} else {
+						// Default to '摘要' if neither exists or '摘要' exists
+						frontmatter['摘要'] = content;
+					}
+				});
+			} catch (e) {
+				console.error("Failed to update frontmatter digest", e);
+			}
+		}
 	}
 	private createCoverFrame(details: HTMLElement) {
 		new Setting(details)

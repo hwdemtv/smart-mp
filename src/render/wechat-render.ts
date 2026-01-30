@@ -8,6 +8,7 @@
  * each functionality will be implemented in different extensions of marked.
  *
  */
+import { Logger } from '../utils/logger';
 
 import matter from "gray-matter";
 import { Marked, Tokens, RendererObject, RendererThis } from "marked";
@@ -212,7 +213,7 @@ export class WechatRender {
 		if (this.contentCache.has(path)) {
 			const cached = this.contentCache.get(path);
 			if (cached && cached.hash === hash) {
-				console.debug(`[WechatRender] Cache HIT for ${path}`);
+				Logger.debug('WechatRender', `Cache HIT for ${path}`);
 				// Skip Obsidian Render & Marked Parse
 				return await this.postprocess(cached.html);
 			}
@@ -303,7 +304,7 @@ export class WechatRender {
 				const needsMermaid = /```\s*mermaid/i.test(content);
 
 				if (needsExcalidraw || needsMermaid) {
-					console.debug(`[WechatRender] Waiting for dynamic elements (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid})`);
+					Logger.debug('WechatRender', `Waiting for dynamic elements (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid})`);
 					while (attempts < maxAttempts && !elementsFound) {
 						attempts++;
 

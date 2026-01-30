@@ -5,6 +5,7 @@
  */
 
 import postcss from 'postcss';
+import { Logger } from '../utils/logger';
 
 import $00 from '../assets/default-styles/00_smart-mp.css';
 import $01 from '../assets/default-styles/01_layout.css';
@@ -132,7 +133,7 @@ export class CSSMerger {
 				this.universalRules.push(selector);
 			}
 		});
-		console.debug(`[CssMerger] Index rebuilt. Keyed: ${this.keyedRules.size}, Universal: ${this.universalRules.length}`);
+		Logger.perf('CssMerger', `Index rebuilt. Keyed: ${this.keyedRules.size}, Universal: ${this.universalRules.length}`);
 	}
 
 	private addIndex(key: string, selector: string) {
@@ -231,7 +232,7 @@ export class CSSMerger {
 	async buildBaseCSS() {
 		// Check Static Cache
 		if (CSSMerger.BASE_STATE_CACHE) {
-			console.debug('[CssMerger] Base State Cache hit!');
+			Logger.debug('CssMerger', 'Base State Cache hit!');
 			this.rules = new Map(CSSMerger.BASE_STATE_CACHE.rules);
 			this.vars = new Map(CSSMerger.BASE_STATE_CACHE.vars);
 			this.keyedRules = new Map(CSSMerger.BASE_STATE_CACHE.keyedRules);
@@ -279,7 +280,7 @@ export class CSSMerger {
 			)
 		);
 
-		console.debug(`[CssMerger] Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
+		Logger.perf('CssMerger', `Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
 		const MAX_DEPTH = 10; // 防止无限循环
@@ -386,7 +387,7 @@ export class CSSMerger {
 
 			// Highlight element diagnostic
 			if (currentNode.tagName === 'MARK' || currentNode.classList.contains('highlight')) {
-				console.debug(`[CssMerger] Identified highlight element: <${currentNode.tagName}> content: "${currentNode.textContent?.substring(0, 20)}..."`);
+				Logger.debug('CssMerger', `Identified highlight element: <${currentNode.tagName}> content: "${currentNode.textContent?.substring(0, 20)}..."`);
 			}
 
 			// Resolve variables in existing inline styles first

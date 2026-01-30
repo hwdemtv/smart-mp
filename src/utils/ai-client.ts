@@ -3,6 +3,7 @@ import SmartMPPlugin from "src/main";
 import {
 	SmartMPSetting
 } from "src/settings/smart-mp-setting";
+import { LLMProviderType, LLMProvider } from "src/settings/llm-types";
 import { DeepSeekResult } from "../types/types";
 import { OllamaClient } from "./ollama-client";
 import { OpenAIClient } from "./openAI-client";
@@ -31,27 +32,40 @@ export class AiClient {
 		return AiClient.instance;
 	}
 	private getClient() {
-		const account = this.plugin.getChatAIAccount();
-		if (!account) {
+		const provider = this.plugin.settings.llmProviders?.find(p => p.id === this.plugin.settings.selectedLLMProviderId);
+		if (!provider) {
 			throw new Error($t("settings.no-chat-account-selected"));
 		}
-		if (account.baseUrl === undefined || !account.baseUrl) {
+		if (provider.baseUrl === undefined || !provider.baseUrl) {
 			throw new Error($t("utils.no-ai-server-url-given"));
 		}
 
-		if (account.baseUrl.startsWith("https://") || account.baseUrl.includes("/v1")) {
-			return this.openaiClient
-		} else {
+		// Use provider type for routing instead of URL heuristics
+		// Ollama type uses native Ollama client, others use OpenAI-compatible client
+		if (provider.type === LLMProviderType.Ollama && !provider.baseUrl.includes("/v1")) {
 			return this.ollamaClient;
+		} else {
+			// OpenAI, DeepSeek, Moonshot, Custom (with /v1 endpoint) all use OpenAI client
+			return this.openaiClient;
 		}
 	}
-	public async getModelList(account: string | undefined = undefined): Promise<string[]> {
+	public async getModelList(): Promise<string[]> {
 		const client = this.getClient();
-		return await client.getModelList(account);
+		return await client.getModelList();
 	}
 	public async generateSummary(content: string): Promise<string | null> {
 		const client = this.getClient();
 		return await client.generateSummary(content);
+	}
+
+	public async generateTitle(content: string): Promise<string[]> {
+		const client = this.getClient();
+		// If client doesn't support generateTitle (e.g. older Ollama impl), return empty
+		if ('generateTitle' in client) {
+			// @ts-ignore
+			return await client.generateTitle(content);
+		}
+		return [];
 	}
 
 
@@ -102,11 +116,39 @@ export class AiClient {
 		return await client.translateText(content, sourceLang, targetLang);
 	}
 
-	public async generateCustom(promptTemplate: string, content: string): Promise<string> {
-		const client = this.getClient();
-		// In OpenAIClient and OllamaClient, we will add this method
-		// @ts-ignore
-		return await client.generateCustom(promptTemplate, content);
+	/**
+	 * Get client and provider for a specific providerId, or fall back to global default
+	 */
+	private getClientForProvider(providerId?: string): { client: OpenAIClient | OllamaClient, provider: LLMProvider } {
+		const targetProviderId = providerId || this.plugin.settings.selectedLLMProviderId;
+		const provider = this.plugin.settings.llmProviders?.find(p => p.id === targetProviderId);
+
+		if (!provider) {
+			throw new Error($t("settings.no-chat-account-selected"));
+		}
+		if (provider.baseUrl === undefined || !provider.baseUrl) {
+			throw new Error($t("utils.no-ai-server-url-given"));
+		}
+
+		// Use provider type for routing
+		let client: OpenAIClient | OllamaClient;
+		if (provider.type === LLMProviderType.Ollama && !provider.baseUrl.includes("/v1")) {
+			client = this.ollamaClient;
+		} else {
+			client = this.openaiClient;
+		}
+
+		return { client, provider };
+	}
+
+	public async generateCustom(promptTemplate: string, content: string, providerId?: string, modelId?: string): Promise<string> {
+		const { client, provider } = this.getClientForProvider(providerId);
+
+		// Determine which model to use
+		const targetModelId = modelId || this.plugin.settings.selectedLLMModelId;
+
+		// @ts-ignore - generateCustom with model override
+		return await client.generateCustomWithModel(promptTemplate, content, provider, targetModelId);
 	}
 }
 

@@ -2,6 +2,7 @@ import { Ollama } from "ollama";
 import { $t } from "src/lang/i18n";
 import SmartMPPlugin from "src/main";
 import { SmartMPSetting } from "src/settings/smart-mp-setting";
+import { LLMProvider } from "src/settings/llm-types";
 import { DeepSeekResult } from "../types/types";
 import { removeThinkTags } from "./utils";
 export class OllamaClient {
@@ -21,26 +22,34 @@ export class OllamaClient {
 		return OllamaClient.instance;
 	}
 
-	private getOllama(name: string | undefined = undefined): {
+	private getCurrentProvider(): LLMProvider | undefined {
+		return this.settings.llmProviders?.find(p => p.id === this.settings.selectedLLMProviderId);
+	}
+
+	private getCurrentModelId(provider: LLMProvider): string {
+		if (this.settings.selectedLLMModelId) {
+			return this.settings.selectedLLMModelId;
+		}
+		return provider.models.length > 0 ? provider.models[0].id : "llama2";
+	}
+
+	private getOllama(): {
 		ollama: Ollama;
 		model: string;
 		systemPrompt?: string;
 	} {
-		const account = this.plugin.getChatAIAccount(name);
-		if (!account) {
+		const provider = this.getCurrentProvider();
+		if (!provider) {
 			throw new Error($t("settings.no-chat-account-selected"));
 		}
-		if (account.baseUrl === undefined || !account.baseUrl) {
+		if (!provider.baseUrl) {
 			throw new Error($t("utils.no-ai-server-url-given"));
-		}
-		if (account.model === undefined || !account.model) {
-			throw new Error($t("utils.no-ai-server-model-given"));
 		}
 
 		const ollama = new Ollama({
-			host: account.baseUrl,
+			host: provider.baseUrl,
 		});
-		return { ollama, model: account.model, systemPrompt: account.systemPrompt };
+		return { ollama, model: this.getCurrentModelId(provider), systemPrompt: provider.systemPrompt };
 	}
 
 	private getPrompt(key: string, defaultPrompt: string, content: string): string {
@@ -52,14 +61,18 @@ export class OllamaClient {
 	}
 
 	public async getModelList(
-		account: string | undefined = undefined
 	): Promise<string[]> {
-		const { ollama } = this.getOllama(account);
-		if (!ollama) {
+		try {
+			const { ollama } = this.getOllama();
+			if (!ollama) {
+				return [];
+			}
+			const models = await ollama.list();
+			return models.models.map((model) => model.name);
+		} catch (e) {
+			console.error("Failed to list Ollama models", e);
 			return [];
 		}
-		const models = await ollama.list();
-		return models.models.map((model) => model.name);
 	}
 	public async generateSummary(content: string): Promise<string | null> {
 		const { ollama, model, systemPrompt } = this.getOllama();
@@ -300,6 +313,32 @@ export class OllamaClient {
 		const response = await ollama.generate({
 			model: model || "deepseek-r1",
 			system: systemPrompt,
+			prompt: promptTemplate.replace("{{content}}", content),
+			stream: true,
+		});
+
+		let result = "";
+		for await (const chunk of response) {
+			result += chunk.response || "";
+		}
+		return removeThinkTags(result);
+	}
+
+	/**
+	 * Generate custom content using a specific provider and model (for per-assistant model selection)
+	 */
+	public async generateCustomWithModel(promptTemplate: string, content: string, provider: LLMProvider, modelId: string): Promise<string> {
+		if (!provider.baseUrl) {
+			throw new Error($t("utils.no-ai-server-url-given"));
+		}
+
+		const ollama = new Ollama({
+			host: provider.baseUrl,
+		});
+
+		const response = await ollama.generate({
+			model: modelId,
+			system: provider.systemPrompt,
 			prompt: promptTemplate.replace("{{content}}", content),
 			stream: true,
 		});

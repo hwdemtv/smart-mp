@@ -4,6 +4,7 @@ manage the wechat account settings
 */
 import PouchDB from 'pouchdb';
 import { areObjectsEqual } from 'src/utils/utils';
+import { LLMProvider } from './llm-types';
 
 export type WeChatAccountInfo = {
     _id?: string;
@@ -43,6 +44,9 @@ export type CustomAssistant = {
     prompt: string;
     enabled?: boolean;
     isDefault?: boolean;
+    // Per-assistant model selection (optional, falls back to global default)
+    providerId?: string;
+    modelId?: string;
 }
 
 // export type SmartMPAccountInfo = WeChatAccountInfo | AIChatAccountInfo | AITaskAccountInfo;
@@ -61,6 +65,7 @@ export type SmartMPSetting = {
     firstLineIndent?: boolean;
     linkFootnotes?: boolean;
     showImageCaptions?: boolean;
+    showArticleStats?: boolean;
     embedArticleStats?: boolean;
     css_styles_folder: string;
     _id?: string; // = 'smart-mp-setting';
@@ -78,6 +83,11 @@ export type SmartMPSetting = {
     customAssistantList?: CustomAssistant[];
     hrStyle?: string;
     customHrText?: string;
+
+    // New LLM Architecture
+    llmProviders?: Array<LLMProvider>;
+    selectedLLMProviderId?: string;
+    selectedLLMModelId?: string;
 }
 
 export type ChatSetting = {

@@ -329,13 +329,24 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						button.setTooltip(this.isMobileView ? "切换为桌面视图" : "切换为手机视图");
 					});
 			})
+			.addExtraButton((button) => {
+				// 字数统计开关按钮
+				const updateIcon = () => {
+					const isOn = this.plugin.settings.embedArticleStats;
+					button.setIcon(isOn ? "file-text" : "file-x");
+					button.setTooltip(isOn ? "字数统计: 开启" : "字数统计: 关闭");
+				};
+				updateIcon();
+				button.onClick(() => {
+					this.plugin.settings.embedArticleStats = !this.plugin.settings.embedArticleStats;
+					updateIcon();
+					void this.plugin.saveSettings();
+					void this.renderDraft();
+				});
+			})
 			.setClass("smart-mp-toolbar-item");
 
 		this.draftHeader = new MPArticleHeader(this.plugin, mainDiv);
-
-		// Article Stats Display (Word Count / Reading Time)
-		this.articleStats = mainDiv.createDiv({ cls: "smart-mp-article-stats" });
-		this.articleStats.setText("约 0 字 / 预计阅读 0 分钟");
 
 		this.renderDiv = mainDiv.createDiv({ cls: "render-container" });
 		this.renderDiv.id = "render-div";
@@ -539,6 +550,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		// Apply layout enhancements
 		this.applyLayoutEnhancements(element);
 
+		// Update preview stats immediately
+		this.updateArticleStats();
+
 		const apply = () => {
 			// Double check connectivity and task ID before heavy theme application
 			if (!element.isConnected || taskId !== this.lastRenderTaskId) return;
@@ -546,6 +560,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			void ThemeManager.getInstance(this.plugin)
 				.applyTheme(element)
 				.then(() => {
+					// Ensure stats are consistent if theme changed something (rare)
 					this.updateArticleStats();
 				})
 				.catch((error) => {
@@ -680,12 +695,33 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		const statsDiv = document.createElement("section");
 		statsDiv.className = "smart-mp-embedded-stats";
-		statsDiv.createEl("p", {
-			text: `📖 全文约 ${totalWords} 字 · 预计阅读 ${readingTime} 分钟`,
-			attr: {
-				style: "text-align: center; color: #999; font-size: 14px; margin-bottom: 1.5em;"
-			}
+
+		// 检测当前主题并应用对应样式
+		const currentTheme = this.plugin.settings.custom_theme || "";
+		if (currentTheme.includes("互为螺旋·金") || currentTheme.includes("互为螺旋")) {
+			// 金色主题样式
+			statsDiv.style.cssText = `
+				text-align: center;
+				font-size: 13px;
+				color: #b08d55;
+				padding: 12px 20px;
+				margin: 0 0 24px 0;
+				background: linear-gradient(135deg, rgba(252, 244, 218, 0.6) 0%, rgba(255, 251, 240, 0.8) 100%);
+				border-radius: 8px;
+				border: 1px solid rgba(212, 175, 55, 0.3);
+				box-shadow: 0 2px 8px rgba(176, 141, 85, 0.08);
+				letter-spacing: 1px;
+			`;
+		}
+
+		const p = statsDiv.createEl("p", {
+			text: `📖 ` + $t("views.previewer.article-stats", [String(totalWords), String(readingTime)])
 		});
+
+		// 继承父元素颜色
+		if (currentTheme.includes("互为螺旋·金") || currentTheme.includes("互为螺旋")) {
+			p.style.cssText = "margin: 0; color: #b08d55;";
+		}
 
 		if (element.firstChild) {
 			element.insertBefore(statsDiv, element.firstChild);
@@ -787,8 +823,21 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 	updateArticleStats() {
 		if (!this.articleStats) return;
+
+		if (this.plugin.settings.showArticleStats === false) {
+			this.articleStats.style.display = "none";
+			return;
+		} else {
+			this.articleStats.style.display = "block";
+		}
+
 		const { totalWords, readingTime } = this.currentArticleStats;
-		this.articleStats.setText(`约 ${totalWords} 字 / 预计阅读 ${readingTime} 分钟`);
+		this.articleStats.setText(
+			$t("views.previewer.article-stats", [
+				String(totalWords),
+				String(readingTime),
+			])
+		);
 	}
 	isViewActive(): boolean {
 		return this.isActive && !this.app.workspace.rightSplit.collapsed

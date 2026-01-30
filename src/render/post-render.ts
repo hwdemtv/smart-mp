@@ -143,21 +143,16 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         images.push(img)
     })
 
-    console.log('[uploadURLImage] Found', images.length, 'images to upload');
 
     const uploadPromises = images.map(async (img) => {
-        console.log('[uploadURLImage] Processing:', img.src);
         let blob: Blob | undefined
         if (img.src.includes('://mmbiz.qpic.cn/')) {
-            console.log('[uploadURLImage] Skip WeChat CDN');
             img.setAttribute('data-uploaded', 'true');
             return;
         }
         else if (img.src.startsWith('data:image/')) {
-            console.log('[uploadURLImage] Data URL');
             blob = dataURLtoBlob(img.src);
         } else {
-            console.log('[uploadURLImage] Fetching blob...');
             try {
                 blob = await fetchImageBlob(img.src)
             } catch (error) {
@@ -174,7 +169,6 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
 
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
                 if (res && res.url) {
-                    console.log('[uploadURLImage] Uploaded! New URL:', res.url);
                     img.src = res.url;
                     img.setAttribute('data-upload-processed', 'true');
                     img.setAttribute('data-uploaded', 'true');
@@ -188,7 +182,6 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         }
     })
     await Promise.all(uploadPromises)
-    console.log('[uploadURLImage] All done');
 }
 // export async function uploadURLBackgroundImage(root:HTMLElement, wechatClient:WechatClient):Promise<void>{
 //     const bgEls: Map<string, HTMLElement>  = new Map()

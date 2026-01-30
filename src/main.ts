@@ -47,6 +47,7 @@ import { Spinner } from "./views/spinner";
 import { ThemeHotReloader } from "./theme/hot-reloader";
 import { ThemeManager } from "./theme/theme-manager";
 import { SMART_MP_ICON } from "./icons";
+import { migrateSettings } from "./settings/migrate";
 
 const DEFAULT_SETTINGS: SmartMPSetting = {
 	mpAccounts: [],
@@ -59,6 +60,7 @@ const DEFAULT_SETTINGS: SmartMPSetting = {
 	firstLineIndent: false,
 	linkFootnotes: true,
 	showImageCaptions: false,
+	showArticleStats: false,
 	embedArticleStats: false,
 	hrStyle: "dots",
 	customHrText: "· · ·",
@@ -413,6 +415,12 @@ export default class SmartMPPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await getSmartMPSetting()
 		);
+
+		// Run Migration
+		if (migrateSettings(this.settings)) {
+			await this.saveSettings();
+		}
+
 		await this.loadThemeFolder();
 	}
 	async updateIpAddress(): Promise<string> {
@@ -564,14 +572,6 @@ export default class SmartMPPlugin extends Plugin {
 	}
 	getMPAccountByName(accountName: string | undefined) {
 		return this.settings.mpAccounts.find(
-			(account) => account.accountName === accountName
-		);
-	}
-	public getChatAIAccount(accountName: string | undefined = undefined) {
-		if (accountName === undefined) {
-			accountName = this.settings.selectedChatAccount;
-		}
-		return this.settings.chatAccounts.find(
 			(account) => account.accountName === accountName
 		);
 	}
@@ -777,7 +777,13 @@ export default class SmartMPPlugin extends Plugin {
 
 		this.showSpinner(assistant.name + "...");
 		try {
-			const result = await this.aiClient.generateCustom(assistant.prompt, content);
+			// Pass assistant's optional providerId and modelId for per-assistant model selection
+			const result = await this.aiClient.generateCustom(
+				assistant.prompt,
+				content,
+				assistant.providerId,
+				assistant.modelId
+			);
 			if (result) {
 				editor.replaceSelection(result, content);
 			}
@@ -863,7 +869,6 @@ export default class SmartMPPlugin extends Plugin {
 	async onload() {
 		addIcon("smart-mp-logo", SMART_MP_ICON);
 		this.initDB();
-		console.log("SmartMP Version: 1.4.0-Release");
 		this.messageService = new MessageService();
 		await this.loadSettings();
 		this.wechatClient = WechatClient.getInstance(this);
