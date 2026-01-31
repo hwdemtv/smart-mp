@@ -8,6 +8,7 @@ import {
 	Editor,
 	EventRef,
 	MarkdownView,
+	Menu,
 	MenuItem,
 	Notice,
 	Plugin,
@@ -226,14 +227,14 @@ export default class SmartMPPlugin extends Plugin {
 											ssi.setTitle($t("main.to-english")).onClick(async () => {
 												const content = editor.getSelection();
 												const res = await this.translateToEnglish(content);
-												if (res) editor.replaceSelection(res, content);
+												if (res) this.showInsertModeMenu(editor, content, res);
 											});
 										});
 										translateSubMenu.addItem((ssi) => {
 											ssi.setTitle($t("main.to-chinese")).onClick(async () => {
 												const content = editor.getSelection();
 												const res = await this.translateToChinese(content);
-												if (res) editor.replaceSelection(res, content);
+												if (res) this.showInsertModeMenu(editor, content, res);
 											});
 										});
 									});
@@ -253,7 +254,7 @@ export default class SmartMPPlugin extends Plugin {
 												void (async () => {
 													const content = editor.getSelection();
 													const res = await this.polishContent(content);
-													if (res) editor.replaceSelection(res, content);
+													if (res) this.showInsertModeMenu(editor, content, res);
 												})();
 											};
 											break;
@@ -273,7 +274,7 @@ export default class SmartMPPlugin extends Plugin {
 												void (async () => {
 													const content = editor.getSelection();
 													const res = await this.generateMermaid(content);
-													if (res) editor.replaceSelection(res, content);
+													if (res) this.showInsertModeMenu(editor, content, res);
 												})();
 											};
 											break;
@@ -285,7 +286,7 @@ export default class SmartMPPlugin extends Plugin {
 													let res = await this.generateLaTex(content);
 													if (res) {
 														res = res.replace(/\\begin{document}/g, "").replace(/\\end{document}/g, "").replace(/\\\\/g, "\\");
-														editor.replaceSelection(res, content);
+														this.showInsertModeMenu(editor, content, res);
 													}
 												})();
 											};
@@ -296,7 +297,7 @@ export default class SmartMPPlugin extends Plugin {
 												void (async () => {
 													const content = editor.getSelection();
 													const res = await this.generateSummary(content);
-													if (res) editor.replaceSelection(res, content);
+													if (res) this.showInsertModeMenu(editor, content, res);
 												})();
 											};
 											break;
@@ -677,6 +678,29 @@ export default class SmartMPPlugin extends Plugin {
 		}
 		return null;
 	}
+
+	async generateHeadline(content: string): Promise<string | null> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return null;
+		}
+		try {
+			this.showSpinner("正在生成爆款标题...");
+			const titles = await this.aiClient.generateTitle(content);
+
+			if (titles && titles.length > 0) {
+				// 如果返回的是数组，格式化为列表
+				return titles.join('\n');
+			}
+			return null;
+		} catch (error) {
+			console.error("Error generating headlines:", error);
+			new Notice("生成标题失败");
+		} finally {
+			this.hideSpinner();
+		}
+		return null;
+	}
 	async translateToEnglish(content: string): Promise<string | null> {
 		if (!this.aiClient) {
 			new Notice($t("main.chat-llm-has-not-been-configured"));
@@ -750,13 +774,21 @@ export default class SmartMPPlugin extends Plugin {
 			this.showSpinner($t("main.generating-mermaid"));
 			const result = await this.aiClient.generateMermaid(content);
 			if (result) {
+				// 尝试提取已有的 mermaid 代码块
 				const mermaidMatch = result.match(
 					/```mermaid\n([\s\S]*?)\n```/
 				);
 				if (mermaidMatch && mermaidMatch[1]) {
 					return `\n\`\`\`mermaid\n${mermaidMatch[1].trim()}\n\`\`\`\n`;
 				}
-				return result;
+
+				// 如果没有代码块包裹，清理结果并添加包裹
+				let cleanedResult = result.trim();
+				// 移除可能存在的多余反引号
+				cleanedResult = cleanedResult.replace(/^```(mermaid)?/i, '').replace(/```$/i, '').trim();
+
+				// 确保返回有代码块包裹的格式
+				return `\n\`\`\`mermaid\n${cleanedResult}\n\`\`\`\n`;
 			}
 			return null;
 		} catch (error) {
@@ -828,7 +860,10 @@ export default class SmartMPPlugin extends Plugin {
 			return;
 		}
 		const content = editor.getSelection();
-		if (!content) return;
+		if (!content) {
+			new Notice("请先选中要处理的文本");
+			return;
+		}
 
 		this.showSpinner(assistant.name + "...");
 		try {
@@ -840,7 +875,47 @@ export default class SmartMPPlugin extends Plugin {
 				assistant.modelId
 			);
 			if (result) {
-				editor.replaceSelection(result, content);
+				// 显示插入模式选择菜单
+				const menu = new Menu();
+
+				menu.addItem((item) => {
+					item.setTitle("🔄 替换选中文本")
+						.setIcon("replace")
+						.onClick(() => {
+							editor.replaceSelection(result);
+						});
+				});
+
+				menu.addItem((item) => {
+					item.setTitle("➕ 追加到选中文本后")
+						.setIcon("plus")
+						.onClick(() => {
+							editor.replaceSelection(content + "\n\n" + result);
+						});
+				});
+
+				menu.addItem((item) => {
+					item.setTitle("⬆️ 插入到选中文本前")
+						.setIcon("arrow-up")
+						.onClick(() => {
+							editor.replaceSelection(result + "\n\n" + content);
+						});
+				});
+
+				menu.addSeparator();
+
+				menu.addItem((item) => {
+					item.setTitle("📋 复制到剪贴板")
+						.setIcon("copy")
+						.onClick(() => {
+							navigator.clipboard.writeText(result);
+							new Notice("已复制到剪贴板");
+						});
+				});
+
+				// 在屏幕中央显示菜单
+				menu.showAtPosition({ x: window.innerWidth / 2 - 100, y: window.innerHeight / 2 - 50 });
+				new Notice("请选择插入方式", 2000);
 			}
 		} catch (error) {
 			console.error("自定义助手执行失败:", error);
@@ -848,6 +923,55 @@ export default class SmartMPPlugin extends Plugin {
 		} finally {
 			this.hideSpinner();
 		}
+	}
+
+	/**
+	 * 显示插入模式选择菜单
+	 * @param editor 编辑器实例
+	 * @param originalContent 原始选中内容
+	 * @param result AI 生成的结果
+	 */
+	private showInsertModeMenu(editor: Editor, originalContent: string, result: string) {
+		const menu = new Menu();
+
+		menu.addItem((item) => {
+			item.setTitle("🔄 替换选中文本")
+				.setIcon("replace")
+				.onClick(() => {
+					editor.replaceSelection(result);
+				});
+		});
+
+		menu.addItem((item) => {
+			item.setTitle("➕ 追加到选中文本后")
+				.setIcon("plus")
+				.onClick(() => {
+					editor.replaceSelection(originalContent + "\n\n" + result);
+				});
+		});
+
+		menu.addItem((item) => {
+			item.setTitle("⬆️ 插入到选中文本前")
+				.setIcon("arrow-up")
+				.onClick(() => {
+					editor.replaceSelection(result + "\n\n" + originalContent);
+				});
+		});
+
+		menu.addSeparator();
+
+		menu.addItem((item) => {
+			item.setTitle("📋 复制到剪贴板")
+				.setIcon("copy")
+				.onClick(() => {
+					navigator.clipboard.writeText(result);
+					new Notice("已复制到剪贴板");
+				});
+		});
+
+		// 在屏幕中央显示菜单
+		menu.showAtPosition({ x: window.innerWidth / 2 - 100, y: window.innerHeight / 2 - 50 });
+		new Notice("请选择插入方式", 2000);
 	}
 
 	async polishContent(content: string): Promise<string | null> {
@@ -962,6 +1086,108 @@ export default class SmartMPPlugin extends Plugin {
 					new Notice(this.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
 					void this.saveSettings();
 				}
+			},
+		});
+
+		// 公众号 AI 助手命令（用户可自定义快捷键）
+		this.addCommand({
+			id: "mp-polish",
+			name: "公众号：润色选中文本",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要润色的文本");
+					return;
+				}
+				const res = await this.polishContent(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
+			},
+		});
+
+		this.addCommand({
+			id: "mp-translate-to-english",
+			name: "公众号：翻译为英语",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要翻译的文本");
+					return;
+				}
+				const res = await this.translateToEnglish(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
+			},
+		});
+
+		this.addCommand({
+			id: "mp-translate-to-chinese",
+			name: "公众号：翻译为中文",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要翻译的文本");
+					return;
+				}
+				const res = await this.translateToChinese(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
+			},
+		});
+
+		this.addCommand({
+			id: "mp-mermaid",
+			name: "公众号：生成 Mermaid 图表",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要转换的文本");
+					return;
+				}
+				const res = await this.generateMermaid(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
+			},
+		});
+
+		this.addCommand({
+			id: "mp-latex",
+			name: "公众号：生成 LaTeX 公式",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要转换的文本");
+					return;
+				}
+				let res = await this.generateLaTex(content);
+				if (res) {
+					res = res.replace(/\\begin{document}/g, "").replace(/\\end{document}/g, "").replace(/\\\\/g, "\\");
+					this.showInsertModeMenu(editor, content, res);
+				}
+			},
+		});
+
+		this.addCommand({
+			id: "mp-summary",
+			name: "公众号：生成文章摘要",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection();
+				if (!content) {
+					new Notice("请先选中要生成摘要的文本");
+					return;
+				}
+				const res = await this.generateSummary(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
+			},
+		});
+
+		this.addCommand({
+			id: "mp-headline",
+			name: "公众号：生成爆款标题",
+			editorCallback: async (editor: Editor) => {
+				const content = editor.getSelection() || editor.getValue();
+				if (!content || content.length < 50) {
+					new Notice("文章内容太少，无法生成标题");
+					return;
+				}
+				const res = await this.generateHeadline(content);
+				if (res) this.showInsertModeMenu(editor, content, res);
 			},
 		});
 

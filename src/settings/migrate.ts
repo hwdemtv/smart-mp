@@ -70,5 +70,41 @@ export function migrateSettings(settings: SmartMPSetting): boolean {
     // Notify user
     new Notice("SmartMP: LLM Settings migrated to new format.");
 
+    // Establish default assistants
+    if (!settings.customAssistantList) {
+        settings.customAssistantList = [];
+    }
+
+    const defaults = [
+        { id: "polish", name: "润色 (Polish)" },
+        { id: "proofread", name: "校对 (Proofread)" },
+        { id: "synonyms", name: "同义词 (Synonyms)" },
+        { id: "translate", name: "翻译 (Translate)" },
+        { id: "mermaid", name: "Mermaid 图表" },
+        { id: "latex", name: "LaTeX 公式" },
+        { id: "summary", name: "摘要生成 (Summary)" },
+        { id: "text-to-image", name: "文生图 (Text to Image)" },
+    ];
+
+    let assistantsUpdated = false;
+    defaults.forEach((def) => {
+        const exists = settings.customAssistantList!.some(a => a.id === def.id);
+        if (!exists) {
+            settings.customAssistantList!.push({
+                id: def.id,
+                name: def.name,
+                prompt: "",
+                enabled: true,
+                isDefault: true
+            });
+            assistantsUpdated = true;
+        }
+    });
+
+    if (assistantsUpdated) {
+        new Notice("SmartMP: Default AI Assistants restored.");
+        return true;
+    }
+
     return true;
 }
