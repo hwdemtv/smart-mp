@@ -21,13 +21,48 @@ const isDevelopment = (): boolean => {
 
 export class Logger {
     private static prefix = '[SmartMP]';
+    private static SENSITIVE_KEYS = [
+        'access_token', 'refresh_token', 'token', 'ticket',
+        'appSecret', 'app_secret', 'secret', 'password', 'passwd', 'pwd'
+    ];
+
+    /**
+     * 脱敏处理
+     * 递归遍历对象，将敏感字段的值替换为 ******
+     */
+    private static scrub(data: unknown): unknown {
+        if (!data) return data;
+
+        if (typeof data === 'string') {
+            // 简单的字符串包含检查 (如果字符串很长且包含敏感key的引用，这里可能很难处理，暂时只处理 key-value 对象)
+            return data;
+        }
+
+        if (Array.isArray(data)) {
+            return data.map(item => this.scrub(item));
+        }
+
+        if (typeof data === 'object') {
+            const scrubbed: any = {};
+            for (const [key, value] of Object.entries(data)) {
+                if (this.SENSITIVE_KEYS.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
+                    scrubbed[key] = '******';
+                } else {
+                    scrubbed[key] = this.scrub(value);
+                }
+            }
+            return scrubbed;
+        }
+
+        return data;
+    }
 
     /**
      * 错误日志 - 始终输出
      * 用于记录需要用户注意的错误
      */
     static error(context: string, message: string, error?: unknown): void {
-        console.error(`${this.prefix}:${context}] ${message}`, error ?? '');
+        console.error(`${this.prefix}:${context}] ${message}`, this.scrub(error ?? ''));
     }
 
     /**
@@ -35,7 +70,7 @@ export class Logger {
      * 用于记录非致命但可能有问题的情况
      */
     static warn(context: string, message: string, data?: unknown): void {
-        console.warn(`${this.prefix}:${context}] ${message}`, data ?? '');
+        console.warn(`${this.prefix}:${context}] ${message}`, this.scrub(data ?? ''));
     }
 
     /**
@@ -44,7 +79,7 @@ export class Logger {
      */
     static debug(context: string, message: string, data?: unknown): void {
         if (isDevelopment()) {
-            console.debug(`${this.prefix}:${context}] ${message}`, data ?? '');
+            console.debug(`${this.prefix}:${context}] ${message}`, this.scrub(data ?? ''));
         }
     }
 
@@ -66,7 +101,7 @@ export class Logger {
     static table(context: string, data: unknown[]): void {
         if (isDevelopment()) {
             console.debug(`${this.prefix}:${context}]`);
-            console.table(data);
+            console.table(this.scrub(data));
         }
     }
 }

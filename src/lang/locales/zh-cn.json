@@ -101,6 +101,8 @@
     "app-secret": "App Secret",
     "app-secret-for-your-wechat-official": "微信公众号App Secret",
     "appid-for-your-wechat-official-account": "微信公众号App ID",
+    "enable-strict-security-mode": "启用严格安全模式",
+    "enable-strict-security-mode-desc": "开启后将对 HTML 进行严格白名单过滤，防止 XSS 攻击。如果遇到 **LaTeX 公式 (MathJax)**、**Excalidraw** 或其他复杂内容显示异常，请尝试关闭此选项。(Default: ON)",
     "be-carefull-delete-account": "注意！这将删除该账号的所有设置和数据。",
     "check-if-your-account-setting-is-correct": "检查账号设置是否正确。",
     "click-to-connect-wechat-server": "点击连接微信服务器",

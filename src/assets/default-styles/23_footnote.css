@@ -1,40 +1,104 @@
 :root {
-  --footnote-color:  #a0a0a0;
-  --footnote-hover-color: #666;
-  --footnote-font-size: 12px;
-  --hr-color: #ccc;
-  --hr-height: 1px;
-  --hr-margin: 1em 0;
+	--footnote-color: #666;
+	--footnote-hover-color: #666;
+	--footnote-font-size: 13px;
+	--wechat-footnote-text-color: #999;
+	--hr-color: #eee;
 }
 
-.smart-mp hr {
-	border-bottom: var(--hr-height, 1px) solid var(--hr-color, #eaeaea);
-	border-bottom: none;
-	border-left: none;
-	border-right: none;
-	margin-top: 20px;
-	margin-bottom: 20px;
+/* 列表整体样式 (共享) */
+.smart-mp-footnotes,
+.smart-mp-references {
+	font-size: var(--footnote-font-size, 13px);
+	color: var(--footnote-color, #666);
+	margin-top: 3rem;
+	padding-top: 1.2rem;
+	border-top: 1px solid var(--hr-color, #eee);
+	background: var(--background-secondary, #f9f9f9);
+	border-radius: 0 0 8px 8px;
 }
 
-.smart-mp .foot-links hr {
-	margin-top: 2rem;
-	margin-bottom: 0.5rem;
+/* 标题样式 (共享) */
+.smart-mp-footnotes-title,
+.smart-mp-references-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-normal);
+	margin-bottom: 1rem;
+	padding-left: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 }
 
-.smart-mp .foot-links {
-	font-size: var(--footnote-font-size, 12px);
-	color: var(--footnote-color, #a0a0a0);
+/* 分隔线 (共享) */
+.smart-mp-footnotes-separator,
+.smart-mp-references-separator {
+	margin: 2rem 0 1rem 0;
+	border: none;
 }
 
-/* footnote */
-.smart-mp .footnote-id {
+/* 列表样式 (共享) */
+.smart-mp-footnotes ol,
+.smart-mp-references ol {
+	margin: 0;
+	padding: 0 1rem 1rem 1.5rem;
+	list-style-type: decimal;
+	counter-reset: list-counter;
+	/* Changed from footnote-counter to generic */
+}
+
+.smart-mp-footnotes li,
+.smart-mp-references li {
+	margin-bottom: 0.8rem;
+	line-height: 1.6;
+	counter-increment: list-counter;
+	position: relative;
 	color: var(--wechat-footnote-text-color, #999);
-	margin-right: 0.5em;
-
 }
 
-.smart-mp .footnote {
-	font-size: 0.9em;
-	font-weight: 300;
-	margin-left: 0.5em;
+/* 内容 (共享) */
+.smart-mp-footnotes .footnote-content,
+.smart-mp-references .reference-content {
+	display: inline;
+}
+
+.smart-mp-footnotes .footnote-content p,
+.smart-mp-references p {
+	display: inline;
+	margin: 0;
+	padding: 0;
+}
+
+/* 返回引用链接 & 链接样式 */
+.smart-mp-footnotes .footnote-backref,
+.smart-mp-references a {
+	color: var(--footnote-color, #999);
+	text-decoration: none;
+	font-size: 12px;
+	margin-left: 0.5rem;
+	opacity: 0.7;
+	transition: opacity 0.2s;
+	cursor: pointer;
+}
+
+.smart-mp-footnotes .footnote-backref:hover,
+.smart-mp-references a:hover {
+	opacity: 1;
+	color: var(--text-accent);
+}
+
+/* 文中脚注标记样式 */
+.footnote-mark {
+	color: var(--text-accent);
+	text-decoration: none;
+	font-size: 12px;
+	font-weight: 500;
+	transition: color 0.2s;
+	margin: 0 2px;
+}
+
+.footnote-mark:hover {
+	color: var(--text-accent-hover);
+	text-decoration: underline;
 }

@@ -111,6 +111,10 @@ export class AssetsManager {
         return AssetsManager.instance;
     }
 
+    public static onPluginUnload() {
+        this.instance = undefined as any;
+    }
+
     private isNewsLikeItem(item: MaterialItem): item is MaterialNewsItem | DraftItem {
         return "content" in item;
     }
@@ -381,7 +385,7 @@ export class AssetsManager {
         })
     }
     async getAllMeterialOfTypeFromDB(accountName: string, type: string): Promise<MaterialItem[]> {
-        const pageSize = 10;
+        const pageSize = 50;
         let offset = 0;
         const items: Array<MaterialItem> = [];
         if (accountName === undefined || !accountName) {

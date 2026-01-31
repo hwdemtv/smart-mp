@@ -63,7 +63,7 @@ export class ObsidianMarkdownRenderer {
                 waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
             }
             if (/```\s*mermaid/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg", 5000));
+                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg, .block-language-mermaid svg", 5000));
             }
             if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
                 waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));

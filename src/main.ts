@@ -16,6 +16,7 @@ import {
 	addIcon,
 } from "obsidian";
 import { getPublicIpAddress } from "src/utils/ip-address";
+import { CryptoHelper } from "./utils/crypto-helper";
 import { AssetsManager } from "./assets/assets-manager";
 import { ResourceManager } from "./assets/resource-manager";
 import { $t } from "./lang/i18n";
@@ -71,6 +72,7 @@ const DEFAULT_SETTINGS: SmartMPSetting = {
 	realTimeRender: true,
 	realTimeRenderDelay: 500,
 	scrollSync: true,
+	enableStrictSecurityMode: true,
 	chatSetting: {
 		temperature: 0.7,
 		max_tokens: 2048,
@@ -145,10 +147,23 @@ export default class SmartMPPlugin extends Plugin {
 	}, 3000);
 
 	private async persistSettings(): Promise<void> {
-		delete this.settings._id;
-		delete this.settings._rev;
-		this.trimSettings();
-		await saveSmartMPSetting(this.settings);
+		const settingsCopy: SmartMPSetting = JSON.parse(JSON.stringify(this.settings));
+		delete settingsCopy._id;
+		delete settingsCopy._rev;
+
+		// Encrypt sensitive info
+		settingsCopy.mpAccounts.forEach(acc => {
+			if (acc.appSecret) acc.appSecret = CryptoHelper.obfuscate(acc.appSecret, this.settings.cryptoKey || "");
+		});
+		settingsCopy.chatAccounts.forEach(acc => {
+			if (acc.apiKey) acc.apiKey = CryptoHelper.obfuscate(acc.apiKey, this.settings.cryptoKey || "");
+		});
+		settingsCopy.drawAccounts.forEach(acc => {
+			if (acc.apiKey) acc.apiKey = CryptoHelper.obfuscate(acc.apiKey, this.settings.cryptoKey || "");
+		});
+
+		// this.trimSettings(); // Trim only makes sense for raw input, here we are saving
+		await saveSmartMPSetting(settingsCopy);
 		await this.saveThemeFolder();
 	}
 
@@ -292,11 +307,14 @@ export default class SmartMPPlugin extends Plugin {
 													const content = editor.getValue();
 													const result = await this.proofContent(content);
 													if (result) {
-														proofreadText(
-															editor,
-															this.app.workspace.getActiveViewOfType(MarkdownView)!,
-															result as any
-														);
+														const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+														if (activeView) {
+															proofreadText(
+																editor,
+																activeView,
+																result as any
+															);
+														}
 													}
 												})();
 											};
@@ -420,6 +438,43 @@ export default class SmartMPPlugin extends Plugin {
 		if (migrateSettings(this.settings)) {
 			await this.saveSettings();
 		}
+
+		// Check for migration to dynamic key
+		if (!this.settings.cryptoKey) {
+			// First time migration: Generate new key
+			this.settings.cryptoKey = CryptoHelper.generateKey();
+			// Decrypt using legacy key
+			this.settings.mpAccounts.forEach(acc => {
+				if (acc.appSecret) acc.appSecret = CryptoHelper.deobfuscateLegacy(acc.appSecret);
+			});
+			this.settings.chatAccounts.forEach(acc => {
+				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
+			});
+			this.settings.drawAccounts.forEach(acc => {
+				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
+			});
+			// Save immediately to apply new encryption
+			await this.saveSettings();
+		} else {
+			// Decrypt sensitive info using dynamic key
+			this.settings.mpAccounts.forEach(acc => {
+				if (acc.appSecret) acc.appSecret = CryptoHelper.deobfuscate(acc.appSecret, this.settings.cryptoKey || "");
+			});
+			this.settings.chatAccounts.forEach(acc => {
+				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscate(acc.apiKey, this.settings.cryptoKey || "");
+			});
+			this.settings.drawAccounts.forEach(acc => {
+				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscate(acc.apiKey, this.settings.cryptoKey || "");
+			});
+		}
+
+		// If migration happened (plain text found and decrypted=plain), saving will encrypted it.
+		// Since we modify saveSettings to encrypt, we should trigger a save to ensure data on disk becomes encrypted eventually.
+		// However, explicitly saving on every load might be aggressive. 
+		// Let's rely on user action or auto-migration if we detect plain text?
+		// Actually, CryptoHelper.deobfuscate returns plain text if it detects it's not encrypted.
+		// So if we find any plain text that SHOULD be encrypted, we might want to trigger a save.
+		// For now, let's keep it simple: It validates on load, and encrypts on next manual save.
 
 		await this.loadThemeFolder();
 	}
@@ -550,7 +605,7 @@ export default class SmartMPPlugin extends Plugin {
 				return token.access_token;
 			}
 		} else if (
-			lastRefreshTime! + expiresIn! * 1000 <
+			(lastRefreshTime || 0) + (expiresIn || 0) * 1000 <
 			new Date().getTime()
 		) {
 			const token = await this.wechatClient.getAccessToken(
@@ -959,7 +1014,13 @@ export default class SmartMPPlugin extends Plugin {
 		// this.spinnerEl.remove();
 		this.spinner.unload();
 		if (this.themeHotReloader) this.themeHotReloader.stopWatching();
+
+		// Clean up static instances
 		ThemeManager.getInstance(this).onPluginUnload();
+		WechatClient.onPluginUnload();
+		AssetsManager.onPluginUnload();
+		AiClient.onPluginUnload();
+		ResourceManager.onPluginUnload();
 
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view instanceof PreviewPanel) {

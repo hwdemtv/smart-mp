@@ -144,7 +144,19 @@ export class OllamaClient {
 			/[\n\s\S]+总结：[\n\s\S]+/g,
 			""
 		);
-		const json = JSON.parse(result);
+		let json;
+		try {
+			json = JSON.parse(result);
+		} catch (e) {
+			console.warn("Failed to parse JSON from AI response, using fallback.", e);
+			// Fallback: treat the whole text as polished content if JSON parsing fails
+			return {
+				summary: "",
+				corrections: [],
+				polished: result,
+				coverImage: "",
+			};
+		}
 
 		return {
 			summary: "",

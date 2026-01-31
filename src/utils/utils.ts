@@ -1,4 +1,5 @@
 import { requestUrl } from "obsidian";
+import { SafeHTML } from "./sanitize-html";
 
 
 export function escapeHtml(unsafe: string): string {
@@ -163,7 +164,9 @@ export function cleanHtmlForWechat(root: HTMLElement): HTMLElement {
     // Fail-safe: if content is completely gone but originally wasn't empty, restore something
     if (result.innerHTML.trim().length === 0 && originalLength > 0) {
         console.warn('[cleanHtmlForWechat] Content over-cleaned! Restoring backup.');
-        result.innerHTML = '<section><p>（内容可能包含不支持的格式，已重置）</p></section>';
+        console.warn('[cleanHtmlForWechat] Content over-cleaned! Restoring backup.');
+        SafeHTML.setSafeHTML(result, '<section><p>（内容可能包含不支持的格式，已重置）</p></section>');
+        // Or could we return to original logic? For now, at least don't send empty.
         // Or could we return to original logic? For now, at least don't send empty.
     }
     return result;

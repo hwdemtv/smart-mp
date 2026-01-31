@@ -114,6 +114,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	private articleStats: HTMLElement;
 	private currentArticleStats = { totalWords: 0, readingTime: 0 };
 
+	// Scroll sync properties
+	private scrollRAF: number | null = null;
+	private scrollSyncEnabled: boolean = true;
+
 	getViewType(): string {
 		return VIEW_TYPE_SMART_MP_PREVIEW;
 	}
@@ -576,6 +580,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		} else {
 			setTimeout(apply, 0);
 		}
+
+		// 渲染完成后设置滚动同步
+		this.setupScrollSync();
 	}
 
 	// Apply layout enhancements based on settings
@@ -1016,32 +1023,6 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		});
 	}
 
-	stopListen() {
-		// Clean up the specifically attached scroll listener if it exists
-		if (this.editorScrollListener && this.renderDiv) {
-			// Try to remove from the current editor's scrollDom
-			const editor = this.getMarkdownView()?.editor;
-			// @ts-ignore
-			const scrollDom = editor?.cm?.scrollDOM;
-			if (scrollDom) {
-				scrollDom.removeEventListener("scroll", this.editorScrollListener);
-			}
-		}
-		this.listeners.forEach((e) => this.app.workspace.offref(e));
-	}
-
-	getMarkdownView(): MarkdownView | null {
-		return this.app.workspace.getActiveViewOfType(MarkdownView);
-	}
-
-	refreshScrollSyncButton() {
-		if (this.scrollSyncButton) {
-			const isSync = this.plugin.settings.scrollSync ?? true;
-			this.scrollSyncButton.setIcon(isSync ? "arrow-up-down" : "lock");
-			this.scrollSyncButton.setTooltip(isSync ? (isSync ? "滚动同步: 开启" : "滚动同步: 关闭") : "滚动同步: 关闭");
-		}
-	}
-
 	onEditorChange(editor: Editor, info: MarkdownView) {
 		void this.debouncedRender();
 	}
@@ -1101,5 +1082,230 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			}
 		};
 		await loadChildren(this as unknown as InternalComponent);
+	}
+
+	// ============== Scroll Sync Methods ==============
+
+	/**
+	 * 设置滚动同步监听器
+	 */
+	setupScrollSync() {
+		const editor = this.getMarkdownView()?.editor;
+		if (!editor) return;
+
+		// @ts-ignore - 访问 CodeMirror 内部
+		const scrollDom = editor.cm?.scrollDOM;
+		if (!scrollDom) return;
+
+		// 移除旧的监听器
+		if (this.editorScrollListener) {
+			scrollDom.removeEventListener("scroll", this.editorScrollListener);
+		}
+
+		// 创建新的监听器（使用 RAF 节流）
+		this.editorScrollListener = () => {
+			if (!this.scrollSyncEnabled) return;
+
+			if (this.scrollRAF) {
+				cancelAnimationFrame(this.scrollRAF);
+			}
+
+			this.scrollRAF = requestAnimationFrame(() => {
+				this.performScrollSync(scrollDom, editor);
+			});
+		};
+
+		scrollDom.addEventListener("scroll", this.editorScrollListener);
+	}
+
+	/**
+	 * 执行滚动同步 - 标题锚点辅助 + 百分比插值
+	 */
+	private performScrollSync(scrollDom: HTMLElement, editor: any) {
+		const previewEl = this.renderDiv;
+		if (!previewEl) return;
+
+		const file = this.app.workspace.getActiveFile();
+		if (!file) return;
+
+		// @ts-ignore
+		const cmView = editor.cm;
+		const currentScrollTop = scrollDom.scrollTop;
+		const editorScrollHeight = scrollDom.scrollHeight;
+		const editorClientHeight = scrollDom.clientHeight;
+		const editorScrollableHeight = editorScrollHeight - editorClientHeight;
+
+		const previewScrollableHeight = previewEl.scrollHeight - previewEl.clientHeight;
+
+		// 计算编辑器滚动百分比 (0 到 1)
+		const scrollPercent = editorScrollableHeight > 0
+			? currentScrollTop / editorScrollableHeight
+			: 0;
+
+		// 获取标题元数据（包含真实行号）
+		const headings = this.app.metadataCache.getFileCache(file)?.headings;
+
+		// [方案A] 标题锚点辅助同步
+		if (headings && headings.length > 0) {
+			try {
+				// 获取编辑器当前可见的第一行行号
+				const doc = cmView.state.doc;
+				const topLine = doc.lineAt(cmView.lineBlockAtHeight(currentScrollTop).from).number;
+				const totalLines = doc.lines;
+
+				// 在预览区查找标题元素
+				const previewHeadings = previewEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+				// 构建标题锚点列表
+				const headingAnchors: Array<{
+					line: number;
+					editorPercent: number;
+					previewTop: number;
+				}> = [];
+
+				headings.forEach((h, index) => {
+					const line = h.position.start.line + 1;
+					const editorPercent = totalLines > 1 ? (line - 1) / (totalLines - 1) : 0;
+					const previewHeading = index < previewHeadings.length
+						? previewHeadings[index] as HTMLElement
+						: null;
+
+					if (previewHeading) {
+						headingAnchors.push({
+							line,
+							editorPercent,
+							previewTop: previewHeading.offsetTop
+						});
+					}
+				});
+
+				if (headingAnchors.length > 0) {
+					// 找到当前行号附近的前后标题
+					let prevHeading: typeof headingAnchors[0] | null = null;
+					let nextHeading: typeof headingAnchors[0] | null = null;
+
+					for (const h of headingAnchors) {
+						if (h.line <= topLine) {
+							prevHeading = h;
+						} else {
+							nextHeading = h;
+							break;
+						}
+					}
+
+					// 计算目标滚动位置
+					let targetScrollTop: number;
+
+					if (prevHeading && nextHeading) {
+						// 在两个标题之间 - 精确插值
+						const lineRange = nextHeading.line - prevHeading.line;
+						const localProgress = lineRange > 0
+							? (topLine - prevHeading.line) / lineRange
+							: 0;
+						const previewRange = nextHeading.previewTop - prevHeading.previewTop;
+						targetScrollTop = prevHeading.previewTop + localProgress * previewRange;
+					} else if (prevHeading) {
+						// 在最后一个标题之后
+						const remainingEditorPercent = scrollPercent - prevHeading.editorPercent;
+						const remainingPreviewSpace = previewScrollableHeight - prevHeading.previewTop;
+						const remainingEditorSpace = 1 - prevHeading.editorPercent;
+						if (remainingEditorSpace > 0) {
+							targetScrollTop = prevHeading.previewTop +
+								(remainingEditorPercent / remainingEditorSpace) * remainingPreviewSpace;
+						} else {
+							targetScrollTop = prevHeading.previewTop;
+						}
+					} else if (nextHeading) {
+						// 在第一个标题之前
+						const beforePercent = nextHeading.editorPercent > 0
+							? scrollPercent / nextHeading.editorPercent
+							: scrollPercent;
+						targetScrollTop = beforePercent * nextHeading.previewTop;
+					} else {
+						targetScrollTop = scrollPercent * previewScrollableHeight;
+					}
+
+					// 应用滚动（带平滑处理）
+					targetScrollTop = Math.max(0, Math.min(targetScrollTop, previewScrollableHeight));
+					const delta = Math.abs(targetScrollTop - previewEl.scrollTop);
+
+					if (delta > 2) {
+						if (delta > 300) {
+							previewEl.scrollTop = targetScrollTop;
+						} else {
+							previewEl.scrollTop += (targetScrollTop - previewEl.scrollTop) * 0.4;
+						}
+					}
+					return;
+				}
+			} catch (e) {
+				// 标题同步失败，使用百分比回退
+				console.debug('Heading sync failed, falling back to percentage');
+			}
+		}
+
+		// Fallback: 纯百分比同步
+		const targetScrollTop = scrollPercent * previewScrollableHeight;
+		const delta = Math.abs(targetScrollTop - previewEl.scrollTop);
+
+		if (delta > 2) {
+			if (delta > 300) {
+				previewEl.scrollTop = targetScrollTop;
+			} else {
+				previewEl.scrollTop += (targetScrollTop - previewEl.scrollTop) * 0.4;
+			}
+		}
+	}
+
+	/**
+	 * 获取当前的 MarkdownView
+	 */
+	getMarkdownView(): MarkdownView | null {
+		const leaf = this.app.workspace.getMostRecentLeaf();
+		if (leaf?.view instanceof MarkdownView) {
+			return leaf.view;
+		}
+		return null;
+	}
+
+	/**
+	 * 刷新滚动同步按钮状态
+	 */
+	refreshScrollSyncButton() {
+		if (!this.scrollSyncButton) return;
+
+		if (this.scrollSyncEnabled) {
+			this.scrollSyncButton.setIcon("link");
+			this.scrollSyncButton.setTooltip($t("views.previewer.scroll-sync-on") || "Scroll sync enabled");
+		} else {
+			this.scrollSyncButton.setIcon("unlink");
+			this.scrollSyncButton.setTooltip($t("views.previewer.scroll-sync-off") || "Scroll sync disabled");
+		}
+	}
+
+	/**
+	 * 停止滚动同步监听
+	 */
+	stopListen() {
+		// 清理 RAF
+		if (this.scrollRAF) {
+			cancelAnimationFrame(this.scrollRAF);
+			this.scrollRAF = null;
+		}
+
+		// 移除编辑器滚动监听器
+		if (this.editorScrollListener) {
+			const editor = this.getMarkdownView()?.editor;
+			// @ts-ignore
+			const scrollDom = editor?.cm?.scrollDOM;
+			if (scrollDom) {
+				scrollDom.removeEventListener("scroll", this.editorScrollListener);
+			}
+			this.editorScrollListener = null;
+		}
+
+		// 清理事件引用
+		this.listeners.forEach((e) => this.app.workspace.offref(e));
+		this.listeners = [];
 	}
 }

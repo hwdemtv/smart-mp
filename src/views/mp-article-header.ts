@@ -36,6 +36,7 @@ export class MPArticleHeader {
 	private _title: TextComponent;
 	private _author: TextComponent;
 	private _digest: HTMLTextAreaElement;
+	private _digestCounter: HTMLElement;
 	private _needOpenComment: ToggleComponent;
 	private _onlyFansCanComment: ToggleComponent;
 	private imageGenerateModal: ImageGenerateModal | undefined;
@@ -172,15 +173,32 @@ export class MPArticleHeader {
 					});
 			});
 
+		// [UI] Add digest length counter
+		this._digestCounter = details.createEl("div", {
+			cls: "smart-mp-digest-counter",
+			attr: { style: "text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;" }
+		});
+
 		this._digest = details.createEl("textarea", {
 			cls: "digest",
 			attr: {
 				rows: 3,
 				placeholder: $t("views.article-header.digest-text"),
+				maxlength: "120", // Limit to 120 chars
 			},
 		});
+
 		this._digest.onkeyup = (event: KeyboardEvent) => {
 			const target = event.target as HTMLTextAreaElement;
+
+			// Force truncate if somehow exceeds
+			if (target.value.length > 120) {
+				target.value = target.value.substring(0, 120);
+				new Notice("描述最多 120 个字符，已自动截断", 2000);
+			}
+
+			this.updateDigestCounter();
+
 			if (this.activeLocalDraft !== undefined) {
 				this.activeLocalDraft.digest = target.value;
 				void this.localDraftmanager.setDraft(this.activeLocalDraft);
@@ -188,8 +206,13 @@ export class MPArticleHeader {
 		};
 		this._digest.onchange = (event: Event) => {
 			const target = event.target as HTMLTextAreaElement;
+			this.updateDigestCounter(); // Ensure counter is updated on change/paste
 			void this.updateFrontmatterDigest(target.value);
 		};
+
+		// Initialize counter
+		// We need to wait until value is set (updateHeaderProperties will set it) or set initial
+		this.updateDigestCounter();
 
 		this.coverFrame = this.createCoverFrame(details);
 
@@ -533,12 +556,32 @@ export class MPArticleHeader {
 	private setCoverImageXY(x: number = 0, y: number = 0) {
 		this.setCoverImage(this.cover_image);
 	}
+
+	private updateDigestCounter() {
+		if (!this._digest || !this._digestCounter) return;
+
+		const currentLength = this._digest.value.length;
+		this._digestCounter.textContent = `${currentLength} / 120`;
+
+		if (currentLength > 120) {
+			this._digestCounter.style.color = "var(--text-error)";
+			this._digest.style.borderColor = "var(--background-modifier-error)";
+		} else if (currentLength > 100) {
+			this._digestCounter.style.color = "var(--text-warning)";
+			this._digest.style.borderColor = "var(--background-modifier-warning)";
+		} else {
+			this._digestCounter.style.color = "var(--text-muted)";
+			this._digest.style.borderColor = "";
+		}
+	}
+
 	async updateLocalDraft() {
 		this.activeLocalDraft =
 			await this.localDraftmanager.getDrafOfActiveNote();
 		this.updateHeaderProporties();
 		return true;
 	}
+
 	updateHeaderProporties() {
 		let x = 0;
 		let y = 0;
@@ -565,10 +608,13 @@ export class MPArticleHeader {
 			this.cover_image = "";
 		}
 
+
 		this.setCoverImageXY(Number(x), Number(y));
 		this.plugin.messageService.sendMessage(
 			"draft-title-updated",
 			this._title.getValue()
 		);
+		// Update digest counter if exists
+		this.updateDigestCounter();
 	}
 }

@@ -55,6 +55,7 @@ export type SmartMPSetting = {
     realTimeRender: boolean;
     realTimeRenderDelay?: number;
     scrollSync?: boolean;
+    enableStrictSecurityMode?: boolean;
     previewer_wxname?: string;
     custom_theme?: string;
     themePreset?: string;
@@ -88,6 +89,7 @@ export type SmartMPSetting = {
     llmProviders?: Array<LLMProvider>;
     selectedLLMProviderId?: string;
     selectedLLMModelId?: string;
+    cryptoKey?: string; // For upgraded encryption
 }
 
 export type ChatSetting = {

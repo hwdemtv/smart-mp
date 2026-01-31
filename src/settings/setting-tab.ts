@@ -129,6 +129,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		if (this.activeTab === 'general') {
 			this.createWeChatSettings(containerEl);
 			this.creatCSSStyleSetting(containerEl);
+			this.createSecuritySettings(containerEl);
 
 			// Import/Export also moved here for now
 			new Setting(containerEl)
@@ -340,6 +341,23 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						}
 					});
 			});
+
+	}
+
+	createSecuritySettings(container: HTMLElement) {
+		const frame = this.createCollapsibleFrame(container, "🛡️ 安全设置 (Security)");
+
+		new Setting(frame)
+			.setName($t("settings.enable-strict-security-mode") ?? "启用严格安全模式")
+			.setDesc($t("settings.enable-strict-security-mode-desc") ?? "开启后将对 HTML 进行严格白名单过滤，防止 XSS 攻击。如果 Excalidraw 或 SVG 显示异常，请尝试关闭此选项。 (Default: ON)")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.enableStrictSecurityMode ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableStrictSecurityMode = value;
+						await this.plugin.saveSettings();
+					});
+			});
 	}
 
 	newMPAccountInfo() {
@@ -418,12 +436,15 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			.setName($t("settings.app-secret"))
 			.setDesc($t("settings.app-secret-for-your-wechat-official"))
 			.setClass("smart-mp-setting-input")
-			.addText((text) =>
-				text.setValue(account.appSecret).onChange((value) => {
-					account.appSecret = value;
-					void this.plugin.saveSettings();
-				})
-			);
+			.addText((text) => {
+				text.setPlaceholder("请输入 AppSecret")
+					.setValue(account.appSecret)
+					.onChange(async (value) => {
+						account.appSecret = value;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.type = "password";
+			});
 		// refresh token
 		new Setting(container)
 			.setName($t("settings.test-connection"))
@@ -796,10 +817,15 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		// API Key with Test button
 		const apiKeySetting = new Setting(container)
 			.setName($t("settings.llm-provider.api-key"))
-			.addText(text => text.setPlaceholder("sk-...").setValue(provider.apiKey).onChange(async v => {
-				provider.apiKey = v;
-				await this.plugin.saveSettings();
-			}));
+			.addText(text => {
+				text.setPlaceholder("sk-...")
+					.setValue(provider.apiKey)
+					.onChange(async v => {
+						provider.apiKey = v;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.type = "password";
+			});
 
 		// Test Connection button
 		apiKeySetting.addButton(btn => btn

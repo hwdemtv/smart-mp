@@ -282,6 +282,29 @@ export class CSSMerger {
 
 		Logger.perf('CssMerger', `Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
+	// Obsidian 常用 CSS 变量的默认回退值
+	private static readonly DEFAULT_CSS_VARS: Record<string, string> = {
+		'--text-normal': '#333333',
+		'--text-muted': '#666666',
+		'--text-faint': '#999999',
+		'--text-accent': '#705dcf',
+		'--text-accent-hover': '#8875ff',
+		'--text-on-accent': '#ffffff',
+		'--interactive-normal': '#f5f5f5',
+		'--interactive-hover': '#e0e0e0',
+		'--interactive-accent': '#705dcf',
+		'--interactive-accent-hover': '#8875ff',
+		'--background-primary': '#ffffff',
+		'--background-secondary': '#f5f5f5',
+		'--background-modifier-border': '#ddd',
+		'--background-modifier-hover': 'rgba(0,0,0,0.05)',
+		'--link-color': '#705dcf',
+		'--link-external-color': '#705dcf',
+		'--code-background': '#f5f5f5',
+		'--tag-background': '#e0e0e0',
+		'--tag-color': '#333333',
+	};
+
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
 		const MAX_DEPTH = 10; // 防止无限循环
 		const varRegex = /var\(\s*--([\w-]+)(?:\s*,\s*((?:(?:\([^()]*\))|[^)\s])*?))?\s*\)/g;
@@ -301,8 +324,15 @@ export class CSSMerger {
 				} else if (fallback !== undefined) {
 					replaced = true;
 					return fallback;
+				} else if (CSSMerger.DEFAULT_CSS_VARS[fullKey]) {
+					// 使用预定义的默认值
+					replaced = true;
+					return CSSMerger.DEFAULT_CSS_VARS[fullKey];
 				} else {
-					console.warn(`Variable ${fullKey} not found and no fallback provided`);
+					// 仅在调试模式下输出警告
+					if (process.env.NODE_ENV === 'development') {
+						console.debug(`Variable ${fullKey} not found, using empty string`);
+					}
 					return '';
 				}
 			});
@@ -316,7 +346,6 @@ export class CSSMerger {
 	private pickRules(root: postcss.Root, rules: Rules): void {
 		root.walkRules(rule => {
 			if (rule.selector !== ':root') {
-				// Split multi-selectors (e.g., "h1::before, h1::after") to handle each pseudo-element correctly
 				rule.selectors.forEach(selector => {
 					let selectedRule = rules.get(selector);
 					if (!selectedRule) {
@@ -324,30 +353,31 @@ export class CSSMerger {
 						rules.set(selector, selectedRule);
 					}
 					rule.walkDecls(decl => {
-						const baseDecl = selectedRule.get(decl.prop);
+						const baseDecl = selectedRule!.get(decl.prop);
 						if (baseDecl === undefined || !baseDecl.important || decl.important) {
-							selectedRule.set(decl.prop, decl);
+							// [Optimization] Pre-resolve variables here
+							// Clone the decl to avoid mutating the original AST if cached
+							const optimizedDecl = decl.clone();
+							if (optimizedDecl.value.includes('var(')) {
+								optimizedDecl.value = this.resolveCssVars(optimizedDecl.value, this.vars);
+							}
+							selectedRule!.set(decl.prop, optimizedDecl);
 						}
 					})
 				});
 			}
 		})
 	}
+
 	private pickVariables(root: postcss.Root, vars: Map<string, string>): void {
 		root.walkRules(rule => {
 			if (rule.selector === ':root') {
 				rule.walkDecls(decl => {
 					if (decl.prop.startsWith('--')) {
-						// Validate variable name format
 						if (!/^[a-zA-Z0-9-]+$/.test(decl.prop.substring(2))) {
 							console.warn(`[CssMerger] Potentially invalid variable name format: ${decl.prop}`);
 						}
-
-						// Validation passed
-						// Logic Update: Always set/overwrite the variable to support CSS cascading (Last wins)
-						// This allows Custom CSS (loaded later) to override Base CSS.
 						vars.set(decl.prop, decl.value);
-						// console.log(`[CssMerger] Set variable: ${decl.prop} = ${decl.value}`);
 					}
 				});
 			}
@@ -390,11 +420,27 @@ export class CSSMerger {
 				Logger.debug('CssMerger', `Identified highlight element: <${currentNode.tagName}> content: "${currentNode.textContent?.substring(0, 20)}..."`);
 			}
 
-			// Resolve variables in existing inline styles first
+			// [Optimization] Batch Styles
+			const finalStyles = new Map<string, string>();
+
+			// 1. Existing Inline Styles (Highest Priority for vars, but we need to resolve them? 
+			// Actually, existing inline styles usually come from Obsidian/Users and shouldn't be touched unless they use vars we know)
+			// For performance, let's keep the existing logic: resolve vars in inline style.
 			const existingStyle = currentNode.getAttribute('style');
+			let preservedOriginalStyle = existingStyle || '';
+
 			if (existingStyle && existingStyle.includes('var(')) {
 				const resolvedStyle = this.resolveCssVars(existingStyle, this.vars);
-				currentNode.setAttribute('style', resolvedStyle);
+				// We don't setAttribute here to avoid Reflow. We just treat it as base.
+				// But wait, existing styles might conflict with our rules.
+				// Our rules allow overriding if !important, or providing defaults.
+				// Usually, we want our Theme rules to APPLY. 
+				// The original logic appended theme styles to cssText.
+				// To preserve behavior: We calculate Theme Styles, then APPEND them to Existing Styles.
+				if (resolvedStyle !== existingStyle) {
+					currentNode.setAttribute('style', resolvedStyle);
+					preservedOriginalStyle = resolvedStyle;
+				}
 			}
 
 			// Collect Candidate Rules
@@ -418,6 +464,9 @@ export class CSSMerger {
 				if (idRules) idRules.forEach(s => candidates.add(s));
 			}
 
+			// Calculate Theme Styles
+			const themeStyleBatch: string[] = [];
+
 			candidates.forEach((selector) => {
 				const rule = this.rules.get(selector);
 				if (!rule) return;
@@ -425,44 +474,69 @@ export class CSSMerger {
 				const { baseSelector, pseudo } = this.normalizeSelector(selector);
 				try {
 					if (currentNode.matches(baseSelector)) {
-						let target = currentNode;
 						if (pseudo) {
+							// Pseudo-elements handling remains direct DOM manipulation for now (less frequent)
 							const displayDecl = rule.get('display');
 							const contentDecl = rule.get('content');
 
-							// Correctly handle display: none or content: none to HIDE base pseudo-elements
 							if (displayDecl?.value === 'none' || contentDecl?.value === 'none') {
 								const attr = `data-smart-mp-pseudo-${pseudo}`;
 								const existing = currentNode.querySelector(`[${attr}]`);
 								if (existing) existing.remove();
-								return; // Break out of this specific rule application
+								return;
 							}
+							// Only resolve vars if we haven't pre-resolved (which we have in pickRules!)
+							// But content might need resolution if it wasn't caught.
+							// ensurePseudoElement logic...
+							const target = this.ensurePseudoElement(currentNode, pseudo, contentDecl?.value);
 
-							target = this.ensurePseudoElement(currentNode, pseudo, contentDecl?.value);
+							// Pseudo-element styles apply to the span, so we batch them for that span?
+							// For simplicity, keep pseudo logic as is, it's rare compared to main elements.
+							rule.forEach((decl, prop) => {
+								if (prop === 'content') return;
+								// Values are already pre-resolved in pickRules!
+								const fullValue = decl.important ? `${decl.value} !important` : decl.value;
+								this.appendStyleText(target, prop, fullValue);
+							})
+						} else {
+							// Main Element Rules
+							rule.forEach((decl, prop) => {
+								// Values are already pre-resolved in pickRules!
+								// Just need security check
+								const lowerValue = decl.value.toLowerCase();
+								if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
+									return;
+								}
+
+								// Check !important conflict
+								// If existing style has !important for this prop, skip.
+								// Only check if preservedOriginalStyle has it.
+								const regex = new RegExp(`${prop}\\s*:\\s*[^;]*!important`, 'i');
+								if (regex.test(preservedOriginalStyle)) {
+									return;
+								}
+
+								const fullValue = decl.important ? `${decl.value} !important` : decl.value;
+								themeStyleBatch.push(`${prop}: ${fullValue}`);
+							})
 						}
-						rule.forEach((decl, prop) => {
-							if (prop === 'content') {
-								return;
-							}
-							let value = this.resolveCssVars(decl.value, this.vars);
-
-							// [Security] Prevent XSS in CSS values
-							const lowerValue = value.toLowerCase();
-							if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
-								return;
-							}
-
-							const fullValue = decl.important ? `${value} !important` : value;
-							this.appendStyleText(target, prop, fullValue);
-						})
 					}
 				} catch (error) {
 					// safe ignore
 				}
 			})
 
+			// [Optimization] Batch Write
+			if (themeStyleBatch.length > 0) {
+				const cssToAppend = themeStyleBatch.join('; ');
+				// Check for semicolon in original
+				const prefix = (preservedOriginalStyle && !preservedOriginalStyle.trim().endsWith(';')) ? '; ' : '';
+
+				// Single write
+				currentNode.setAttribute('style', `${preservedOriginalStyle}${prefix}${cssToAppend}`);
+			}
+
 			// Add children to stack
-			// Iterate backwards so they are popped in order
 			let child = currentNode.lastElementChild;
 			while (child) {
 				stack.push(child as HTMLElement);

@@ -16,6 +16,12 @@ import { getErrorMessage } from "./error-code";
 import { $t } from "src/lang/i18n";
 import { MSG_TYPE } from "src/utils/message-service";
 import { SmartMPSetting } from "src/settings/smart-mp-setting";
+import Logger from "src/utils/logger";
+
+// WeChat API constants
+const WECHAT_LIMIT_IMAGE = 10 * 1024 * 1024; // 10MB
+const WECHAT_LIMIT_VOICE = 2 * 1024 * 1024;  // 2MB
+const WECHAT_LIMIT_VIDEO = 10 * 1024 * 1024; // 10MB
 
 export class WechatClient {
 	private static instance: WechatClient;
@@ -32,93 +38,16 @@ export class WechatClient {
 		return WechatClient.instance;
 	}
 
+	public static onPluginUnload() {
+		this.instance = undefined as any;
+	}
+
 	public async requestToken(retryCount = 0): Promise<string | null> {
 		// [Safety] Temporarily disabled until private server is set up
 		new Notice($t("wechat-api.center-token-disabled-manual") || "中心令牌功能已暂时关闭。");
 		return null;
 
-		/*
-		const url = "https://wewrite.3thinking.cn/mp_token";
-		if (retryCount > 3) {
-			console.error("Failed to refresh token after 3 attempts");
-			return null;
-		}
-		const account = this.plugin.getSelectedMPAccount();
-		if (account === undefined) {
-			new Notice($t("wechat-api.select-an-wechat-mp-account-first"));
-			return null;
-		}
-		const { appId, appSecret, doc_id } = account;
-		let params;
-		if (doc_id === undefined || !doc_id) {
-			params = {
-				app_id: appId,
-				secret: appSecret,
-			};
-		} else {
-			params = {
-				doc_id: doc_id,
-			};
-		}
 
-		try {
-			const result = await requestUrl({
-				method: "POST",
-				url: url,
-				headers: { "Content-Type": "application/json" },
-				throw: false,
-				body: JSON.stringify(params),
-			});
-			if (result.status !== 200) {
-				new Notice(result.text, 0);
-				return null;
-			}
-			const { code, data, message, server_errcode, server_errmsg } =
-				result.json;
-			if (code !== 0) {
-				if (code == -2) {
-					account.doc_id = undefined;
-					void this.plugin.saveSettings();
-					return await this.requestToken(retryCount + 1);
-				}
-				if (code == -10) {
-					//white list
-					if (data.errcode === 40164) {
-						const { ipv4 } = extractIPs(data.errmsg);
-						if (ipv4[0] !== undefined && ipv4[0]) {
-							new Notice(
-								$t(
-									"wechat-api.add-ip-address-ipv4-0-to-wechat-mp-ip-wh",
-									[ipv4[0]]
-								)
-							);
-						}
-					}
-				}
-				return null;
-			}
-			if (data.last_token === undefined) {
-				new Notice(
-					$t("wechat-api.failed-to-get-wechat-access-token"),
-					0
-				);
-				return null;
-			}
-			account.access_token = data.last_token;
-			account.doc_id = data.doc_id;
-			account.expires_in = data.expiretime;
-			account.lastRefreshTime = new Date().getTime();
-			void this.plugin.saveSettings();
-			return data.last_token;
-		} catch (error) {
-			console.error("Get wechat access token error:", error);
-			new Notice(
-				$t("wechat-api.failed-to-get-wechat-access-token"),
-				0
-			);
-			return null;
-		}
-		*/
 	}
 
 	private getHeaders() {
@@ -188,12 +117,23 @@ export class WechatClient {
 		const url =
 			"https://api.weixin.qq.com/cgi-bin/draft/add?access_token=" +
 			accessTokenValue;
+		// [Fix] Truncate digest to meet WeChat API limit (usually 120 chars) and strip HTML
+		// [Fix] Truncate digest to meet WeChat API limit (usually 120 chars).
+		// User suggestion: 1 char for CN/EN, 2 chars for Emoji. JS length property handles this well.
+		// Limit to 120 chars, warn at 100 in UI.
+		let digest = localDraft.digest || "";
+		digest = digest.replace(/<[^>]*>?/gm, '');
+		if (digest.length > 120) {
+			digest = digest.substring(0, 120) + "...";
+		}
+		console.log("Sending draft with digest:", digest);
+
 		const body = {
 			articles: [
 				{
 					title: localDraft.title,
 					content: data,
-					digest: localDraft.digest,
+					digest: digest,
 					thumb_media_id: localDraft.thumb_media_id,
 					...(localDraft.content_source_url && {
 						content_source_url: localDraft.content_source_url,
@@ -219,14 +159,15 @@ export class WechatClient {
 		const { errcode, media_id, errmsg } = res.json;
 		if (errcode !== undefined && errcode !== 0) {
 			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
-			console.error(`[sendArticleToDraftBox] Failed: ${errcode} - ${errmsg}`);
+			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
+			Logger.error('sendArticleToDraftBox', `Failed: ${errcode} - ${errmsg}`);
 			return false;
 		} else {
 			new Notice($t("wechat-api.send-article-to-draft-box-successfully"));
 		}
 
 		if (!media_id) {
-			console.error('[sendArticleToDraftBox] Success but no media_id returned', res.json);
+			Logger.error('sendArticleToDraftBox', 'Success but no media_id returned', res.json);
 			return false;
 		}
 
@@ -237,19 +178,19 @@ export class WechatClient {
 		//check size
 		if (type === "video") {
 			// < 10M
-			if (data.size > 1024 * 1024 * 10) {
+			if (data.size > WECHAT_LIMIT_VIDEO) {
 				new Notice($t("wechat-api.video-size-exceeds-10m"));
 				return false;
 			}
 		} else if (type === "voice") {
 			// < 2M
-			if (data.size > 1024 * 1024 * 2) {
+			if (data.size > WECHAT_LIMIT_VOICE) {
 				new Notice($t("wechat-api.voice-size-exceeds-2m"));
 				return false;
 			}
 		} else {
 			// < 10M
-			if (data.size > 1024 * 1024 * 10) {
+			if (data.size > WECHAT_LIMIT_IMAGE) {
 				new Notice($t("wechat-api.image-size-exceeds-10m"));
 				return false;
 			}
@@ -468,7 +409,7 @@ export class WechatClient {
 			};
 		} catch (error) {
 			this.plugin.hideSpinner()
-			console.error("上传素材时出错:", error);
+			Logger.error('uploadMaterial', "上传素材时出错:", error);
 			throw error;
 		}
 	}
@@ -633,7 +574,11 @@ export class WechatClient {
 	}
 	public async publishDraft(meida_id: string, accountName: string = "") {
 		if (!accountName) {
-			accountName = this.plugin.settings.selectedMPAccount!;
+			accountName = this.plugin.settings.selectedMPAccount || "";
+		}
+		if (!accountName) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
 		}
 		const accessToken = await this.plugin.refreshAccessToken(accountName);
 		if (!accessToken) {
@@ -664,7 +609,11 @@ export class WechatClient {
 	}
 	public async deleteMedia(meida_id: string, accountName: string = "") {
 		if (!accountName) {
-			accountName = this.plugin.settings.selectedMPAccount!;
+			accountName = this.plugin.settings.selectedMPAccount || "";
+		}
+		if (!accountName) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
 		}
 		const accessToken = await this.plugin.refreshAccessToken(accountName);
 		if (!accessToken) {
@@ -695,7 +644,11 @@ export class WechatClient {
 	}
 	public async deleteDraft(meida_id: string, accountName: string = "") {
 		if (!accountName) {
-			accountName = this.plugin.settings.selectedMPAccount!;
+			accountName = this.plugin.settings.selectedMPAccount || "";
+		}
+		if (!accountName) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
 		}
 		const accessToken = await this.plugin.refreshAccessToken(accountName);
 		if (!accessToken) {
@@ -726,7 +679,11 @@ export class WechatClient {
 	}
 	public async massSendAll(media_id: string, accountName: string = "") {
 		if (!accountName) {
-			accountName = this.plugin.settings.selectedMPAccount!;
+			accountName = this.plugin.settings.selectedMPAccount || "";
+		}
+		if (!accountName) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
 		}
 		const accessToken = await this.plugin.refreshAccessToken(accountName);
 		if (!accessToken) {
@@ -767,10 +724,14 @@ export class WechatClient {
 		accountName: string = ""
 	) {
 		if (!accountName) {
-			accountName = this.plugin.settings.selectedMPAccount!;
+			accountName = this.plugin.settings.selectedMPAccount || "";
 		}
 		if (!wxname) {
-			wxname = this.plugin.settings.previewer_wxname!;
+			wxname = this.plugin.settings.previewer_wxname || "";
+		}
+		if (!accountName) {
+			new Notice($t("main.no-wechat-mp-account-selected"));
+			return false;
 		}
 		const accessToken = await this.plugin.refreshAccessToken(accountName);
 		if (!accessToken) {

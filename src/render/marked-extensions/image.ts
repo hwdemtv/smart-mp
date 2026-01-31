@@ -153,12 +153,12 @@ export class Image extends SmartMPMarkedExtension {
 
 			if (file instanceof TFile) {
 				const resolved = plugin.app.vault.getResourcePath(file);
-				// console.log('[Image Extension] Vault File:', decodedPath, '→', resolved);
+				console.log('[Image Extension] Vault File Resolved:', decodedPath, '→', resolved);
 				this.pathCache.set(cacheKey, resolved);
 				return resolved;
 			}
 
-			console.warn('[Image Extension] Fallback to original path:', path);
+			console.warn('[Image Extension] FAILED to resolve path:', path, 'decoded:', decodedPath);
 			return path; // Fallback to original
 		};
 

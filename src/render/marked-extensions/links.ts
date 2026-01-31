@@ -1,16 +1,15 @@
 /**
- * marked extension for footnote
- * 
- * 
- * 
+ * marked extension for links
  */
 
 import { MarkedExtension, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
+import { SafeHTML } from "../../utils/sanitize-html";
+import { Logger } from "../../utils/logger";
 
 export class Links extends SmartMPMarkedExtension {
 
-    allLinks: string[] = [];
+    allLinks: { text: string, href: string }[] = [];
     prepare(): Promise<void> {
         this.allLinks = [];
         return Promise.resolve();
@@ -20,21 +19,25 @@ export class Links extends SmartMPMarkedExtension {
         if (!this.allLinks.length) {
             return Promise.resolve(dom);
         }
-        // Remove existing foot-links to avoid duplication (defensive)
-        dom.querySelectorAll('.foot-links').forEach(el => el.remove());
+        // Remove existing references to avoid duplication (defensive)
+        dom.querySelectorAll('.smart-mp-references').forEach(el => el.remove());
 
-        const linksHtml = this.allLinks.map((href, i) => {
-            return `<li>${href}&nbsp;↩</li>`;
+        const linksHtml = this.allLinks.map((link, i) => {
+            // If text implies URL or is same as href, just show href
+            const displayText = (link.text && link.text !== link.href && !link.text.startsWith('http'))
+                ? `${link.text}: `
+                : '';
+            return `<li>${displayText}${link.href}</li>`;
         }).join('');
 
-        const footLinks = dom.createEl('section', { cls: 'foot-links' });
-        footLinks.createEl('hr', { cls: 'foot-links-separator' });
+        const referencesContainer = dom.createEl('section', { cls: 'smart-mp-references' });
+        referencesContainer.createEl('hr', { cls: 'smart-mp-references-separator' });
 
-        const title = footLinks.createEl('p', { cls: 'smart-mp-footnotes-title' });
+        const title = referencesContainer.createEl('p', { cls: 'smart-mp-references-title' });
         title.textContent = "🔗 参考链接";
 
-        const ol = footLinks.createEl('ol');
-        ol.innerHTML = linksHtml;
+        const ol = referencesContainer.createEl('ol');
+        SafeHTML.setSafeHTML(ol, linksHtml);
 
         return Promise.resolve(dom);
     }
@@ -48,9 +51,14 @@ export class Links extends SmartMPMarkedExtension {
                     let text = token.text;
                     const href = token.href;
 
+                    // [Conflict Fix] Skip processing if it's a footnote mark (contains footnote or ^) or internal anchor to footnote
+                    if (text.includes('footnote') || text.includes('^') || href.startsWith('#footnote')) {
+                        return `<a href="${href}">${text}</a>`;
+                    }
+
                     if (href.startsWith('http')) {
                         // Diagnostic log to catch why it duplicates
-                        console.debug(`[Links] Rendering link: "${text}" -> ${href}, current allLinks:`, this.allLinks);
+                        Logger.debug('Links', `Rendering link: "${text}" -> ${href}, current allLinks: ${this.allLinks.length}`);
 
                         // 1. More aggressive cleaning to handle nested <sup> or multiple passes
                         // Strip anything that looks like a marker at the end
@@ -60,9 +68,9 @@ export class Links extends SmartMPMarkedExtension {
                             .trim();
 
                         // 2. Manage unique link list
-                        let index = this.allLinks.indexOf(href);
+                        let index = this.allLinks.findIndex(l => l.href === href);
                         if (index === -1) {
-                            this.allLinks.push(href);
+                            this.allLinks.push({ text: text, href: href });
                             index = this.allLinks.length - 1;
                         }
 
@@ -72,6 +80,6 @@ export class Links extends SmartMPMarkedExtension {
                     }
                 }
             }]
-        }
+        };
     }
 }

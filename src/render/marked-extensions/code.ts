@@ -354,7 +354,8 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 		// 2. Try to find root with multiple selectors
 		let root = renderer.queryElement(index, '.mermaid') ||
-			renderer.queryElement(index, 'div.mermaid');
+			renderer.queryElement(index, 'div.mermaid') ||
+			renderer.queryElement(index, '.block-language-mermaid');
 
 		if (!root) {
 			console.debug(`[Mermaid] Root not found immediately, retrying...`);
@@ -365,7 +366,8 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			for (let i = 0; i < maxRetries; i++) {
 				await new Promise(resolve => setTimeout(resolve, retryInterval)); // Incremental backoff removed for consistency
 				root = renderer.queryElement(index, '.mermaid') ||
-					renderer.queryElement(index, 'div.mermaid');
+					renderer.queryElement(index, 'div.mermaid') ||
+					renderer.queryElement(index, '.block-language-mermaid');
 				if (root) break;
 			}
 		}

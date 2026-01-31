@@ -20,6 +20,10 @@ export class ResourceManager {
         }
         return this.instance;
     }
+
+    static onPluginUnload() {
+        this.instance = undefined as any;
+    }
     private init() {
     }
     public getCurrentMarkdownView() {

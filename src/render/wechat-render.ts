@@ -9,6 +9,7 @@
  *
  */
 import { Logger } from '../utils/logger';
+import { SafeHTML } from "../utils/sanitize-html";
 
 import matter from "gray-matter";
 import { Marked, Tokens, RendererObject, RendererThis } from "marked";
@@ -50,6 +51,7 @@ export class WechatRender {
 	previewRender: PreviewRender;
 	// Smart Cache
 	private contentCache = new Map<string, { hash: string; html: string }>();
+	private tempContainer: HTMLElement | null = null;
 
 	private simpleHash(str: string): string {
 		let hash = 0;
@@ -110,6 +112,22 @@ export class WechatRender {
 	static getInstance(plugin: SmartMPPlugin, previewRender: PreviewRender) {
 		if (!WechatRender.instance) {
 			WechatRender.instance = new WechatRender(plugin, previewRender);
+		} else {
+			// [Fix] Refresh context to ensure renderer uses the latest view/service
+			WechatRender.instance.plugin = plugin;
+			WechatRender.instance.previewRender = previewRender;
+
+			// Re-sync basic extensions which might hold old references
+			// Ideally extensions should access plugin/previewRender via 'this.wechatRender.plugin' if they were designed that way, 
+			// but they hold their own references.
+			// So we need to potentialy re-create extensions or update them.
+			// For now, let's update the references in the extensions if possible, 
+			// OR fully re-instantiate WechatRender to be safe.
+
+			// Stronger Fix: Force re-instantiation if context changed, or just update extensions.
+			// Since extensions hold references to 'plugin' and 'previewRender' in their constructors,
+			// we MUST re-create attributes or the extensions will point to old/dead objects.
+			WechatRender.instance = new WechatRender(plugin, previewRender);
 		}
 		return this.instance;
 	}
@@ -162,21 +180,151 @@ export class WechatRender {
 		);
 		// this.addExtension(new ListItem(this.plugin, this.previewRender, this.marked))
 	}
+
+	// Track line numbers for scroll sync
+	private currentLineMap: Map<string, number> = new Map();
+	private lineCounter = 0;
+
 	async parse(md: string) {
 		const { data, content } = matter(md);
 		await Promise.all(this.extensions.map(ext => ext.prepare()));
+
+		// Reset line tracking
+		this.currentLineMap.clear();
+		this.lineCounter = 0;
+
+		// Calculate line offsets for content (after frontmatter)
+		const frontmatterLines = md.substring(0, md.indexOf(content)).split('\n').length - 1;
+
+		// Track token positions using walkTokens
+		const lineTracker = {
+			walkTokens: (token: any) => {
+				// Only track block-level tokens
+				if (token.type === 'heading' || token.type === 'paragraph' ||
+					token.type === 'code' || token.type === 'blockquote' ||
+					token.type === 'list' || token.type === 'table' ||
+					token.type === 'hr' || token.type === 'html') {
+					// Use raw token text to create unique key
+					const key = `${token.type}-${this.lineCounter++}`;
+					// Calculate approximate line from token raw position
+					if (token.raw) {
+						const beforeToken = content.substring(0, content.indexOf(token.raw));
+						const line = (beforeToken.match(/\n/g) || []).length + frontmatterLines + 1;
+						this.currentLineMap.set(key, line);
+					}
+				}
+			}
+		};
+
+		// Temporarily apply line tracker
+		const tempMarked = new Marked(markedOptiones);
+		tempMarked.use(lineTracker);
+
+		// Use original marked for actual parsing (extensions already applied)
 		return await this.marked.parse(content);
 	}
+
 	public async postprocess(html: string): Promise<HTMLElement> {
-		const dom = sanitizeHTMLToDom(html);
+		const strict = this.plugin.settings.enableStrictSecurityMode ?? true;
+		const dom = SafeHTML.htmlToFragment(html, strict);
 		const wrapper = document.createElement('div');
 		wrapper.appendChild(dom);
+
+		// Inject line numbers to block elements
+		this.injectLineNumbers(wrapper);
 
 		for (let ext of this.extensions) {
 			await ext.postprocess(wrapper);
 		}
 		// Return DOM element directly
 		return this.removeEmptyListItems(wrapper);
+	}
+
+	private injectLineNumbers(wrapper: HTMLElement) {
+		// [P1] Multi-level anchors: inject line numbers to all block-level elements
+		// Selector includes headings, paragraphs, code blocks, lists, tables, images, etc.
+		const blockSelectors = [
+			'h1', 'h2', 'h3', 'h4', 'h5', 'h6',  // Headings
+			'p',                                   // Paragraphs
+			'pre',                                 // Code blocks
+			'blockquote',                          // Quotes
+			'ul', 'ol',                            // Lists
+			'table',                               // Tables
+			'hr',                                  // Horizontal rules
+			'figure',                              // Figures (images)
+			'img',                                 // Inline images
+			'.block-math',                         // Math blocks
+			'.mermaid',                            // Mermaid diagrams
+			'.callout'                             // Callouts
+		].join(', ');
+
+		const blockElements = wrapper.querySelectorAll(blockSelectors);
+		let lineNumber = 1;
+
+		blockElements.forEach((el) => {
+			const htmlEl = el as HTMLElement;
+
+			// Skip if already has a line number (e.g., nested elements)
+			if (htmlEl.hasAttribute('data-source-line')) return;
+
+			// Skip if parent already has line number (avoid duplicate anchors)
+			const parent = htmlEl.parentElement;
+			if (parent && parent.hasAttribute('data-source-line')) return;
+
+			htmlEl.setAttribute('data-source-line', String(lineNumber));
+
+			// Estimate lines based on element type and content
+			const tagName = htmlEl.tagName.toLowerCase();
+			const text = htmlEl.textContent || '';
+
+			let estimatedLines = 1;
+
+			if (tagName.match(/^h[1-6]$/)) {
+				// Headings are usually 1-2 lines
+				estimatedLines = 1;
+			} else if (tagName === 'pre') {
+				// Code blocks: count actual newlines
+				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
+			} else if (tagName === 'p') {
+				// Paragraphs: estimate based on character count (~80 chars per line)
+				estimatedLines = Math.max(1, Math.ceil(text.length / 80));
+			} else if (tagName === 'ul' || tagName === 'ol') {
+				// Lists: count list items
+				const items = htmlEl.querySelectorAll('li');
+				estimatedLines = Math.max(1, items.length);
+			} else if (tagName === 'table') {
+				// Tables: count rows
+				const rows = htmlEl.querySelectorAll('tr');
+				estimatedLines = Math.max(2, rows.length + 1); // +1 for header row
+			} else if (tagName === 'blockquote') {
+				// Blockquotes: count based on content
+				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
+			} else if (tagName === 'img' || tagName === 'figure') {
+				// Images/figures: typically 1 line in source
+				estimatedLines = 1;
+			} else if (tagName === 'hr') {
+				// Horizontal rules: 1 line
+				estimatedLines = 1;
+			} else {
+				// Default: estimate based on newlines
+				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
+			}
+
+			lineNumber += estimatedLines;
+		});
+
+		// Also inject line numbers for list items (finer granularity)
+		const listItems = wrapper.querySelectorAll('li');
+		let liLineOffset = 0;
+		listItems.forEach((li, index) => {
+			const htmlLi = li as HTMLElement;
+			// Find parent list's line number
+			const parentList = htmlLi.closest('ul, ol');
+			if (parentList) {
+				const parentLine = parseInt(parentList.getAttribute('data-source-line') || '1');
+				htmlLi.setAttribute('data-source-line', String(parentLine + index));
+			}
+		});
 	}
 
 	private removeEmptyListItems(wrapper: HTMLElement): HTMLElement {
@@ -225,15 +373,19 @@ export class WechatRender {
 		// This is required for extensions (Excalidraw, Table, RemixIcon) that need to query the DOM
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app as any);
 
-		// Create a hidden temporary container
-		const tempContainer = createDiv();
-		tempContainer.style.position = 'absolute';
-		tempContainer.style.left = '-9999px';
-		tempContainer.style.top = '-9999px';
-		tempContainer.style.width = '1200px';
-		tempContainer.style.height = '2000px';
-		tempContainer.addClasses(['markdown-preview-view', 'markdown-rendered', 'node-insert-event']);
-		document.body.appendChild(tempContainer);
+		// [Fixed] Reuse persistent temp container to avoid DOM thrashing
+		if (!this.tempContainer) {
+			this.tempContainer = createDiv();
+			this.tempContainer.style.position = 'absolute';
+			this.tempContainer.style.left = '-9999px';
+			this.tempContainer.style.top = '-9999px';
+			this.tempContainer.style.width = '1200px';
+			this.tempContainer.style.height = '2000px';
+			this.tempContainer.addClasses(['markdown-preview-view', 'markdown-rendered', 'node-insert-event']);
+			document.body.appendChild(this.tempContainer);
+		}
+		const tempContainer = this.tempContainer;
+		tempContainer.empty(); // Clear previous run
 
 
 		// Optimize: Conditional Rendering
@@ -310,7 +462,8 @@ export class WechatRender {
 
 						const excalidrawFound = tempContainer.querySelector('.excalidraw') ||
 							tempContainer.querySelector('.excalidraw-svg');
-						const mermaidFound = tempContainer.querySelector('.mermaid');
+						const mermaidFound = tempContainer.querySelector('.mermaid') ||
+							tempContainer.querySelector('.block-language-mermaid');
 
 						// If we found what we need, we can proceed
 						if ((needsExcalidraw && excalidrawFound) || (needsMermaid && mermaidFound)) {
@@ -355,10 +508,10 @@ export class WechatRender {
 
 		const domElement = await this.postprocess(htmlString);
 
-		// Clean up temp container at the very end
-		if (tempContainer.parentNode) {
-			tempContainer.parentNode.removeChild(tempContainer);
-		}
+		// Do not remove tempContainer, keep it for reuse
+		// if (tempContainer.parentNode) {
+		// 	tempContainer.parentNode.removeChild(tempContainer);
+		// }
 
 		return domElement;
 

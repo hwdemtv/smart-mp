@@ -31,6 +31,10 @@ export class AiClient {
 		}
 		return AiClient.instance;
 	}
+
+	public static onPluginUnload() {
+		this.instance = undefined as any;
+	}
 	private getClient() {
 		const provider = this.plugin.settings.llmProviders?.find(p => p.id === this.plugin.settings.selectedLLMProviderId);
 		if (!provider) {

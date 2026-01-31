@@ -9,19 +9,20 @@ import { SmartMPMarkedExtension } from "./extension";
 
 type CalloutInfo = { icon: string };
 
-const iconNote = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`;
-const iconAbstract = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-clipboard-list"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>`;
-const iconInfo = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>`;
-const iconTodo = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-check-circle-2"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>`;
-const iconTip = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-flame"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>`;
-const iconSuccess = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-check"><path d="M20 6 9 17l-5-5"></path></svg>`;
-const iconQuestion = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-help-circle"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>`;
-const iconWarning = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>`;
-const iconFailure = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>`;
-const iconDanger = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
-const iconBug = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-bug"><path d="m8 2 1.88 1.88"></path><path d="M14.12 3.88 16 2"></path><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path><path d="M12 20v-9"></path><path d="M6.53 9C4.6 8.8 3 7.1 3 5"></path><path d="M6 13H2"></path><path d="M3 21c0-2.1 1.7-3.9 3.8-4"></path><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"></path><path d="M22 13h-4"></path><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"></path></svg>`;
-const iconExample = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
-const iconQuote = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-quote"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>`;
+// 使用 Emoji 替代 SVG 图标，确保微信兼容
+const iconNote = `📝`;
+const iconAbstract = `📋`;
+const iconInfo = `ℹ️`;
+const iconTodo = `☑️`;
+const iconTip = `💡`;
+const iconSuccess = `✅`;
+const iconQuestion = `❓`;
+const iconWarning = `⚠️`;
+const iconFailure = `❌`;
+const iconDanger = `⚡`;
+const iconBug = `🐛`;
+const iconExample = `📖`;
+const iconQuote = `💬`;
 
 const calloutIcons = new Map<string, CalloutInfo>(Object.entries({
 	note: { icon: iconNote },
@@ -52,6 +53,7 @@ const calloutIcons = new Map<string, CalloutInfo>(Object.entries({
 	quote: { icon: iconQuote },
 	cite: { icon: iconQuote },
 }));
+
 
 function matchCallout(text: string | undefined) {
 	if (!text) return "";
@@ -85,6 +87,43 @@ function getCalloutTitle(callout: string, text: string) {
 	}
 	return title;
 }
+
+// 内联样式颜色映射，使用十六进制颜色确保微信兼容
+// 微信编辑器可能不支持 rgba() 透明度，改用近似的浅色背景
+function getCalloutColors(calloutType: string): { bg: string; text: string } {
+	const colorMap: Record<string, { bg: string; text: string }> = {
+		note: { bg: "#e8f4fd", text: "#086ddd" },      // 浅蓝
+		abstract: { bg: "#e6f7ff", text: "#00b0ff" },  // 浅青
+		summary: { bg: "#e6faf9", text: "#00bfbc" },   // 浅青绿
+		tldr: { bg: "#e6f7ff", text: "#00b0ff" },      // 浅青
+		info: { bg: "#e8f4fd", text: "#086ddd" },      // 浅蓝
+		todo: { bg: "#e8f4fd", text: "#086ddd" },      // 浅蓝
+		tip: { bg: "#e6faf9", text: "#08bfbc" },       // 浅青绿
+		hint: { bg: "#e6faf9", text: "#08bfbc" },      // 浅青绿
+		important: { bg: "#e6faf9", text: "#08bfbc" }, // 浅青绿
+		success: { bg: "#e8f9ed", text: "#08b94e" },   // 浅绿
+		check: { bg: "#e8f9ed", text: "#08b94e" },     // 浅绿
+		done: { bg: "#e8f9ed", text: "#08b94e" },      // 浅绿
+		question: { bg: "#fff4e6", text: "#ec7500" },  // 浅橙
+		help: { bg: "#fff4e6", text: "#ec7500" },      // 浅橙
+		faq: { bg: "#fff4e6", text: "#ec7500" },       // 浅橙
+		warning: { bg: "#fff4e6", text: "#ec7500" },   // 浅橙
+		caution: { bg: "#fff4e6", text: "#ec7500" },   // 浅橙
+		attention: { bg: "#fff4e6", text: "#ec7500" }, // 浅橙
+		failure: { bg: "#fdeaed", text: "#e93147" },   // 浅红
+		fail: { bg: "#fdeaed", text: "#e93147" },      // 浅红
+		missing: { bg: "#fdeaed", text: "#e93147" },   // 浅红
+		danger: { bg: "#fdeaed", text: "#e93147" },    // 浅红
+		error: { bg: "#fdeaed", text: "#e93147" },     // 浅红
+		bug: { bg: "#fdeaed", text: "#e93147" },       // 浅红
+		example: { bg: "#f3effd", text: "#7852ee" },   // 浅紫
+		quote: { bg: "#f5f5f5", text: "#9e9e9e" },     // 浅灰
+		cite: { bg: "#f5f5f5", text: "#9e9e9e" },      // 浅灰
+	};
+	return colorMap[calloutType] || colorMap.note;
+}
+
+
 
 export class BlockquoteRenderer extends SmartMPMarkedExtension {
 	prepare(): Promise<void> {
@@ -120,8 +159,18 @@ export class BlockquoteRenderer extends SmartMPMarkedExtension {
 		}
 		const info = calloutIcons.get(calloutType) || calloutIcons.get("note");
 		const icon = info ? info.icon : "";
-		return `<section class="smart-mp-callout" data-callout="${calloutType}"><div class="callout-title"><div class="callout-icon">${icon}</div><div class="callout-title-inner">${title}</div></div><div class="callout-content">${body}</div></section>`;
+
+		// 获取 Callout 类型对应的颜色（内联样式，确保微信兼容）
+		const colors = getCalloutColors(calloutType);
+		// 使用 !important 防止被 CSSMerger 覆盖
+		const containerStyle = `overflow: hidden; border-radius: 4px; margin: 1em 0; padding: 12px 12px 12px 24px; background-color: ${colors.bg} !important;`;
+		const titleStyle = `padding: 0; display: flex; gap: 4px; font-size: inherit; line-height: 1.3; align-items: flex-start; color: ${colors.text} !important;`;
+		const iconStyle = `height: 1em; flex: 0 0 auto; display: flex; align-items: center;`;
+		const titleInnerStyle = `font-weight: 600; color: inherit;`;
+
+		return `<section class="smart-mp-callout" data-callout="${calloutType}" style="${containerStyle}"><div class="callout-title" style="${titleStyle}"><div class="callout-icon" style="${iconStyle}">${icon}</div><div class="callout-title-inner" style="${titleInnerStyle}">${title}</div></div><div class="callout-content">${body}</div></section>`;
 	}
+
 
 	markedExtension(): MarkedExtension {
 		return {

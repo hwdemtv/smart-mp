@@ -325,5 +325,6 @@ export class ThemeManager {
 		// Clean up caches
 		CSSCache.getInstance().clear();
 		CSSMerger.clearCaches();
+		ThemeManager.instance = undefined as any;
 	}
 }

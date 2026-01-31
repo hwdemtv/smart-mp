@@ -73,38 +73,137 @@ export function getCanvasBlob(canvas: HTMLCanvasElement) {
     return pngBlob;
 }
 
+const imageCache = new Map<string, string>();
+
+function simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+}
+
 export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) {
     const svgs: SVGSVGElement[] = []
     root.querySelectorAll('svg').forEach(svg => {
         svgs.push(svg)
     })
 
-    const uploadPromises = svgs.map(async (svg) => {
-        const svgString = serializeElement(svg);
-        // 之前的阈值 1000 太高，导致简单的 Icon (300-500 chars) 被跳过
-        // 调整为 150 以允许大多数合法的小图标，同时过滤极短的空 SVG
-        if (svgString.length < 150) {
-            console.warn('[uploadSVGs] SVG too small, skipping:', svgString.length);
-            return Promise.resolve();
-        }
-        try {
-            const blob = await svgToPng(svgString);
-            const res = await wechatClient.uploadMaterial(blob, imageFileName(blob.type));
-            if (res && res.url) {
-                const img = document.createElement('img');
-                img.src = res.url;
-                img.setAttribute('data-upload-processed', 'true'); // Mark as processed
-                svg.replaceWith(img);
-            } else {
-                console.error(`[uploadSVGs] uploadMaterial failed for SVG.`);
-            }
-        } catch (error) {
-            console.error('[uploadSVGs] Error converting/uploading SVG:', error);
-        }
-    })
+    const MAX_CONCURRENT = 3;
 
-    await Promise.all(uploadPromises)
+    // Process SVGs in batches to prevent memory issues
+    for (let i = 0; i < svgs.length; i += MAX_CONCURRENT) {
+        const batch = svgs.slice(i, i + MAX_CONCURRENT);
+        const batchPromises = batch.map(async (svg) => {
+            // [Fix] Capture actual rendered dimensions before conversion
+            // SVGs often use 100% width, which fails in isolated img conversion
+            const rect = svg.getBoundingClientRect();
+            const width = rect.width || parseInt(svg.getAttribute('width') || '0') || 300;
+            const height = rect.height || parseInt(svg.getAttribute('height') || '0') || 150;
+
+            let svgString = serializeElement(svg);
+
+            // [Fix] Robust SVG Sanitization for MathJax & Excalidraw
+            // 1. Ensure xmlns exists
+            if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            // 2. Force pixel dimensions on the SVG string for correct Canvas scaling
+            // Regex to replace existing width/height or add them
+            if (svgString.match(/ width="[^"]*"/)) {
+                svgString = svgString.replace(/ width="[^"]*"/, ` width="${width}"`);
+            } else {
+                svgString = svgString.replace('<svg', `<svg width="${width}"`);
+            }
+            if (svgString.match(/ height="[^"]*"/)) {
+                svgString = svgString.replace(/ height="[^"]*"/, ` height="${height}"`);
+            } else {
+                svgString = svgString.replace('<svg', `<svg height="${height}"`);
+            }
+
+            // 3. Replace dynamic CSS variables (var(--...)) with static color because they fail in Blob context
+            svgString = svgString.replace(/var\(--[^)]+\)/g, '#333');
+            // 4. Replace currentColor
+            svgString = svgString.replace(/currentColor/g, '#333');
+
+            const hash = simpleHash(svgString);
+
+            // [Cache Check]: logic to prevent re-uploading same math formula
+            if (imageCache.has(hash)) {
+                const url = imageCache.get(hash);
+                const img = document.createElement('img');
+                img.src = url!;
+                img.setAttribute('data-upload-processed', 'true');
+
+                const parent = svg.parentElement;
+                if (parent && parent.tagName.toLowerCase() === 'mjx-container') {
+                    parent.replaceWith(img);
+                } else {
+                    svg.replaceWith(img);
+                }
+                return;
+            }
+
+            // Lower threshold to 50 to allow very simple math symbols
+            if (svgString.length < 50) {
+                console.warn('[uploadSVGs] SVG too small, likely empty or artifact:', svgString.length);
+                return;
+            }
+
+            try {
+                const blob = await svgToPng(svgString);
+                const res = await wechatClient.uploadMaterial(blob, imageFileName(blob.type));
+                if (res && res.url) {
+                    // Update Cache
+                    imageCache.set(hash, res.url);
+
+                    const img = document.createElement('img');
+                    img.src = res.url;
+                    img.setAttribute('data-upload-processed', 'true');
+
+                    // [Fix] Copy original dimensions and styles to ensure correct display size
+                    if (svg.getAttribute('width')) img.setAttribute('width', svg.getAttribute('width')!);
+                    if (svg.getAttribute('height')) img.setAttribute('height', svg.getAttribute('height')!);
+                    if (svg.getAttribute('style')) img.setAttribute('style', svg.getAttribute('style')!);
+                    if (svg.getAttribute('class')) img.setAttribute('class', svg.getAttribute('class')!);
+
+                    // [Fix] Unwrap mjx-container (MathJax wrapper) as WeChat doesn't support it
+                    const parent = svg.parentElement;
+                    if (parent && parent.tagName.toLowerCase() === 'mjx-container') {
+                        parent.replaceWith(img);
+                    } else {
+                        svg.replaceWith(img);
+                    }
+                } else {
+                    console.error(`[uploadSVGs] uploadMaterial failed for SVG.`);
+                    // Show error placeholder only if it's likely a math formula we care about
+                    if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
+                        const errorSpan = document.createElement('span');
+                        errorSpan.style.color = 'red';
+                        errorSpan.innerText = '[公式上传失败]';
+                        svg.replaceWith(errorSpan);
+                    }
+                }
+            } catch (error) {
+                console.error('[uploadSVGs] Error converting/uploading SVG:', error);
+                // Fallback: Try converting SVG to data URL directly (might work in some web views, but not strictly WeChat article)
+                // But usually WeChat strips base64 images in articles. Better to show error.
+                if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
+                    const errorSpan = document.createElement('span');
+                    errorSpan.style.color = 'red';
+                    errorSpan.innerText = '[公式转换错误]';
+                    svg.replaceWith(errorSpan);
+                }
+            }
+        })
+
+        await Promise.all(batchPromises);
+    }
 }
+
 export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient): Promise<void> {
     const canvases: HTMLCanvasElement[] = []
 
@@ -138,6 +237,13 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
     root.querySelectorAll('img').forEach(img => {
         // Skip already processed images (from SVG/Canvas conversion or previous runs)
         if (img.getAttribute('data-upload-processed') === 'true' || img.getAttribute('data-uploaded') === 'true') {
+            return;
+        }
+        // Skip invalid URLs that are clearly not images
+        const src = img.src || '';
+        if (src.includes('index.html') || src === '' || src === 'about:blank') {
+            console.warn('[uploadURLImage] Skipping invalid URL:', src);
+            img.setAttribute('data-upload-skipped', 'invalid-url');
             return;
         }
         images.push(img)
@@ -284,11 +390,39 @@ export async function convertAssetsToDataURLs(
         onProgress?.(current, total);
     };
 
+    const processingTasks: Promise<void>[] = [];
+
     // 1. Convert SVGs to PNG Base64
-    await Promise.all(svgs.map(async (svg) => {
+    const svgTasks = svgs.map(async (svg) => {
         try {
+            // [Fix] Capture actual rendered dimensions
+            const rect = svg.getBoundingClientRect();
+            const width = rect.width || 300;
+            const height = rect.height || 150;
+
             // Keep xmlns for valid SVG image source
-            const svgString = serializeElement(svg, true);
+            let svgString = serializeElement(svg, true);
+
+            // [Fix] Robust SVG Sanitization (Same as uploadSVGs)
+            if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            // Force dimensions
+            if (svgString.match(/ width="[^"]*"/)) {
+                svgString = svgString.replace(/ width="[^"]*"/, ` width="${width}"`);
+            } else {
+                svgString = svgString.replace('<svg', `<svg width="${width}"`);
+            }
+            if (svgString.match(/ height="[^"]*"/)) {
+                svgString = svgString.replace(/ height="[^"]*"/, ` height="${height}"`);
+            } else {
+                svgString = svgString.replace('<svg', `<svg height="${height}"`);
+            }
+
+            svgString = svgString.replace(/var\(--[^)]+\)/g, '#333');
+            svgString = svgString.replace(/currentColor/g, '#333');
+
             const blob = await svgToPng(svgString);
             const reader = new FileReader();
             await new Promise<void>((resolve, reject) => {
@@ -314,9 +448,12 @@ export async function convertAssetsToDataURLs(
         } finally {
             updateProgress();
         }
-    }));
+    });
+    processingTasks.push(...svgTasks);
+
 
     // 2. Convert Canvas to PNG Base64
+    // Canvas operation is synchronous/fast enough in main thread usually, or we can't really make it async easily without OffscreenCanvas
     canvases.forEach(canvas => {
         try {
             const dataURL = canvas.toDataURL('image/png');
@@ -331,7 +468,7 @@ export async function convertAssetsToDataURLs(
     });
 
     // 3. Convert Local Images to Base64
-    await Promise.all(images.map(async (img) => {
+    const imageTasks = images.map(async (img) => {
         // Skip already Base64
         if (img.src.startsWith('data:')) {
             updateProgress();
@@ -360,7 +497,11 @@ export async function convertAssetsToDataURLs(
         } finally {
             updateProgress();
         }
-    }));
+    });
+    processingTasks.push(...imageTasks);
+
+    // Wait for all async tasks (SVGs + Images) to complete concurrently
+    await Promise.all(processingTasks);
 
     // 4. Final Sanitize: Remove any remaining images with invalid sources (file://, app://, etc.)
     // These will definitively cause "Image paste failed" in WeChat
