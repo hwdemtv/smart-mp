@@ -132,7 +132,10 @@ export class WechatClient {
 			articles: [
 				{
 					title: localDraft.title,
-					content: data,
+					content: data + `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
+    Powered by SmartMP<br>
+    使用过程中如有疑问或需要中转服务请➕V (hwdemtv)
+</section>`,
 					digest: digest,
 					thumb_media_id: localDraft.thumb_media_id,
 					...(localDraft.content_source_url && {
