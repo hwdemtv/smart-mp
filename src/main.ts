@@ -156,16 +156,17 @@ export default class SmartMPPlugin extends Plugin {
 		delete settingsCopy._id;
 		delete settingsCopy._rev;
 
-		// Encrypt sensitive info
-		settingsCopy.mpAccounts.forEach(acc => {
-			if (acc.appSecret) acc.appSecret = CryptoHelper.obfuscate(acc.appSecret, this.settings.cryptoKey || "");
-		});
-		settingsCopy.chatAccounts.forEach(acc => {
-			if (acc.apiKey) acc.apiKey = CryptoHelper.obfuscate(acc.apiKey, this.settings.cryptoKey || "");
-		});
-		settingsCopy.drawAccounts.forEach(acc => {
-			if (acc.apiKey) acc.apiKey = CryptoHelper.obfuscate(acc.apiKey, this.settings.cryptoKey || "");
-		});
+		// Encrypt sensitive info using AES-GCM
+		const key = this.settings.cryptoKey || "";
+		for (const acc of settingsCopy.mpAccounts) {
+			if (acc.appSecret) acc.appSecret = await CryptoHelper.encrypt(acc.appSecret, key);
+		}
+		for (const acc of settingsCopy.chatAccounts) {
+			if (acc.apiKey) acc.apiKey = await CryptoHelper.encrypt(acc.apiKey, key);
+		}
+		for (const acc of settingsCopy.drawAccounts) {
+			if (acc.apiKey) acc.apiKey = await CryptoHelper.encrypt(acc.apiKey, key);
+		}
 
 		// this.trimSettings(); // Trim only makes sense for raw input, here we are saving
 		await saveSmartMPSetting(settingsCopy);
@@ -448,7 +449,7 @@ export default class SmartMPPlugin extends Plugin {
 		if (!this.settings.cryptoKey) {
 			// First time migration: Generate new key
 			this.settings.cryptoKey = CryptoHelper.generateKey();
-			// Decrypt using legacy key
+			// Decrypt using legacy key (synchronous for old XOR data)
 			this.settings.mpAccounts.forEach(acc => {
 				if (acc.appSecret) acc.appSecret = CryptoHelper.deobfuscateLegacy(acc.appSecret);
 			});
@@ -458,19 +459,20 @@ export default class SmartMPPlugin extends Plugin {
 			this.settings.drawAccounts.forEach(acc => {
 				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
 			});
-			// Save immediately to apply new encryption
+			// Save immediately to apply new AES encryption
 			await this.saveSettings();
 		} else {
-			// Decrypt sensitive info using dynamic key
-			this.settings.mpAccounts.forEach(acc => {
-				if (acc.appSecret) acc.appSecret = CryptoHelper.deobfuscate(acc.appSecret, this.settings.cryptoKey || "");
-			});
-			this.settings.chatAccounts.forEach(acc => {
-				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscate(acc.apiKey, this.settings.cryptoKey || "");
-			});
-			this.settings.drawAccounts.forEach(acc => {
-				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscate(acc.apiKey, this.settings.cryptoKey || "");
-			});
+			// Decrypt sensitive info using AES-GCM (or fallback to XOR)
+			const key = this.settings.cryptoKey || "";
+			for (const acc of this.settings.mpAccounts) {
+				if (acc.appSecret) acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
+			}
+			for (const acc of this.settings.chatAccounts) {
+				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+			}
+			for (const acc of this.settings.drawAccounts) {
+				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+			}
 		}
 
 		// If migration happened (plain text found and decrypted=plain), saving will encrypted it.
