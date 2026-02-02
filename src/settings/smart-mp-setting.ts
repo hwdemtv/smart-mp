@@ -90,6 +90,7 @@ export type SmartMPSetting = {
     selectedLLMProviderId?: string;
     selectedLLMModelId?: string;
     cryptoKey?: string; // For upgraded encryption
+    enableFloatingToolbar?: boolean;
 }
 
 export type ChatSetting = {

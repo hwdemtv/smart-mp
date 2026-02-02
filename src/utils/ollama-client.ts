@@ -203,6 +203,45 @@ export class OllamaClient {
 		};
 	}
 
+	/**
+	 * 流式润色内容 - 带回调
+	 */
+	public async polishContentStream(
+		content: string,
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const { ollama, model, systemPrompt } = this.getOllama();
+		if (!ollama) {
+			return "";
+		}
+
+		const response = await ollama.generate({
+			model: model || "deepseek-r1",
+			system: systemPrompt,
+			prompt: this.getPrompt("polish", `请遵循以下原则润色文本：
+1. 保持原文核心意思不变
+2. 改进句子结构和语法
+3. 提升表达清晰度和流畅度
+4. 优化用词，使其更准确和专业
+5. 保持适当的语气和风格
+6. 确保逻辑连贯性
+7. 消除冗余表达
+8. 优化段落结构，保持原意但提升表达质量：\n\n{ { content } } `, content),
+			stream: true,
+		});
+
+		let result = "";
+		for await (const chunk of response) {
+			if (signal?.aborted) break;
+			const text = chunk.response || "";
+			result += text;
+			if (text) onChunk(text);
+		}
+
+		return removeThinkTags(result);
+	}
+
 	public async generateMermaid(content: string): Promise<string> {
 		const { ollama, model, systemPrompt } = this.getOllama();
 		if (!ollama) {
@@ -315,6 +354,46 @@ export class OllamaClient {
 			""
 		);
 		return result;
+	}
+
+	/**
+	 * 流式翻译内容 - 带回调
+	 */
+	public async translateTextStream(
+		content: string,
+		sourceLang: string = "English",
+		targetLang: string = "Chinese",
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const { ollama, model, systemPrompt } = this.getOllama();
+		if (!ollama) {
+			return "";
+		}
+
+		const response = await ollama.generate({
+			model: model || "deepseek-r1",
+			system: systemPrompt,
+			prompt: this.getPrompt("translate", `#角色：你是一个专业的翻译助手。请遵循以下原则进行翻译：
+1. 保持原文意思准确
+2. 使用自然流畅的目标语言表达
+3. 保持专业术语的准确性
+4. 保持上下文一致性
+5. 保留原文格式和特殊符号
+ 
+ # 任务：请将以下内容从${sourceLang}翻译成${targetLang}：\n\n{ { content } } `, content),
+			stream: true,
+		});
+
+		let result = "";
+		for await (const chunk of response) {
+			if (signal?.aborted) break;
+			const text = chunk.response || "";
+			result += text;
+			if (text) onChunk(text);
+		}
+
+		return removeThinkTags(result);
 	}
 
 	public async generateCustom(promptTemplate: string, content: string): Promise<string> {

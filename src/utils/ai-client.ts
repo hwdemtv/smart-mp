@@ -62,6 +62,26 @@ export class AiClient {
 		return await client.generateSummary(content);
 	}
 
+	/**
+	 * 流式生成摘要
+	 */
+	public async generateSummaryStream(
+		content: string,
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const client = this.getClient();
+		if ('generateSummaryStream' in client) {
+			return await (client as any).generateSummaryStream(content, onChunk, signal);
+		} else {
+			// 降级：非流式输出
+			const result = await client.generateSummary(content);
+			const summary = result || "";
+			onChunk(summary);
+			return summary;
+		}
+	}
+
 	public async generateTitle(content: string): Promise<string[]> {
 		const client = this.getClient();
 		// If client doesn't support generateTitle (e.g. older Ollama impl), return empty
@@ -70,6 +90,26 @@ export class AiClient {
 			return await client.generateTitle(content);
 		}
 		return [];
+	}
+
+	/**
+	 * 流式生成标题
+	 */
+	public async generateTitleStream(
+		content: string,
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const client = this.getClient();
+		if ('generateTitleStream' in client) {
+			return await (client as any).generateTitleStream(content, onChunk, signal);
+		} else {
+			// 降级：非流式输出
+			const results = await this.generateTitle(content);
+			const combined = results.join('\n');
+			onChunk(combined);
+			return combined;
+		}
 	}
 
 
@@ -85,7 +125,46 @@ export class AiClient {
 		return await client.polishContent(content);
 	}
 
+	/**
+	 * 流式润色内容
+	 */
+	public async polishContentStream(
+		content: string,
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const client = this.getClient();
+		if ('polishContentStream' in client) {
+			return await (client as any).polishContentStream(content, onChunk, signal);
+		} else {
+			// 降级：非流式输出，一次性返回
+			const result = await (client as any).polishContent(content);
+			const polished = result?.polished || "";
+			onChunk(polished);
+			return polished;
+		}
+	}
 
+	/**
+	 * 流式翻译内容
+	 */
+	public async translateStream(
+		content: string,
+		sourceLang: string,
+		targetLang: string,
+		onChunk: (chunk: string) => void,
+		signal?: AbortSignal
+	): Promise<string> {
+		const client = this.getClient();
+		if ('translateTextStream' in client) {
+			return await (client as any).translateTextStream(content, sourceLang, targetLang, onChunk, signal);
+		} else {
+			// 降级：非流式输出，一次性返回
+			const result = await (client as any).translateText(content, sourceLang, targetLang);
+			onChunk(result);
+			return result;
+		}
+	}
 
 	public async generateCoverImageFromText(
 		prompt: string,

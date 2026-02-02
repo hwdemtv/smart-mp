@@ -91,6 +91,28 @@ const isClassReserved = (className: string) => {
 	return RESERVED_CLASS_PREFIX.some(prefix => className.startsWith(prefix));
 }
 
+// Simple Parser to get properties with !important
+const parseImportantProperties = (styleStr: string | null): Set<string> => {
+	const importantProps = new Set<string>();
+	if (!styleStr) return importantProps;
+
+	// Split by semicolon
+	const decls = styleStr.split(';');
+	for (const decl of decls) {
+		const part = decl.trim();
+		if (!part) continue;
+		const colonIndex = part.indexOf(':');
+		if (colonIndex > 0) {
+			const value = part.substring(colonIndex + 1);
+			if (value.toLowerCase().includes('!important')) {
+				const prop = part.substring(0, colonIndex).trim().toLowerCase();
+				importantProps.add(prop);
+			}
+		}
+	}
+	return importantProps;
+};
+
 type Rule = Map<string, postcss.Declaration>;
 type Rules = Map<string, Rule>;
 
@@ -429,17 +451,16 @@ export class CSSMerger {
 			const existingStyle = currentNode.getAttribute('style');
 			let preservedOriginalStyle = existingStyle || '';
 
+			// [Optimization] Parse !important props once per node
+			let existingImportantProps = parseImportantProperties(preservedOriginalStyle);
+
 			if (existingStyle && existingStyle.includes('var(')) {
 				const resolvedStyle = this.resolveCssVars(existingStyle, this.vars);
-				// We don't setAttribute here to avoid Reflow. We just treat it as base.
-				// But wait, existing styles might conflict with our rules.
-				// Our rules allow overriding if !important, or providing defaults.
-				// Usually, we want our Theme rules to APPLY. 
-				// The original logic appended theme styles to cssText.
-				// To preserve behavior: We calculate Theme Styles, then APPEND them to Existing Styles.
 				if (resolvedStyle !== existingStyle) {
-					currentNode.setAttribute('style', resolvedStyle);
+					// We don't setAttribute here to avoid Reflow. We just treat it as base.
 					preservedOriginalStyle = resolvedStyle;
+					// Re-parse if changed (rare)
+					existingImportantProps = parseImportantProperties(preservedOriginalStyle);
 				}
 			}
 
@@ -509,10 +530,8 @@ export class CSSMerger {
 								}
 
 								// Check !important conflict
-								// If existing style has !important for this prop, skip.
-								// Only check if preservedOriginalStyle has it.
-								const regex = new RegExp(`${prop}\\s*:\\s*[^;]*!important`, 'i');
-								if (regex.test(preservedOriginalStyle)) {
+								// Optimized: Check against Set
+								if (existingImportantProps.has(prop)) {
 									return;
 								}
 

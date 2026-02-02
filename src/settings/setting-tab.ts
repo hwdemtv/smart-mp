@@ -127,32 +127,10 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		// Render Content
 		if (this.activeTab === 'general') {
-			this.createWeChatSettings(containerEl);
-			this.creatCSSStyleSetting(containerEl);
-			this.createSecuritySettings(containerEl);
-
-			// Import/Export also moved here for now
-			new Setting(containerEl)
-				.setName($t("settings.import-export-smart-mp-account"))
-				.setHeading()
-				.setDesc($t("settings.import-or-export-your-account-info-for-b"))
-				.setClass("smart-mp-import-export-config")
-				.addExtraButton((button) => {
-					button
-						.setIcon("upload")
-						.setTooltip($t("settings.import-account-info"))
-						.onClick(() => {
-							this.importSettings();
-						});
-				})
-				.addExtraButton((button) => {
-					button
-						.setIcon("download")
-						.setTooltip($t("settings.export-account-info"))
-						.onClick(() => {
-							void this.exportSettings();
-						});
-				});
+			this.createWeChatSettings(containerEl); // Account
+			this.createGeneralSettings(containerEl); // General
+			this.creatCSSStyleSetting(containerEl); // Appearance
+			this.createSecuritySettings(containerEl); // Advanced
 		} else {
 			this.createAiChatSettings(containerEl);
 			this.createAiDrawSettings(containerEl);
@@ -269,7 +247,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	}
 
 	creatCSSStyleSetting(container: HTMLElement) {
-		const frame = this.createCollapsibleFrame(container, $t("settings.custom-themes"));
+		const frame = this.createCollapsibleFrame(container, "🎨 外观与排版 (Appearance & Layout)");
 
 		// new Setting(frame).setName($t("settings.custom-themes")).setHeading();
 
@@ -300,27 +278,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 
 
-		new Setting(frame)
-			.setName($t("settings.real-time-render-delay"))
-			.setDesc($t("settings.real-time-render-delay-desc"))
-			.addSlider((slider) => {
-				slider
-					.setLimits(300, 2000, 100)
-					.setValue(this.plugin.settings.realTimeRenderDelay || 500)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings.realTimeRenderDelay = value;
-						await this.plugin.saveSettings();
 
-						// Rebuild debounce for active previewer
-						const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
-						for (const leaf of leaves) {
-							if (leaf.view instanceof PreviewPanel) {
-								(leaf.view as any).rebuildDebounce();
-							}
-						}
-					});
-			});
 
 		new Setting(frame)
 			.setName($t("settings.show-image-captions"))
@@ -345,7 +303,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	}
 
 	createSecuritySettings(container: HTMLElement) {
-		const frame = this.createCollapsibleFrame(container, "🛡️ 安全设置 (Security)");
+		const frame = this.createCollapsibleFrame(container, "🛡️ 高级设置 (Advanced Settings)");
 
 		new Setting(frame)
 			.setName($t("settings.enable-strict-security-mode") ?? "启用严格安全模式")
@@ -356,6 +314,19 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.enableStrictSecurityMode = value;
 						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.use-center-token-server"))
+			.setDesc(($t("settings.if-your-device-cannot-get-static-pubic-i") || "") + " (功能已暂时关闭，请待自建服务器后开启)")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(false) // Force false in UI
+					.setDisabled(true) // Disable interaction
+					.onChange((value) => {
+						this.plugin.settings.useCenterToken = value;
+						void this.plugin.saveSettings();
 					});
 			});
 	}
@@ -1810,9 +1781,59 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		return content;
 	}
 
+	createGeneralSettings(container: HTMLElement) {
+		const frame = this.createCollapsibleFrame(container, "⚙️ 通用与交互 (General & Interaction)", true);
+
+		new Setting(frame)
+			.setName("启用智能浮动工具栏")
+			.setDesc("选中文字自动显示 AI 助手栏")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.enableFloatingToolbar ?? true)
+					.onChange(async (value) => {
+						this.plugin.settings.enableFloatingToolbar = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.real-time-render"))
+			.setDesc($t("settings.enable-real-time-rendering"))
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.realTimeRender)
+					.onChange((value) => {
+						this.plugin.settings.realTimeRender = value;
+						void this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.real-time-render-delay"))
+			.setDesc($t("settings.real-time-render-delay-desc"))
+			.addSlider((slider) => {
+				slider
+					.setLimits(300, 2000, 100)
+					.setValue(this.plugin.settings.realTimeRenderDelay || 500)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.realTimeRenderDelay = value;
+						await this.plugin.saveSettings();
+
+						// Rebuild debounce for active previewer
+						const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
+						for (const leaf of leaves) {
+							if (leaf.view instanceof PreviewPanel) {
+								(leaf.view as any).rebuildDebounce();
+							}
+						}
+					});
+			});
+	}
+
 	createWeChatSettings(container: HTMLElement) {
 		// Use collapsible frame
-		const mpFrame = this.createCollapsibleFrame(container, $t("settings.wechat-account"));
+		const mpFrame = this.createCollapsibleFrame(container, "📱 账号配置 (Account Configuration)");
 
 		// Remove the old heading since it's now in the summary
 		// new Setting(mpFrame).setName($t("settings.wechat-account")).setHeading();
@@ -1859,29 +1880,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				});
 		});
 
-		new Setting(mpFrame)
-			.setName($t("settings.use-center-token-server"))
-			.setDesc(($t("settings.if-your-device-cannot-get-static-pubic-i") || "") + " (功能已暂时关闭，请待自建服务器后开启)")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(false) // Force false in UI
-					.setDisabled(true) // Disable interaction
-					.onChange((value) => {
-						this.plugin.settings.useCenterToken = value;
-						void this.plugin.saveSettings();
-					});
-			});
-		new Setting(mpFrame)
-			.setName($t("settings.real-time-render"))
-			.setDesc($t("settings.enable-real-time-rendering"))
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.realTimeRender)
-					.onChange((value) => {
-						this.plugin.settings.realTimeRender = value;
-						void this.plugin.saveSettings();
-					});
-			});
+		// Removed Advanced Settings from here
 
 		// mpFrame.createEl("hr");
 
@@ -1971,5 +1970,27 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			this.mpAccountDropdown.getValue(),
 			this.mpAccountContainer
 		);
+
+		new Setting(mpFrame)
+			.setName($t("settings.import-export-smart-mp-account"))
+			.setHeading()
+			.setDesc($t("settings.import-or-export-your-account-info-for-b"))
+			.setClass("smart-mp-import-export-config")
+			.addExtraButton((button) => {
+				button
+					.setIcon("upload")
+					.setTooltip($t("settings.import-account-info"))
+					.onClick(() => {
+						this.importSettings();
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon("download")
+					.setTooltip($t("settings.export-account-info"))
+					.onClick(() => {
+						void this.exportSettings();
+					});
+			});
 	}
 }

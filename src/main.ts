@@ -26,6 +26,7 @@ import { ImageGenerateModal } from "./modals/image-generate-modal";
 import { PromptModal } from "./modals/prompt-modal";
 import { SynonymsModal } from "./modals/synonyms-modal";
 import { SmartMPSettingTab } from "./settings/setting-tab";
+import { DiffModal } from "./modals/diff-modal";
 import { DeepSeekResult } from "./types/types";
 import {
 	getSmartMPSetting,
@@ -44,6 +45,7 @@ import {
 } from "./utils/proofread";
 import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "./views/previewer";
+import { FloatingToolbar } from "./views/floating-toolbar";
 import { WechatClient } from "./wechat-api/wechat-client";
 import { Spinner } from "./views/spinner";
 import { ThemeHotReloader } from "./theme/hot-reloader";
@@ -74,6 +76,7 @@ const DEFAULT_SETTINGS: SmartMPSetting = {
 	realTimeRenderDelay: 500,
 	scrollSync: true,
 	enableStrictSecurityMode: true,
+	enableFloatingToolbar: true,
 	chatSetting: {
 		temperature: 0.7,
 		max_tokens: 2048,
@@ -96,6 +99,7 @@ export default class SmartMPPlugin extends Plugin {
 	active: boolean = false;
 	spinner: Spinner;
 	themeHotReloader: ThemeHotReloader;
+	floatingToolbar: FloatingToolbar;
 
 	async saveThemeFolder() {
 		const config = {
@@ -931,7 +935,7 @@ export default class SmartMPPlugin extends Plugin {
 	 * @param originalContent 原始选中内容
 	 * @param result AI 生成的结果
 	 */
-	private showInsertModeMenu(editor: Editor, originalContent: string, result: string) {
+	public showInsertModeMenu(editor: Editor, originalContent: string, result: string) {
 		const menu = new Menu();
 
 		menu.addItem((item) => {
@@ -987,6 +991,209 @@ export default class SmartMPPlugin extends Plugin {
 		}
 		return null;
 	}
+
+	/**
+	 * 流式润色内容 - 打开流式 Diff 对话框
+	 */
+	async polishContentWithStreaming(editor: Editor, content: string): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		// 动态导入 StreamingDiffModal
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+
+		// 创建重新生成回调
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.polishContentStream(content, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				editor.replaceSelection(result);
+				new Notice("已应用 AI 修改");
+			},
+			regenerateCallback
+		);
+		modal.open();
+
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.polishContentStream(
+				content,
+				(chunk: string) => {
+					modal.appendChunk(chunk);
+				},
+				signal
+			);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式润色失败:", error);
+				modal.showError("AI 生成失败，请重试");
+			}
+		}
+	}
+
+	/**
+	 * 流式翻译内容 - 打开流式 Diff 对话框
+	 */
+	async translateWithStreaming(
+		editor: Editor,
+		content: string,
+		sourceLang: string,
+		targetLang: string
+	): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		// 动态导入 StreamingDiffModal
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+
+		// 创建重新生成回调
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.translateStream(content, sourceLang, targetLang, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				editor.replaceSelection(result);
+				new Notice("已应用翻译");
+			},
+			regenerateCallback
+		);
+		modal.open();
+
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.translateStream(
+				content,
+				sourceLang,
+				targetLang,
+				(chunk: string) => {
+					modal.appendChunk(chunk);
+				},
+				signal
+			);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式翻译失败:", error);
+				modal.showError("翻译失败，请重试");
+			}
+		}
+	}
+
+	/**
+	 * 流式生成标题 - 打开流式 Diff 对话框
+	 */
+	async generateTitleWithStreaming(
+		editor: Editor,
+		content: string
+	): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		// 动态导入 StreamingDiffModal
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+
+		// 创建重新生成回调
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.generateTitleStream(content, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				// 标题生成后，替换选中内容
+				editor.replaceSelection(result);
+				new Notice("已应用标题");
+			},
+			regenerateCallback
+		);
+		modal.open();
+
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.generateTitleStream(
+				content,
+				(chunk: string) => {
+					modal.appendChunk(chunk);
+				},
+				signal
+			);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式标题生成失败:", error);
+				modal.showError("标题生成失败，请重试");
+			}
+		}
+	}
+
+	/**
+	 * 流式生成摘要 - 打开流式 Diff 对话框
+	 */
+	async generateSummaryWithStreaming(
+		editor: Editor,
+		content: string
+	): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		// 动态导入 StreamingDiffModal
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+
+		// 创建重新生成回调
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.generateSummaryStream(content, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				editor.replaceSelection(result);
+				new Notice("已应用摘要");
+			},
+			regenerateCallback
+		);
+		modal.open();
+
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.generateSummaryStream(
+				content,
+				(chunk: string) => {
+					modal.appendChunk(chunk);
+				},
+				signal
+			);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式摘要生成失败:", error);
+				modal.showError("摘要生成失败，请重试");
+			}
+		}
+	}
+
 	generateImage(editor: Editor) {
 		if (!this.aiClient) {
 			new Notice($t("main.chat-llm-has-not-been-configured"));
@@ -1099,8 +1306,8 @@ export default class SmartMPPlugin extends Plugin {
 					new Notice("请先选中要润色的文本");
 					return;
 				}
-				const res = await this.polishContent(content);
-				if (res) this.showInsertModeMenu(editor, content, res);
+				// 使用流式润色
+				await this.polishContentWithStreaming(editor, content);
 			},
 		});
 
@@ -1113,8 +1320,8 @@ export default class SmartMPPlugin extends Plugin {
 					new Notice("请先选中要翻译的文本");
 					return;
 				}
-				const res = await this.translateToEnglish(content);
-				if (res) this.showInsertModeMenu(editor, content, res);
+				// 使用流式翻译
+				await this.translateWithStreaming(editor, content, "Chinese", "English");
 			},
 		});
 
@@ -1127,8 +1334,8 @@ export default class SmartMPPlugin extends Plugin {
 					new Notice("请先选中要翻译的文本");
 					return;
 				}
-				const res = await this.translateToChinese(content);
-				if (res) this.showInsertModeMenu(editor, content, res);
+				// 使用流式翻译
+				await this.translateWithStreaming(editor, content, "English", "Chinese");
 			},
 		});
 
@@ -1195,6 +1402,44 @@ export default class SmartMPPlugin extends Plugin {
 			void this.activateView();
 		});
 
+		// Initialize Floating Toolbar
+		this.floatingToolbar = new FloatingToolbar(this);
+
+		// Register Smart Toolbar events
+		this.registerDomEvent(document, 'mouseup', (evt: MouseEvent) => {
+			if (!this.settings.enableFloatingToolbar) return;
+			// Delay to ensure selection is settled
+			setTimeout(() => {
+				const activeLeaf = this.app.workspace.activeLeaf;
+				if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
+					const editor = activeLeaf.view.editor;
+					if (editor.somethingSelected()) {
+						const selection = editor.getSelection();
+						// Only show if selection is meaningful (not just whitespace)
+						if (selection && selection.trim().length > 0) {
+							// Also check browser selection to be safe about focus
+							const docSelection = document.getSelection();
+							if (docSelection && docSelection.toString().length > 0) {
+								console.log("SmartMP: Show Toolbar for selection:", selection.substring(0, 20) + "...");
+								this.floatingToolbar.show(editor, selection);
+							} else {
+								console.log("SmartMP: Document selection empty/invalid.");
+							}
+						}
+					}
+				}
+			}, 100);
+		});
+
+		// 滚动同步相关
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
+			this.floatingToolbar.hide();
+		}));
+
+		this.registerEvent(this.app.workspace.on('editor-change', () => {
+			this.floatingToolbar.hide();
+		}));
+
 		this.addSettingTab(new SmartMPSettingTab(this.app, this));
 
 		this.addEditorMenu();
@@ -1233,6 +1478,7 @@ export default class SmartMPPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.floatingToolbar?.destroy();
 		if (this.editorChangeListener) {
 			this.app.workspace.offref(this.editorChangeListener);
 		}
@@ -1263,4 +1509,10 @@ export default class SmartMPPlugin extends Plugin {
 
 
 
+	showDiffModal(editor: Editor, original: string, modified: string) {
+		new DiffModal(this.app, editor, original, modified, (result) => {
+			editor.replaceSelection(result);
+			new Notice("已应用 AI 修改");
+		}).open();
+	}
 }

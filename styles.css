@@ -2384,3 +2384,207 @@ proofreed
 	border-radius: 3px;
 	font-size: 0.9em;
 }
+
+/* Toolbar styles removed as we use native Menu */
+
+/* Diff Modal */
+.smart-mp-diff-modal {
+	max-width: 90vw;
+	width: 100%;
+	/* Responsive */
+	max-height: 85vh;
+	height: auto;
+	display: flex;
+	flex-direction: column;
+	padding: 0 !important;
+	/* Reset Obsidian's default padding */
+}
+
+/* Diff Modal - Split View Layout */
+.smart-mp-diff-modal .diff-container {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+	margin: 16px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+	flex-direction: row;
+	/* Side-by-side */
+	gap: 12px;
+	/* Gap between panes */
+}
+
+.smart-mp-diff-modal .diff-pane {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	min-width: 0;
+	/* 关键：防止 flex item 溢出 */
+	padding: 0;
+}
+
+.smart-mp-diff-modal .diff-content {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: auto;
+	/* 改为 auto，让浏览器处理溢出 */
+	padding: 16px;
+	white-space: pre-wrap;
+	word-break: break-all;
+	/* 关键：允许在任意字符处断行 */
+	overflow-wrap: anywhere;
+	/* 关键：在任何位置换行 */
+	font-family: var(--font-monospace);
+	line-height: 1.6;
+	font-size: 14px;
+
+	/* 盒模型设置，不使用 !important */
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+
+	/* Firefox 滚动条隐藏 */
+	scrollbar-width: none;
+	/* IE/Edge 滚动条隐藏 */
+	-ms-overflow-style: none;
+}
+
+/* Webkit 浏览器滚动条隐藏 */
+.smart-mp-diff-modal .diff-content::-webkit-scrollbar:horizontal {
+	height: 0 !important;
+	display: none !important;
+}
+
+.smart-mp-diff-modal .diff-add {
+	background-color: rgba(74, 222, 128, 0.15);
+	/* Soft Green */
+	color: var(--text-normal);
+	text-decoration: none;
+	border-radius: 2px;
+	padding: 0 2px;
+	border-bottom: 2px solid rgba(74, 222, 128, 0.6);
+}
+
+.smart-mp-diff-modal .diff-remove {
+	background-color: rgba(248, 113, 113, 0.15);
+	/* Soft Red */
+	color: var(--text-muted);
+	text-decoration: line-through;
+	border-radius: 2px;
+	padding: 0 2px;
+	opacity: 0.8;
+}
+
+.smart-mp-diff-modal .diff-common {
+	color: var(--text-normal);
+}
+
+.smart-mp-diff-modal .diff-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ================================= 
+   Streaming Diff Modal Styles
+   ================================= */
+.smart-mp-streaming-diff-modal .streaming-edit-hint {
+	display: block;
+	color: var(--text-muted);
+	font-size: 12px;
+	margin-bottom: 8px;
+}
+
+.smart-mp-streaming-diff-modal .streaming-textarea-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.smart-mp-streaming-diff-modal .streaming-textarea {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 300px;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: 14px;
+	line-height: 1.6;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.smart-mp-streaming-diff-modal .streaming-textarea:disabled {
+	background: var(--background-secondary);
+	opacity: 0.8;
+}
+
+.smart-mp-streaming-diff-modal .streaming-status {
+	padding: 8px 16px;
+	font-size: 12px;
+	color: var(--text-muted);
+	background: var(--background-secondary);
+	border-radius: 4px;
+	margin: 8px 0;
+}
+
+.smart-mp-streaming-diff-modal .streaming-status.streaming-complete {
+	color: var(--text-success, #4ade80);
+	background: rgba(74, 222, 128, 0.1);
+}
+
+.smart-mp-streaming-diff-modal .streaming-status.streaming-error {
+	color: var(--text-error, #f87171);
+	background: rgba(248, 113, 113, 0.1);
+}
+
+/* 进度条样式 */
+.smart-mp-streaming-diff-modal .streaming-progress-bar {
+	height: 8px;
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+	margin: 12px 0 16px 0;
+	overflow: hidden;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.smart-mp-streaming-diff-modal .streaming-progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg,
+			var(--interactive-accent),
+			var(--interactive-accent-hover, #7c3aed),
+			var(--interactive-accent));
+	background-size: 200% 100%;
+	animation: progress-shimmer 1.5s ease-in-out infinite;
+	transition: width 0.3s ease;
+	width: 0%;
+	border-radius: 4px;
+}
+
+@keyframes progress-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+.smart-mp-streaming-diff-modal .streaming-progress-fill.streaming-progress-error {
+	background: var(--text-error, #f87171);
+	animation: none;
+}
+
+/* 撤销/重做按钮样式 */
+.smart-mp-streaming-diff-modal .diff-actions button[aria-label="撤销 (Ctrl+Z)"],
+.smart-mp-streaming-diff-modal .diff-actions button[aria-label="重做 (Ctrl+Y)"] {
+	padding: 6px 10px;
+	min-width: auto;
+}

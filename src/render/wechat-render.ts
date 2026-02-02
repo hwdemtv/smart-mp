@@ -352,9 +352,10 @@ export class WechatRender {
 	public async parseNote(
 		path: string,
 		container: HTMLElement,
-		view: Component
+		view: Component,
+		contentOverride?: string
 	): Promise<HTMLElement> {
-		const content = await this.plugin.app.vault.adapter.read(path);
+		const content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
 		const hash = this.simpleHash(content);
 
 		// 1. Check Cache

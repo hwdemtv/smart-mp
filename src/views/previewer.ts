@@ -71,15 +71,15 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (this.plugin.settings.realTimeRender) {
 			void this.renderDraft();
 		}
-	}, 500);
+	}, 200);
 	private debouncedUpdate = debounce(() => {
 		if (this.plugin.settings.realTimeRender) {
 			void this.renderDraft();
 		}
-	}, 500);
+	}, 200);
 
 	rebuildDebounce() {
-		const delay = this.plugin.settings.realTimeRenderDelay || 500;
+		const delay = this.plugin.settings.realTimeRenderDelay || 200;
 		this.debouncedRender = debounce(() => {
 			if (this.plugin.settings.realTimeRender) {
 				void this.renderDraft();
@@ -183,6 +183,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);
 		void this.loadComponents();
+		// Force initial render
+		setTimeout(() => {
+			void this.renderDraft();
+		}, 500);
 		return Promise.resolve();
 	}
 
@@ -481,50 +485,53 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		return Promise.resolve();
 	}
 
-	async parseActiveMarkdown(taskId: number) {
+	// REPAIRED: parseActiveMarkdown returning Promise<HTMLElement | null>
+	async parseActiveMarkdown(taskId: number): Promise<HTMLElement | null> {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile || activeFile.extension !== "md") {
-			return;
+			return null;
 		}
 
-		const content = await this.plugin.app.vault.adapter.read(activeFile.path);
+		// Optimize: Get content from Editor directly (memory)
+		let content = "";
+		const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (mdView && mdView.file?.path === activeFile.path) {
+			content = mdView.editor.getValue();
+		} else {
+			content = await this.plugin.app.vault.adapter.read(activeFile.path);
+		}
 
-		// 1. Content Hashing: Skip if content is exactly the same as last time
 		if (content === this.lastRenderedContent) {
 			console.debug("Render skipped: Content not changed");
-			return;
+			return null;
 		}
 
-		// Update last rendered content tracking
-		this.lastRenderedContent = content;
-
-		// 2. Prepare rendering
-		this.articleDiv.empty();
+		// NOTE: 竞态修复 - 不在此处更新 lastRenderedContent
+		// 改为在 renderDraft 成功挂载 DOM 后再更新
+		const contentToRender = content;
 		this.elementMap = new Map<string, HTMLElement | string>();
 
-		// 3. Task ID Validation: Check if this task is still the most recent one
 		if (taskId !== this.lastRenderTaskId) {
 			console.debug("Render cancelled: Newer task started");
-			return;
+			return null;
 		}
 
-		// Render directly into articleDiv to preserve live DOM
 		const renderedDom = await WechatRender.getInstance(this.plugin, this).parseNote(
 			activeFile.path,
 			this.articleDiv,
-			this
+			this,
+			content
 		);
 
-		// Populate articleDiv with the rendered HTML
 		const articleSection = createEl("section", {
 			cls: "smart-mp-article-content smart-mp",
 		});
 		articleSection.appendChild(renderedDom);
-
-		this.articleDiv.empty();
-		this.articleDiv.appendChild(articleSection);
+		// 将渲染的内容附加到 section，并返回包含内容字符串的对象
+		(articleSection as any)._renderedContent = contentToRender;
 
 		this.elementMap.clear();
+		return articleSection;
 	}
 
 	async renderDraft() {
@@ -535,50 +542,46 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		// 1. Generation a new Task ID to track this specific render request
 		const taskId = ++this.lastRenderTaskId;
 
-		await this.parseActiveMarkdown(taskId);
+		const articleSection = await this.parseActiveMarkdown(taskId);
 
 		// 2. Final Validation: If a newer task has already started/finished, abort this one
 		if (taskId !== this.lastRenderTaskId) {
 			return;
 		}
 
-		if (this.articleDiv === null || this.articleDiv.firstChild === null) {
-			return;
-		}
-		const element = this.articleDiv.firstChild as HTMLElement;
+		if (!articleSection) return;
 
 		// Calculate stats from fresh rendered content (before layout enhancements)
-		const textContent = element.textContent || "";
+		const textContent = articleSection.textContent || "";
 		this.currentArticleStats = this.calculateStats(textContent);
 
-		// Apply layout enhancements
-		this.applyLayoutEnhancements(element);
+		// Apply layout enhancements (Off-screen)
+		// Note: applyLayoutEnhancements expects 'element' which is usually the content container.
+		// In old logic: element = articleDiv.firstChild (which is articleSection).
+		// So we pass articleSection.
+		this.applyLayoutEnhancements(articleSection);
 
-		// Update preview stats immediately
+		// Apply Theme (Off-screen) - Sync/Await to prevent flicker
+		try {
+			// We await here to ensure unstyled content never flashes
+			await ThemeManager.getInstance(this.plugin).applyTheme(articleSection);
+		} catch (error) {
+			console.error("应用主题失败:", error);
+		}
+
+		// Update preview stats logic 
+		// (updateArticleStats updates the stats UI, not the content)
 		this.updateArticleStats();
 
-		const apply = () => {
-			// Double check connectivity and task ID before heavy theme application
-			if (!element.isConnected || taskId !== this.lastRenderTaskId) return;
+		// Finally: Swap DOM
+		if (taskId !== this.lastRenderTaskId) return; // check again
 
-			void ThemeManager.getInstance(this.plugin)
-				.applyTheme(element)
-				.then(() => {
-					// Ensure stats are consistent if theme changed something (rare)
-					this.updateArticleStats();
-				})
-				.catch((error) => {
-					console.error("应用主题失败:", error);
-				});
-		};
-		type WindowWithIdleCallback = Window & {
-			requestIdleCallback?: (cb: () => void) => number;
-		};
-		const idleWindow = window as WindowWithIdleCallback;
-		if (typeof idleWindow.requestIdleCallback === 'function') {
-			idleWindow.requestIdleCallback(apply);
-		} else {
-			setTimeout(apply, 0);
+		this.articleDiv.empty();
+		this.articleDiv.appendChild(articleSection);
+
+		// 竞态修复：只有成功挂载后才更新 lastRenderedContent
+		if ((articleSection as any)._renderedContent) {
+			this.lastRenderedContent = (articleSection as any)._renderedContent;
 		}
 
 		// 渲染完成后设置滚动同步
@@ -847,7 +850,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		);
 	}
 	isViewActive(): boolean {
-		return this.isActive && !this.app.workspace.rightSplit.collapsed
+		// Check if visible in DOM
+		return this.containerEl.offsetParent !== null;
 	}
 
 	startListen() {
