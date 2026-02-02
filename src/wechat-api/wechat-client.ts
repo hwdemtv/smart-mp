@@ -159,7 +159,6 @@ export class WechatClient {
 		const { errcode, media_id, errmsg } = res.json;
 		if (errcode !== undefined && errcode !== 0) {
 			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
-			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
 			Logger.error('sendArticleToDraftBox', `Failed: ${errcode} - ${errmsg}`);
 			return false;
 		} else {

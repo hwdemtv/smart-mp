@@ -1891,12 +1891,12 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		});
 		const link = div.createEl("a", {
 			cls: "smart-mp-web-image-link",
-			href: "https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame&nav=10141",
+			href: "https://developers.weixin.qq.com/platform",
 		});
 		const img = link.createEl("img", { cls: "smart-mp-web-image-img" });
 		img.src = WECHAT_MP_WEB_PAGE;
 		img.alt = "smart-mp-web-page";
-		// div.innerHTML = `<a href="https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame&nav=10141"><img src="${WECHAT_MP_WEB_PAGE}" alt="smart-mp-web-page"></a> </p>`
+		// div.innerHTML = `<a href="https://developers.weixin.qq.com/platform"><img src="${WECHAT_MP_WEB_PAGE}" alt="smart-mp-web-page"></a> </p>`
 
 		const selectAccountSetting = new Setting(mpFrame)
 			.setName($t("settings.select-account"))
