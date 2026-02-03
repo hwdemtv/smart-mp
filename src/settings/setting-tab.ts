@@ -1938,6 +1938,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				✓ 优先技术支持<br>
 				✓ 未来新功能优先体验
 			</div>
+			<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--background-modifier-border); color: var(--text-accent);">
+				📱 获取激活码：加微信 <strong>hwdemtv</strong>
+			</div>
 		`;
 	}
 
