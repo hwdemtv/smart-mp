@@ -4,7 +4,7 @@
 	"version": "1.5.1",
 	"minAppVersion": "1.7.0",
 	"description": "A powerful workspace for WeChat MP writing and publishing with custom AI assistants and premium UI.",
-	"author": "Learner Chen, hwdemtv",
+	"author": "hwdemtv",
 	"authorUrl": "https://github.com/hwdemtv/smart-mp",
 	"isDesktopOnly": true
 }
