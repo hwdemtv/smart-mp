@@ -18,6 +18,7 @@ import {
 } from "obsidian";
 import { getPublicIpAddress } from "src/utils/ip-address";
 import { CryptoHelper } from "./utils/crypto-helper";
+import { Logger } from "./utils/logger";
 import { AssetsManager } from "./assets/assets-manager";
 import { ResourceManager } from "./assets/resource-manager";
 import { $t } from "./lang/i18n";
@@ -1422,10 +1423,10 @@ export default class SmartMPPlugin extends Plugin {
 							// Also check browser selection to be safe about focus
 							const docSelection = document.getSelection();
 							if (docSelection && docSelection.toString().length > 0) {
-								console.log("SmartMP: Show Toolbar for selection:", selection.substring(0, 20) + "...");
+								Logger.debug("FloatingToolbar", `Show Toolbar for selection: ${selection.substring(0, 20)}...`);
 								this.floatingToolbar.show(editor, selection);
 							} else {
-								console.log("SmartMP: Document selection empty/invalid.");
+								Logger.debug("FloatingToolbar", "Document selection empty/invalid.");
 							}
 						}
 					}

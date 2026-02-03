@@ -1,5 +1,6 @@
 import { App, Editor, MarkdownView, Menu, Notice, setIcon } from "obsidian";
 import SmartMPPlugin from "../main";
+import { Logger } from "../utils/logger";
 
 export class FloatingToolbar {
     private toolbarEl: HTMLElement;
@@ -25,7 +26,7 @@ export class FloatingToolbar {
         const buttons = this.getRelevantButtons(selection);
         if (buttons.length === 0) return;
 
-        console.log("SmartMP: Showing native Menu for debugging.");
+        Logger.debug("FloatingToolbar", "Showing native Menu for debugging.");
 
         const menu = new Menu();
 
@@ -147,7 +148,7 @@ export class FloatingToolbar {
 
         // Ensure toolbar is visible in DOM to measure size (if needed)
         // For simple positioning:
-        console.log("SmartMP: Positioning Toolbar. Rect:", rect);
+        Logger.debug("FloatingToolbar", `Positioning Toolbar. Rect: ${JSON.stringify(rect)}`);
         const top = rect.top - 40; // Approx toolbar height
         const left = rect.left;
 

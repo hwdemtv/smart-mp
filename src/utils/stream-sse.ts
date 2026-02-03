@@ -2,7 +2,7 @@
  * SSE 流式解析通用工具
  * 用于处理 OpenAI 兼容 API 的流式响应
  */
-
+import { Logger } from "./logger";
 export interface StreamRequestOptions {
     url: string;
     apiKey: string;
@@ -104,7 +104,7 @@ export async function safeStreamSSE(options: StreamRequestOptions): Promise<stri
         return await streamSSE(options);
     } catch (error) {
         if ((error as any).name === 'AbortError') {
-            console.log("流式请求已中断");
+            Logger.debug("streamSSE", "流式请求已中断");
             return "";
         }
         throw error;

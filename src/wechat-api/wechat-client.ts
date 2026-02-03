@@ -126,16 +126,22 @@ export class WechatClient {
 		if (digest.length > 120) {
 			digest = digest.substring(0, 120) + "...";
 		}
-		console.log("Sending draft with digest:", digest);
+		Logger.debug("sendArticleToDraftBox", `Sending draft with digest: ${digest}`);
+
+		// Pro password check: skip watermark if password is correct
+		const PRO_SECRET = "smartmp2026"; // Change this to your secret
+		const isPro = this.plugin.settings.proPassword === PRO_SECRET;
+
+		const watermark = isPro ? "" : `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
+    Powered by SmartMP<br>
+    使用过程中如有疑问或需要中转服务请➕V (hwdemtv)
+</section>`;
 
 		const body = {
 			articles: [
 				{
 					title: localDraft.title,
-					content: data + `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
-    Powered by SmartMP<br>
-    使用过程中如有疑问或需要中转服务请➕V (hwdemtv)
-</section>`,
+					content: data + watermark,
 					digest: digest,
 					thumb_media_id: localDraft.thumb_media_id,
 					...(localDraft.content_source_url && {
@@ -161,7 +167,12 @@ export class WechatClient {
 
 		const { errcode, media_id, errmsg } = res.json;
 		if (errcode !== undefined && errcode !== 0) {
-			new Notice(`Failed to send draft: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
+			// 针对内容超限错误给出友好提示
+			if (errcode === 45002 || (errmsg && errmsg.includes('size out of limit'))) {
+				new Notice('⚠️ 文章内容超过限制，请手动分割（必须少于2万字符），或使用「一键复制」手动粘贴到公众号编辑器', 0);
+			} else {
+				new Notice(`发送草稿失败: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
+			}
 			Logger.error('sendArticleToDraftBox', `Failed: ${errcode} - ${errmsg}`);
 			return false;
 		} else {
@@ -170,6 +181,85 @@ export class WechatClient {
 
 		if (!media_id) {
 			Logger.error('sendArticleToDraftBox', 'Success but no media_id returned', res.json);
+			return false;
+		}
+
+		return media_id;
+	}
+
+	/**
+	 * 发送多图文草稿（一个草稿包含多篇文章）
+	 * @param localDraft 基础草稿配置
+	 * @param articles 文章内容数组，每个元素包含 { title, content, digest? }
+	 */
+	public async sendMultiArticlesToDraftBox(
+		localDraft: LocalDraftItem,
+		articles: Array<{ title: string; content: string; digest?: string }>
+	) {
+		const accessToken = await this.plugin.refreshAccessToken(
+			this.plugin.settings.selectedMPAccount
+		);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		const url =
+			"https://api.weixin.qq.com/cgi-bin/draft/add?access_token=" +
+			accessTokenValue;
+
+		// 构建多图文 articles 数组
+		const formattedArticles = articles.map((article, index) => {
+			let digest = article.digest || "";
+			digest = digest.replace(/<[^>]*>?/gm, '');
+			if (digest.length > 120) {
+				digest = digest.substring(0, 120) + "...";
+			}
+
+			return {
+				title: article.title,
+				content: article.content + (index === articles.length - 1
+					? `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
+    Powered by SmartMP<br>
+    使用过程中如有疑问或需要中转服务请➕V (hwdemtv)
+</section>`
+					: ''),
+				digest: digest,
+				thumb_media_id: localDraft.thumb_media_id,
+				...(localDraft.content_source_url && {
+					content_source_url: localDraft.content_source_url,
+				}),
+				...(localDraft.need_open_comment !== undefined && {
+					need_open_comment: localDraft.need_open_comment,
+				}),
+				...(localDraft.only_fans_can_comment !== undefined && {
+					only_fans_can_comment: localDraft.only_fans_can_comment,
+				}),
+				...(localDraft.author && { author: localDraft.author }),
+			};
+		});
+
+		const body = { articles: formattedArticles };
+
+		Logger.debug("sendMultiArticlesToDraftBox", `发送多图文草稿，共 ${articles.length} 篇`);
+
+		const res = await requestUrl({
+			method: "POST",
+			url: url,
+			throw: false,
+			body: JSON.stringify(body),
+		});
+
+		const { errcode, media_id, errmsg } = res.json;
+		if (errcode !== undefined && errcode !== 0) {
+			new Notice(`发送多图文草稿失败: ${getErrorMessage(errcode)} (${errmsg || errcode})`, 0);
+			Logger.error('sendMultiArticlesToDraftBox', `Failed: ${errcode} - ${errmsg}`);
+			return false;
+		} else {
+			new Notice(`成功发送 ${articles.length} 篇到草稿箱`);
+		}
+
+		if (!media_id) {
+			Logger.error('sendMultiArticlesToDraftBox', 'Success but no media_id returned', res.json);
 			return false;
 		}
 

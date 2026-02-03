@@ -9,6 +9,7 @@ import prompt from "./prompt.json";
 import { buildPrompt, Prompt } from "./ai-client";
 import { ChatCompletionMessage } from "openai/resources";
 import { obsidianFetch } from "./fetch";
+import { Logger } from "./logger";
 export class OpenAIClient {
 	private static instance: OpenAIClient;
 	private plugin: SmartMPPlugin;
@@ -243,7 +244,7 @@ export class OpenAIClient {
 			return result;
 		} catch (error) {
 			if ((error as any).name === 'AbortError') {
-				console.log("流式标题生成已中断");
+				Logger.debug("streamTitles", "流式标题生成已中断");
 				return "";
 			}
 			throw error;
@@ -424,7 +425,7 @@ export class OpenAIClient {
 			return result;
 		} catch (error) {
 			if ((error as any).name === 'AbortError') {
-				console.log("流式生成已中断");
+				Logger.debug("streamGenerate", "流式生成已中断");
 				return "";
 			}
 			throw error;
@@ -668,7 +669,7 @@ export class OpenAIClient {
 			return result;
 		} catch (error) {
 			if ((error as any).name === 'AbortError') {
-				console.log("流式翻译已中断");
+				Logger.debug("streamTranslate", "流式翻译已中断");
 				return "";
 			}
 			throw error;
