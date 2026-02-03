@@ -18,6 +18,18 @@ export class CryptoHelper {
     }
 
     /**
+     * 计算字符串的 SHA-256 哈希值
+     * 用于密码验证等场景
+     */
+    static async sha256(text: string): Promise<string> {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    /**
      * 加密文本 (AES-GCM)
      * 返回格式: aes:<base64(iv)>:<base64(ciphertext)>
      */

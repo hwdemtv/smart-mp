@@ -23,6 +23,7 @@ import {
 } from "./smart-mp-setting";
 import { LLMProvider, LLMProviderType, LLMModel } from "./llm-types";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
+import { CryptoHelper } from "../utils/crypto-helper";
 
 interface FileSystemFileHandle {
 	createWritable(): Promise<FileSystemWritableFileStream>;
@@ -127,6 +128,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		// Render Content
 		if (this.activeTab === 'general') {
+			this.createLicenseSettings(containerEl); // License/Pro
 			this.createWeChatSettings(containerEl); // Account
 			this.createGeneralSettings(containerEl); // General
 			this.creatCSSStyleSetting(containerEl); // Appearance
@@ -1829,6 +1831,114 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						}
 					});
 			});
+	}
+
+	createLicenseSettings(container: HTMLElement) {
+		// Pro password verification using SHA-256 hash
+		// 注意：PRO_SECRET_HASH 是 'smartmp2026' 的 SHA-256 哈希值，明文不存储在代码中
+		const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
+
+		// 异步检查密码并渲染UI
+		const checkProStatus = async () => {
+			const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
+			return userPasswordHash === PRO_SECRET_HASH;
+		};
+
+		// 初始状态为未知，异步检查后更新
+		let isPro = false;
+
+		const frame = this.createCollapsibleFrame(container, "🔐 授权管理 (License)", true);
+
+		// Status Banner
+		const statusBanner = frame.createDiv({ cls: 'smart-mp-license-status' });
+		statusBanner.style.padding = '12px 16px';
+		statusBanner.style.borderRadius = '8px';
+		statusBanner.style.marginBottom = '16px';
+		statusBanner.style.display = 'flex';
+		statusBanner.style.alignItems = 'center';
+		statusBanner.style.gap = '12px';
+
+		if (isPro) {
+			statusBanner.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.1))';
+			statusBanner.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+
+			const badge = statusBanner.createSpan();
+			badge.style.background = '#22c55e';
+			badge.style.color = 'white';
+			badge.style.padding = '4px 10px';
+			badge.style.borderRadius = '12px';
+			badge.style.fontSize = '12px';
+			badge.style.fontWeight = '600';
+			badge.textContent = '✓ Pro 已激活';
+
+			const info = statusBanner.createSpan();
+			info.style.color = 'var(--text-muted)';
+			info.style.fontSize = '13px';
+			info.textContent = '已解锁全部功能，发布文章不含水印';
+		} else {
+			statusBanner.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1))';
+			statusBanner.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+
+			const badge = statusBanner.createSpan();
+			badge.style.background = '#f59e0b';
+			badge.style.color = 'white';
+			badge.style.padding = '4px 10px';
+			badge.style.borderRadius = '12px';
+			badge.style.fontSize = '12px';
+			badge.style.fontWeight = '600';
+			badge.textContent = '免费版';
+
+			const info = statusBanner.createSpan();
+			info.style.color = 'var(--text-muted)';
+			info.style.fontSize = '13px';
+			info.textContent = '发布文章将包含 SmartMP 推广水印';
+		}
+
+		// Activation Input
+		new Setting(frame)
+			.setName("激活码")
+			.setDesc("输入激活码以解锁 Pro 功能（去除水印、优先支持等）")
+			.addText((text) => {
+				text.inputEl.type = "password";
+				text.inputEl.style.width = '200px';
+				text
+					.setPlaceholder("请输入激活码")
+					.setValue(this.plugin.settings.proPassword || "")
+					.onChange(async (value) => {
+						this.plugin.settings.proPassword = value;
+						await this.plugin.saveSettings();
+					});
+			})
+			.addButton((btn) => {
+				btn.setButtonText("验证")
+					.setCta()
+					.onClick(async () => {
+						const isValid = await checkProStatus();
+						if (isValid) {
+							new Notice("✅ 激活成功！Pro 功能已解锁");
+						} else {
+							new Notice("❌ 激活码无效，请检查后重试");
+						}
+						this.display(); // Refresh to show new status
+					});
+			});
+
+		// Pro Benefits Info
+		const benefitsEl = frame.createDiv();
+		benefitsEl.style.marginTop = '12px';
+		benefitsEl.style.padding = '12px';
+		benefitsEl.style.background = 'var(--background-secondary)';
+		benefitsEl.style.borderRadius = '6px';
+		benefitsEl.style.fontSize = '13px';
+		benefitsEl.innerHTML = `
+			<div style="font-weight: 600; margin-bottom: 8px;">Pro 权益包含：</div>
+			<div style="color: var(--text-muted); line-height: 1.8;">
+				✓ 发布文章无水印<br>
+				✓ 免配置 IP 白名单（即将上线）<br>
+				✓ 优先技术支持<br>
+				✓ 未来新功能优先体验
+			</div>
+		`;
 	}
 
 	createWeChatSettings(container: HTMLElement) {

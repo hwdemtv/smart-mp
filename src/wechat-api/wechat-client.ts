@@ -17,6 +17,7 @@ import { $t } from "src/lang/i18n";
 import { MSG_TYPE } from "src/utils/message-service";
 import { SmartMPSetting } from "src/settings/smart-mp-setting";
 import Logger from "src/utils/logger";
+import { CryptoHelper } from "src/utils/crypto-helper";
 
 // WeChat API constants
 const WECHAT_LIMIT_IMAGE = 10 * 1024 * 1024; // 10MB
@@ -128,9 +129,11 @@ export class WechatClient {
 		}
 		Logger.debug("sendArticleToDraftBox", `Sending draft with digest: ${digest}`);
 
-		// Pro password check: skip watermark if password is correct
-		const PRO_SECRET = "smartmp2026"; // Change this to your secret
-		const isPro = this.plugin.settings.proPassword === PRO_SECRET;
+		// Pro password check: skip watermark if password hash matches
+		// 注意：PRO_SECRET_HASH 是 'smartmp2026' 的 SHA-256 哈希值，明文不存储在代码中
+		const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
+		const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
+		const isPro = userPasswordHash === PRO_SECRET_HASH;
 
 		const watermark = isPro ? "" : `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
     Powered by SmartMP<br>
