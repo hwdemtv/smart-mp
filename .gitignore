@@ -23,3 +23,5 @@ data.json
 
 # exclue test
 test/
+# Exclude private server setup documentation
+微信API中转服务器配置指南(私用).md

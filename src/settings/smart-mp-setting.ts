@@ -91,6 +91,7 @@ export type SmartMPSetting = {
     selectedLLMModelId?: string;
     cryptoKey?: string; // For upgraded encryption
     enableFloatingToolbar?: boolean;
+    proPassword?: string; // Password to unlock Pro features (remove watermark)
 }
 
 export type ChatSetting = {

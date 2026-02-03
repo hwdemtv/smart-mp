@@ -252,6 +252,20 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
 
     const uploadPromises = images.map(async (img) => {
         let blob: Blob | undefined
+
+        // 处理缺失图片标记
+        if (img.src.includes('__MISSING_IMAGE__')) {
+            const originalPath = img.src.replace(/.*__MISSING_IMAGE__/, '');
+            console.warn('[uploadURLImage] 图片缺失:', originalPath);
+
+            // 替换为文字提示
+            const placeholder = document.createElement('span');
+            placeholder.style.cssText = 'color: #999; padding: 10px; display: block; text-align: center; background: #f5f5f5; border-radius: 4px; margin: 8px 0;';
+            placeholder.textContent = `[图片未找到: ${originalPath}]`;
+            img.replaceWith(placeholder);
+            return;
+        }
+
         if (img.src.includes('://mmbiz.qpic.cn/')) {
             img.setAttribute('data-uploaded', 'true');
             return;

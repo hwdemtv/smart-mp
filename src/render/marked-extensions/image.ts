@@ -151,6 +151,17 @@ export class Image extends SmartMPMarkedExtension {
 				}
 			}
 
+			// 新增：尝试从当前文件所在目录解析相对路径
+			if (!file && sourcePath) {
+				const currentDir = sourcePath.substring(0, sourcePath.lastIndexOf('/'));
+				const resolvedRelativePath = currentDir ? `${currentDir}/${decodedPath}` : decodedPath;
+				const abstractFile = plugin.app.vault.getAbstractFileByPath(resolvedRelativePath);
+				if (abstractFile instanceof TFile) {
+					file = abstractFile;
+					console.log('[Image Extension] 从当前目录解析成功:', decodedPath, '→', resolvedRelativePath);
+				}
+			}
+
 			if (file instanceof TFile) {
 				const resolved = plugin.app.vault.getResourcePath(file);
 				console.log('[Image Extension] Vault File Resolved:', decodedPath, '→', resolved);
@@ -158,8 +169,9 @@ export class Image extends SmartMPMarkedExtension {
 				return resolved;
 			}
 
-			console.warn('[Image Extension] FAILED to resolve path:', path, 'decoded:', decodedPath);
-			return path; // Fallback to original
+			// 图片未找到，返回特殊标记以便后续处理
+			console.warn('[Image Extension] 图片未找到:', path, 'decoded:', decodedPath);
+			return `__MISSING_IMAGE__${path}`;
 		};
 
 		return {
