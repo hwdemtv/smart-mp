@@ -1947,13 +1947,13 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		benefitsEl.style.borderRadius = '6px';
 		benefitsEl.style.fontSize = '13px';
 		benefitsEl.innerHTML = `
-			<div style="font-weight: 600; margin-bottom: 8px;">Pro 权益包含：</div>
+			<div style="font-weight: 600; margin-bottom: 8px;">SmartMP Pro 权益 (¥69 永久买断)：</div>
 			<div style="color: var(--text-muted); line-height: 1.8;">
-				✓ 发布文章无水印<br>
-				✓ 微信文章主题一键克隆 (New!)<br>
-				✓ 免配置 IP 白名单（即将上线）<br>
-				✓ 优先技术支持<br>
-				✓ 未来新功能优先体验
+				✨ <b>去除水印</b>：发布文章纯净无广告<br>
+				🎨 <b>主题克隆</b>：一键复刻任意公众号排版<br>
+				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
+				📦 <b>永久更新</b>：包含所有未来本地新功能<br>
+				🎁 <b>云端特权</b>：未来云服务上线享折扣/赠送
 			</div>
 			<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--background-modifier-border); color: var(--text-accent);">
 			<a href="https://github.com/hwdemtv/smart-mp#pro-features" style="text-decoration: none;">
