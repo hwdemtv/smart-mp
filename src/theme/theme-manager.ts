@@ -321,6 +321,43 @@ export class ThemeManager {
 		return node;
 	}
 
+	public async saveTheme(name: string, css: string): Promise<void> {
+		const saveDir = this.plugin.settings.css_styles_folder || "/smart-mp-custom-css";
+
+		// Ensure directory exists
+		if (!this.plugin.app.vault.getAbstractFileByPath(saveDir)) {
+			await this.plugin.app.vault.createFolder(saveDir);
+		}
+
+		// Create file content with frontmatter
+		const fileContent = `---
+theme_name: ${name}
+desc: Cloned from WeChat Article
+---
+
+\`\`\`css
+${css}
+\`\`\`
+`;
+
+		// Generate unique filename
+		let fileName = `${name}.md`;
+		// sanitize filename
+		fileName = fileName.replace(/[\\/:*?"<>|]/g, "_");
+		let filePath = `${saveDir}/${fileName}`;
+		let counter = 1;
+
+		while (this.plugin.app.vault.getAbstractFileByPath(filePath)) {
+			filePath = `${saveDir}/${name}_${counter}.md`;
+			counter++;
+		}
+
+		await this.plugin.app.vault.create(filePath, fileContent);
+
+		// Reload themes to make it available immediately
+		await this.loadThemes();
+	}
+
 	onPluginUnload() {
 		// Clean up caches
 		CSSCache.getInstance().clear();

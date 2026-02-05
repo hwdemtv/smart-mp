@@ -23,7 +23,9 @@ import {
 } from "./smart-mp-setting";
 import { LLMProvider, LLMProviderType, LLMModel } from "./llm-types";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
+
 import { CryptoHelper } from "../utils/crypto-helper";
+import { ThemeCloneModal } from "../modals/theme-clone-modal";
 
 interface FileSystemFileHandle {
 	createWritable(): Promise<FileSystemWritableFileStream>;
@@ -82,6 +84,12 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	private expandedModelSections: Set<string> = new Set();
 	private initialAssistantPrompts: Record<string, string> = {};
 	private isFirstDisplay = true;
+
+	private async checkProStatus(): Promise<boolean> {
+		const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
+		const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
+		return userPasswordHash === PRO_SECRET_HASH;
+	}
 
 	display(): void {
 		const { containerEl } = this;
@@ -275,6 +283,21 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						void ThemeManager.getInstance(
 							this.plugin
 						).downloadThemes();
+					});
+			});
+		new Setting(frame)
+			.setName($t("settings.clone-theme-from-url") || "从链接克隆主题")
+			.setDesc($t("settings.clone-theme-desc") || "提取微信文章样式生成新主题 (Beta)")
+			.addButton((button) => {
+				button
+					.setButtonText($t("settings.clone-theme-btn") || "开始克隆")
+					.setIcon("copy")
+					.onClick(async () => {
+						if (await this.checkProStatus()) {
+							new ThemeCloneModal(this.app, this.plugin).open();
+						} else {
+							new Notice($t("settings.pro-feature-alert") || "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。");
+						}
 					});
 			});
 
@@ -1836,13 +1859,6 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	createLicenseSettings(container: HTMLElement) {
 		// Pro password verification using SHA-256 hash
 		// 注意：PRO_SECRET_HASH 是 'smartmp2026' 的 SHA-256 哈希值，明文不存储在代码中
-		const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
-
-		// 异步检查密码并渲染UI
-		const checkProStatus = async () => {
-			const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
-			return userPasswordHash === PRO_SECRET_HASH;
-		};
 
 		// 初始状态为未知，异步检查后更新
 		let isPro = false;
@@ -1913,7 +1929,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				btn.setButtonText("验证")
 					.setCta()
 					.onClick(async () => {
-						const isValid = await checkProStatus();
+						const isValid = await this.checkProStatus();
 						if (isValid) {
 							new Notice("✅ 激活成功！Pro 功能已解锁");
 						} else {
@@ -1939,11 +1955,12 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				✓ 未来新功能优先体验
 			</div>
 			<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--background-modifier-border); color: var(--text-accent);">
-				📱 获取激活码：加微信 <strong>hwdemtv</strong>
-			</div>
-		`;
+			<a href="https://github.com/hwdemtv/smart-mp#pro-features" style="text-decoration: none;">
+				🎫 获取激活码 / Get Activation Code
+			</a>
+		</div>
+	`;
 	}
-
 	createWeChatSettings(container: HTMLElement) {
 		// Use collapsible frame
 		const mpFrame = this.createCollapsibleFrame(container, "📱 账号配置 (Account Configuration)");
