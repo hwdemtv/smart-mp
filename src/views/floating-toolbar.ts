@@ -77,19 +77,62 @@ export class FloatingToolbar {
     }> {
         const buttons = [];
 
-        // 1. Polish (Always available for selection)
+
+        // 1. Polish (Always available)
         buttons.push({
             id: 'polish',
-            icon: 'sun', // or 'highlighter'
+            icon: 'sun',
             label: '润色',
             tooltip: '润色选中文本',
             action: async (editor: Editor, sel: string) => {
-                // 使用流式模式
                 await this.plugin.polishContentWithStreaming(editor, sel);
             }
         });
 
-        // 2. Title (If selection is short or looks like title)
+        // 2. Proofread
+        buttons.push({
+            id: 'proofread',
+            icon: 'clipboard-check', // or 'check-circle'
+            label: '校对',
+            tooltip: '校对选中文本',
+            action: async (editor: Editor, sel: string) => {
+                await this.plugin.proofContentWithStreaming(editor, sel);
+            }
+        });
+
+        // 3. Synonyms (Short selection)
+        if (selection.length < 50) {
+            buttons.push({
+                id: 'synonyms',
+                icon: 'book-a',
+                label: '同义词',
+                tooltip: '查找同义词',
+                action: async (editor: Editor, sel: string) => {
+                    await this.plugin.getSynonymsWithStreaming(editor, sel);
+                }
+            });
+        }
+
+
+        // 4. Translate (Short selections usually)
+        if (selection.length < 1000) {
+            buttons.push({
+                id: 'translate',
+                icon: 'languages',
+                label: '翻译',
+                tooltip: '翻译',
+                action: async (editor: Editor, sel: string) => {
+                    const hasChinese = /[\u4e00-\u9fa5]/.test(sel);
+                    if (hasChinese) {
+                        await this.plugin.translateWithStreaming(editor, sel, "Chinese", "English");
+                    } else {
+                        await this.plugin.translateWithStreaming(editor, sel, "English", "Chinese");
+                    }
+                }
+            });
+        }
+
+        // 5. Title (If selection is short or looks like title)
         if (selection.length < 50 && !selection.includes('\n')) {
             buttons.push({
                 id: 'headline',
@@ -97,13 +140,12 @@ export class FloatingToolbar {
                 label: '标题',
                 tooltip: '生成爆款标题',
                 action: async (editor: Editor, sel: string) => {
-                    // 使用流式标题生成
                     await this.plugin.generateTitleWithStreaming(editor, sel);
                 }
             });
         }
 
-        // 3. Summary (If selection is long)
+        // 6. Summary (If selection is long)
         if (selection.length > 200) {
             buttons.push({
                 id: 'summary',
@@ -111,27 +153,7 @@ export class FloatingToolbar {
                 label: '摘要',
                 tooltip: '生成摘要',
                 action: async (editor: Editor, sel: string) => {
-                    // 使用流式摘要生成
                     await this.plugin.generateSummaryWithStreaming(editor, sel);
-                }
-            });
-        }
-
-        // 4. Translate (Short selections usually)
-        if (selection.length < 500) {
-            buttons.push({
-                id: 'translate',
-                icon: 'languages',
-                label: '翻译',
-                tooltip: '翻译',
-                action: async (editor: Editor, sel: string) => {
-                    // 使用流式翻译
-                    const hasChinese = /[\u4e00-\u9fa5]/.test(sel);
-                    if (hasChinese) {
-                        await this.plugin.translateWithStreaming(editor, sel, "Chinese", "English");
-                    } else {
-                        await this.plugin.translateWithStreaming(editor, sel, "English", "Chinese");
-                    }
                 }
             });
         }

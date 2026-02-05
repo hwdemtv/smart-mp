@@ -222,6 +222,11 @@ export default class SmartMPPlugin extends Plugin {
 							this.settings.customAssistantList.forEach((assistant) => {
 								if (assistant.enabled === false) return;
 
+								// 移动到悬浮工具栏的项，不再显示在右键菜单
+								if (["polish", "proofread", "synonyms", "translate"].includes(assistant.id)) {
+									return;
+								}
+
 								// 特殊处理：翻译助手保留其语言选择子菜单
 								if (assistant.id === "translate") {
 									subMenu.addItem((subItem: MenuItem) => {
@@ -1197,6 +1202,80 @@ export default class SmartMPPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * 流式校对内容
+	 */
+	async proofContentWithStreaming(editor: Editor, content: string): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.proofContentStream(content, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				editor.replaceSelection(result);
+				new Notice("已应用校对");
+			},
+			regenerateCallback
+		);
+		modal.open();
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.proofContentStream(content, (chunk) => modal.appendChunk(chunk), signal);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式校对失败:", error);
+				modal.showError("校对生成失败");
+			}
+		}
+	}
+
+	/**
+	 * 流式同义词
+	 */
+	async getSynonymsWithStreaming(editor: Editor, content: string): Promise<void> {
+		if (!this.aiClient) {
+			new Notice($t("main.chat-llm-has-not-been-configured"));
+			return;
+		}
+
+		const { StreamingDiffModal } = await import("./modals/streaming-diff-modal");
+		const regenerateCallback = (onChunk: (chunk: string) => void, signal?: AbortSignal) =>
+			this.aiClient!.getSynonymsStream(content, onChunk, signal);
+
+		const modal = new StreamingDiffModal(
+			this.app,
+			editor,
+			content,
+			(result) => {
+				editor.replaceSelection(result);
+				new Notice("已替换同义词");
+			},
+			regenerateCallback
+		);
+		modal.open();
+		const signal = modal.getAbortSignal();
+
+		try {
+			await this.aiClient.getSynonymsStream(content, (chunk) => modal.appendChunk(chunk), signal);
+			modal.finishStreaming();
+		} catch (error) {
+			if ((error as any).name !== 'AbortError') {
+				console.error("流式同义词失败:", error);
+				modal.showError("同义词获取失败");
+			}
+		}
+	}
+
 	generateImage(editor: Editor) {
 		if (!this.aiClient) {
 			new Notice($t("main.chat-llm-has-not-been-configured"));
@@ -1313,6 +1392,27 @@ export default class SmartMPPlugin extends Plugin {
 				await this.polishContentWithStreaming(editor, content);
 			},
 		});
+
+
+
+		// Initialize Floating Toolbar
+		if (this.settings.enableFloatingToolbar) {
+			import("./views/floating-toolbar").then(({ FloatingToolbar }) => {
+				this.floatingToolbar = new FloatingToolbar(this);
+				this.registerDomEvent(document, "mouseup", (evt: MouseEvent) => {
+					const editor = this.getCurrentEditor();
+					if (editor) {
+						const selection = editor.getSelection();
+						if (selection && selection.length > 0) {
+							// Delay slightly to let selection settle
+							setTimeout(() => {
+								this.floatingToolbar.show(editor, selection);
+							}, 100);
+						}
+					}
+				});
+			});
+		}
 
 		this.addCommand({
 			id: "mp-translate-to-english",
