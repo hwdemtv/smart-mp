@@ -1950,6 +1950,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			<div style="font-weight: 600; margin-bottom: 8px;">Pro 权益包含：</div>
 			<div style="color: var(--text-muted); line-height: 1.8;">
 				✓ 发布文章无水印<br>
+				✓ 微信文章主题一键克隆 (New!)<br>
 				✓ 免配置 IP 白名单（即将上线）<br>
 				✓ 优先技术支持<br>
 				✓ 未来新功能优先体验
