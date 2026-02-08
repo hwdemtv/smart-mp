@@ -14,7 +14,7 @@
 		"hello": "ts-node themes/hello.ts"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "hwdemtv",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/css": "^0.0.38",
