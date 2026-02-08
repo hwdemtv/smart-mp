@@ -2,5 +2,14 @@
   "1.1.7": "1.7.0",
   "1.4.0": "1.7.0",
   "1.5.0": "1.7.0",
-  "1.5.1": "1.7.0"
+  "1.5.1": {
+    "id": "smart-mp",
+    "name": "Smart MP",
+    "version": "1.5.1",
+    "minAppVersion": "1.7.0",
+    "description": "An advanced workspace for writing and publishing articles to WeChat MP with powerful AI assistants and premium UI.",
+    "author": "hwdemtv",
+    "authorUrl": "https://github.com/hwdemtv/smart-mp",
+    "isDesktopOnly": true
+  }
 }
