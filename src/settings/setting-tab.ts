@@ -610,7 +610,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			leftSide.style.gap = '8px';
 
 			const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron' });
-			chevron.innerHTML = '▶';
+			chevron.textContent = '▶';
 			chevron.style.transition = 'transform 0.2s';
 			chevron.style.fontSize = '10px';
 
@@ -619,39 +619,39 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			iconSpan.style.fontSize = '16px';
 			switch (provider.type) {
 				case LLMProviderType.DeepSeek:
-					iconSpan.innerHTML = '🐋';
+					iconSpan.textContent = '🐋';
 					iconSpan.title = 'DeepSeek';
 					break;
 				case LLMProviderType.OpenAI:
-					iconSpan.innerHTML = '🤖';
+					iconSpan.textContent = '🤖';
 					iconSpan.title = 'OpenAI';
 					break;
 				case LLMProviderType.Ollama:
-					iconSpan.innerHTML = '🦙';
+					iconSpan.textContent = '🦙';
 					iconSpan.title = 'Ollama';
 					break;
 				case LLMProviderType.GLM:
-					iconSpan.innerHTML = '🔮';
+					iconSpan.textContent = '🔮';
 					iconSpan.title = '智谱 AI';
 					break;
 				case LLMProviderType.SiliconFlow:
-					iconSpan.innerHTML = '💎';
+					iconSpan.textContent = '💎';
 					iconSpan.title = '硅基流动';
 					break;
 				case LLMProviderType.Qwen:
-					iconSpan.innerHTML = '☁️';
+					iconSpan.textContent = '☁️';
 					iconSpan.title = '通义千问';
 					break;
 				case LLMProviderType.Moonshot:
-					iconSpan.innerHTML = '🌙';
+					iconSpan.textContent = '🌙';
 					iconSpan.title = '月之暗面';
 					break;
 				case LLMProviderType.Gemini:
-					iconSpan.innerHTML = '✨';
+					iconSpan.textContent = '✨';
 					iconSpan.title = 'Google Gemini';
 					break;
 				default:
-					iconSpan.innerHTML = '⚙️';
+					iconSpan.textContent = '⚙️';
 					iconSpan.title = 'Custom';
 			}
 
@@ -877,7 +877,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		modelsHeader.style.padding = '5px 0';
 
 		const modelsChevron = modelsHeader.createSpan({ cls: 'smart-mp-chevron' });
-		modelsChevron.innerHTML = '▶';
+		modelsChevron.textContent = '▶';
 		modelsChevron.style.transition = 'transform 0.2s';
 		modelsChevron.style.fontSize = '10px';
 

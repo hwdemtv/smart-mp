@@ -164,14 +164,14 @@ export class AiChatSection extends SettingSection {
             leftSide.style.gap = '8px';
 
             const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron' });
-            chevron.innerHTML = '▶';
+            chevron.textContent = '▶';
             chevron.style.transition = 'transform 0.2s';
             chevron.style.fontSize = '10px';
 
             // Provider type icon
             const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon' });
             iconSpan.style.fontSize = '16px';
-            iconSpan.innerHTML = '🤖';
+            iconSpan.textContent = '🤖';
 
             const nameSpan = leftSide.createSpan({ text: provider.name });
             nameSpan.style.fontWeight = '500';
