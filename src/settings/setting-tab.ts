@@ -105,17 +105,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		// Tab Navigation
 		const navContainer = containerEl.createDiv({ cls: 'smart-mp-settings-nav' });
-		navContainer.style.display = 'flex';
-		navContainer.style.marginBottom = '20px';
-		navContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
-		navContainer.style.paddingBottom = '10px';
-		navContainer.style.gap = '20px';
 
 		const generalTab = navContainer.createEl('div', { text: $t("render.general-tab"), cls: 'smart-mp-nav-tab' });
-		generalTab.style.cursor = 'pointer';
-		generalTab.style.fontWeight = this.activeTab === 'general' ? 'bold' : 'normal';
-		generalTab.style.color = this.activeTab === 'general' ? 'var(--text-normal)' : 'var(--text-muted)';
-		generalTab.style.borderBottom = this.activeTab === 'general' ? '2px solid var(--interactive-accent)' : 'none';
+		generalTab.toggleClass('is-active', this.activeTab === 'general');
 
 		generalTab.onClickEvent(() => {
 			this.activeTab = 'general';
@@ -123,10 +115,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		});
 
 		const llmTab = navContainer.createEl('div', { text: $t("render.llm-tab"), cls: 'smart-mp-nav-tab' });
-		llmTab.style.cursor = 'pointer';
-		llmTab.style.fontWeight = this.activeTab === 'llm' ? 'bold' : 'normal';
-		llmTab.style.color = this.activeTab === 'llm' ? 'var(--text-normal)' : 'var(--text-muted)';
-		llmTab.style.borderBottom = this.activeTab === 'llm' ? '2px solid var(--interactive-accent)' : 'none';
+		llmTab.toggleClass('is-active', this.activeTab === 'llm');
 
 		llmTab.onClickEvent(() => {
 			this.activeTab = 'llm';

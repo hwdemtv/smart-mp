@@ -2856,3 +2856,27 @@ proofreed
 .smart-mp-license-input {
 	width: 200px;
 }
+
+/* Settings Tab Navigation */
+.smart-mp-settings-nav {
+	display: flex;
+	margin-bottom: 20px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: 10px;
+	gap: 20px;
+}
+
+.smart-mp-nav-tab {
+	cursor: pointer;
+	font-weight: normal;
+	color: var(--text-muted);
+	border-bottom: none;
+	padding-bottom: 4px;
+	transition: all 0.15s ease;
+}
+
+.smart-mp-nav-tab.is-active {
+	font-weight: bold;
+	color: var(--text-normal);
+	border-bottom: 2px solid var(--interactive-accent);
+}
