@@ -2965,3 +2965,24 @@ proofreed
 	border: none;
 	padding: 0;
 }
+
+/* Collapsible Frame Summary */
+.smart-mp-frame-summary {
+	outline: none;
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+/* Benefits Section */
+.smart-mp-benefits {
+	margin-top: 12px;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+/* Input Width */
+.smart-mp-input-w200 {
+	width: 200px;
+}

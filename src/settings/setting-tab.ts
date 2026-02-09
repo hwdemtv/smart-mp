@@ -1698,10 +1698,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			}
 		};
 
-		const summary = details.createEl('summary');
-		summary.style.outline = 'none';
-		summary.style.fontWeight = 'bold';
-		summary.style.fontSize = '1.1em'; // Slightly larger like a header
+		const summary = details.createEl('summary', { cls: 'smart-mp-frame-summary' });
 		summary.setText(title);
 
 		// Container for the content
@@ -1769,47 +1766,23 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		const frame = this.createCollapsibleFrame(container, "🔐 授权管理 (License)", true);
 
 		// Status Banner
-		const statusBanner = frame.createDiv({ cls: 'smart-mp-license-status' });
-		statusBanner.style.padding = '12px 16px';
-		statusBanner.style.borderRadius = '8px';
-		statusBanner.style.marginBottom = '16px';
-		statusBanner.style.display = 'flex';
-		statusBanner.style.alignItems = 'center';
-		statusBanner.style.gap = '12px';
+		const statusBanner = frame.createDiv({ cls: 'smart-mp-license-status smart-mp-license-banner' });
 
 		if (isPro) {
-			statusBanner.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.1))';
-			statusBanner.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+			statusBanner.addClass('is-pro');
 
-			const badge = statusBanner.createSpan();
-			badge.style.background = '#22c55e';
-			badge.style.color = 'white';
-			badge.style.padding = '4px 10px';
-			badge.style.borderRadius = '12px';
-			badge.style.fontSize = '12px';
-			badge.style.fontWeight = '600';
+			const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-pro' });
 			badge.textContent = '✓ Pro 已激活';
 
-			const info = statusBanner.createSpan();
-			info.style.color = 'var(--text-muted)';
-			info.style.fontSize = '13px';
+			const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
 			info.textContent = '已解锁全部功能，发布文章不含水印';
 		} else {
-			statusBanner.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1))';
-			statusBanner.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+			statusBanner.addClass('is-free');
 
-			const badge = statusBanner.createSpan();
-			badge.style.background = '#f59e0b';
-			badge.style.color = 'white';
-			badge.style.padding = '4px 10px';
-			badge.style.borderRadius = '12px';
-			badge.style.fontSize = '12px';
-			badge.style.fontWeight = '600';
+			const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-free' });
 			badge.textContent = '免费版';
 
-			const info = statusBanner.createSpan();
-			info.style.color = 'var(--text-muted)';
-			info.style.fontSize = '13px';
+			const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
 			info.textContent = '发布文章将包含 SmartMP 推广水印';
 		}
 
@@ -1819,7 +1792,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			.setDesc("输入激活码以解锁 Pro 功能（去除水印、优先支持等）")
 			.addText((text) => {
 				text.inputEl.type = "password";
-				text.inputEl.style.width = '200px';
+				text.inputEl.addClass('smart-mp-input-w200');
 				text
 					.setPlaceholder("请输入激活码")
 					.setValue(this.plugin.settings.proPassword || "")
@@ -1843,12 +1816,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			});
 
 		// Pro Benefits Info
-		const benefitsEl = frame.createDiv();
-		benefitsEl.style.marginTop = '12px';
-		benefitsEl.style.padding = '12px';
-		benefitsEl.style.background = 'var(--background-secondary)';
-		benefitsEl.style.borderRadius = '6px';
-		benefitsEl.style.fontSize = '13px';
+		const benefitsEl = frame.createDiv({ cls: 'smart-mp-benefits' });
 		benefitsEl.innerHTML = `
 			<div style="font-weight: 600; margin-bottom: 8px;">SmartMP Pro 权益 (¥69 永久买断)：</div>
 			<div style="color: var(--text-muted); line-height: 1.8;">
