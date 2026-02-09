@@ -2924,3 +2924,44 @@ proofreed
 .smart-mp-model-header-spacer {
 	width: 70px;
 }
+
+/* Model Item */
+.smart-mp-model-item .setting-item-control {
+	width: 100%;
+	justify-content: flex-start;
+	gap: 10px;
+}
+
+.smart-mp-model-item input[type="text"] {
+	width: 100%;
+	flex: 1;
+	min-width: 100px;
+}
+
+/* Assistant Section */
+.smart-mp-assistant-title {
+	font-weight: bold;
+	flex-grow: 1;
+}
+
+.smart-mp-assistant-title.is-disabled {
+	text-decoration: line-through;
+	color: var(--text-muted);
+}
+
+.smart-mp-assistant-controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.smart-mp-assistant-content {
+	margin-top: 10px;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 10px;
+}
+
+.smart-mp-setting-no-border .setting-item {
+	border: none;
+	padding: 0;
+}

@@ -946,11 +946,6 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			// Remove unused info element to maximize space
 			modelSetting.infoEl.remove();
 
-			// Use full width for control element with flex layout
-			modelSetting.controlEl.style.width = '100%';
-			modelSetting.controlEl.style.justifyContent = 'flex-start';
-			modelSetting.controlEl.style.gap = '10px';
-
 			modelSetting.addText(text => {
 				text.setPlaceholder($t("settings.llm-provider.model-id-placeholder"))
 					.setValue(model.id)
@@ -959,9 +954,6 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						model.id = v;
 						await this.plugin.saveSettings();
 					});
-				text.inputEl.style.width = '100%';
-				text.inputEl.style.flex = '1';
-				text.inputEl.style.minWidth = '100px';
 			});
 
 			modelSetting.addText(text => {
@@ -971,9 +963,6 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						model.name = v;
 						await this.plugin.saveSettings();
 					});
-				text.inputEl.style.width = '100%';
-				text.inputEl.style.flex = '1';
-				text.inputEl.style.minWidth = '100px';
 			});
 
 			modelSetting.addToggle(toggle => toggle.setTooltip("Enable/Disable").setValue(model.enabled).onChange(async v => {
@@ -1515,42 +1504,29 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 				const summary = assistantDetails.createEl("summary");
 
-				const titleSpan = summary.createEl("span", { text: assistant.name });
-				titleSpan.style.fontWeight = "bold";
-				titleSpan.style.flexGrow = "1";
+				const titleSpan = summary.createEl("span", { text: assistant.name, cls: 'smart-mp-assistant-title' });
 				if (assistant.enabled === false) {
-					titleSpan.style.textDecoration = "line-through";
-					titleSpan.style.color = "var(--text-muted)";
+					titleSpan.addClass('is-disabled');
 				}
 
-				const controls = summary.createDiv();
-				controls.style.display = "flex";
-				controls.style.gap = "8px";
-				controls.style.alignItems = "center";
+				const controls = summary.createDiv({ cls: 'smart-mp-assistant-controls' });
 
 				// Stop propagation so clicking buttons doesn't toggle details
 				controls.onClickEvent((e) => e.stopPropagation());
 
 				// Enable Toggle
 				const toggle = new Setting(controls)
+					.setClass('smart-mp-setting-no-border')
 					.addToggle((t) => t
 						.setValue(assistant.enabled !== false)
 						.setTooltip($t("settings.assistant.enable-assistant"))
 						.onChange(async (val) => {
 							assistant.enabled = val;
-							if (val) {
-								titleSpan.style.textDecoration = "none";
-								titleSpan.style.color = "var(--text-normal)";
-							} else {
-								titleSpan.style.textDecoration = "line-through";
-								titleSpan.style.color = "var(--text-muted)";
-							}
+							titleSpan.toggleClass('is-disabled', !val);
 							await this.plugin.saveSettings();
 						})
 					);
 				toggle.infoEl.remove();
-				toggle.settingEl.style.border = "none";
-				toggle.settingEl.style.padding = "0";
 
 				// Sorting buttons
 				new Setting(controls)
@@ -1592,10 +1568,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					).settingEl.style.border = "none";
 
 				// Content
-				const content = assistantDetails.createDiv();
-				content.style.marginTop = "10px";
-				content.style.borderTop = "1px solid var(--background-modifier-border)";
-				content.style.paddingTop = "10px";
+				const content = assistantDetails.createDiv({ cls: 'smart-mp-assistant-content' });
 
 				new Setting(content)
 					.setName($t("settings.assistant.assistant-name"))
