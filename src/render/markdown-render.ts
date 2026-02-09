@@ -3,7 +3,7 @@
  * credits to author of export as image plugin
 */
 
-import { App, Component, MarkdownRenderChild, MarkdownRenderer, MarkdownView } from "obsidian";
+import { App, Component, MarkdownRenderChild, MarkdownRenderer } from "obsidian";
 import domtoimage from './dom-to-image-more';
 export class ObsidianMarkdownRenderer {
     private static instance: ObsidianMarkdownRenderer;

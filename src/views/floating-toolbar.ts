@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Menu, Notice, setIcon } from "obsidian";
+import { Editor, Menu, Notice, setIcon } from "obsidian";
 import SmartMPPlugin from "../main";
 import { Logger } from "../utils/logger";
 
