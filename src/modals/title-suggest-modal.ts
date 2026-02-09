@@ -27,49 +27,24 @@ export class TitleSuggestModal extends Modal {
 
         // Container for candidate titles
         const listContainer = contentEl.createDiv({ cls: "smart-mp-title-list" });
-        listContainer.style.maxHeight = "300px";
-        listContainer.style.overflowY = "auto";
-        listContainer.style.marginBottom = "20px";
-        listContainer.style.border = "1px solid var(--background-modifier-border)";
-        listContainer.style.borderRadius = "4px";
-        listContainer.style.padding = "10px";
 
         this.titles.forEach((title) => {
             const item = listContainer.createDiv({ cls: "smart-mp-title-item" });
-            item.style.padding = "8px";
-            item.style.borderBottom = "1px solid var(--background-modifier-border-hover)";
-            item.style.display = "flex";
-            item.style.justifyContent = "space-between";
-            item.style.alignItems = "center";
-            item.style.gap = "10px";
 
             // Title Text - Selectable
-            const textSpan = item.createSpan({ text: title });
-            textSpan.style.flex = "1";
-            textSpan.style.userSelect = "text"; // Allow selection
-            textSpan.style.cursor = "text";
+            const textSpan = item.createSpan({ text: title, cls: "smart-mp-title-text" });
 
             // Action Container
             const actionDiv = item.createDiv({ cls: "smart-mp-title-actions" });
 
             // Use Button
-            const useBtn = new ButtonComponent(actionDiv)
+            new ButtonComponent(actionDiv)
                 .setIcon("arrow-down-circle")
                 .setTooltip($t("views.article-header.click-to-use") ?? "填入")
                 .onClick(() => {
                     this.currentTitle = title;
                     this.editArea.setValue(title);
                 });
-            useBtn.buttonEl.style.height = "24px";
-            useBtn.buttonEl.style.boxShadow = "none";
-            useBtn.buttonEl.style.background = "transparent";
-
-            item.addEventListener("mouseenter", () => {
-                item.style.backgroundColor = "var(--background-secondary)";
-            });
-            item.addEventListener("mouseleave", () => {
-                item.style.backgroundColor = "transparent";
-            });
         });
 
         contentEl.createEl("h3", { text: $t("views.article-header.edit-title") ?? "编辑最终标题:" });
@@ -82,15 +57,10 @@ export class TitleSuggestModal extends Modal {
                 this.currentTitle = value;
             });
 
-        this.editArea.inputEl.style.width = "100%";
-        this.editArea.inputEl.style.height = "80px";
-        this.editArea.inputEl.style.marginBottom = "20px";
+        this.editArea.inputEl.addClass("smart-mp-title-edit");
 
         // Buttons
         const buttonContainer = contentEl.createDiv({ cls: "smart-mp-modal-buttons" });
-        buttonContainer.style.display = "flex";
-        buttonContainer.style.justifyContent = "flex-end";
-        buttonContainer.style.gap = "10px";
 
         // Save Button
         if (this.onSave) {
