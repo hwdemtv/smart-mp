@@ -1,6 +1,6 @@
 /** process custom theme content */
 import matter from "gray-matter";
-import { CachedMetadata, Notice, TFile, TFolder, requestUrl } from "obsidian";
+import { Notice, TFile, TFolder, requestUrl } from "obsidian";
 import postcss from "postcss";
 // import { combinedCss } from "src/assets/css/template-css";
 import { $t } from "src/lang/i18n";
