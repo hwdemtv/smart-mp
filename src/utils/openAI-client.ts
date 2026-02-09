@@ -243,7 +243,7 @@ export class OpenAIClient {
 
 			return result;
 		} catch (error) {
-			if ((error as any).name === 'AbortError') {
+			if (error instanceof Error && error.name === 'AbortError') {
 				Logger.debug("streamTitles", "流式标题生成已中断");
 				return "";
 			}
@@ -424,7 +424,7 @@ export class OpenAIClient {
 
 			return result;
 		} catch (error) {
-			if ((error as any).name === 'AbortError') {
+			if (error instanceof Error && error.name === 'AbortError') {
 				Logger.debug("streamGenerate", "流式生成已中断");
 				return "";
 			}
@@ -572,7 +572,7 @@ export class OpenAIClient {
 			return data.choices?.[0]?.message?.content || "";
 		} catch (error) {
 			clearTimeout(timeoutId);
-			if ((error as any).name === 'AbortError') {
+			if (error instanceof Error && error.name === 'AbortError') {
 				console.error("翻译请求超时");
 				throw new Error("翻译请求超时，请检查网络或 API 服务");
 			}
@@ -668,7 +668,7 @@ export class OpenAIClient {
 
 			return result;
 		} catch (error) {
-			if ((error as any).name === 'AbortError') {
+			if (error instanceof Error && error.name === 'AbortError') {
 				Logger.debug("streamTranslate", "流式翻译已中断");
 				return "";
 			}

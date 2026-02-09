@@ -1040,7 +1040,7 @@ export default class SmartMPPlugin extends Plugin {
 			);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式润色失败:", error);
 				modal.showError("AI 生成失败，请重试");
 			}
@@ -1094,7 +1094,7 @@ export default class SmartMPPlugin extends Plugin {
 			);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式翻译失败:", error);
 				modal.showError("翻译失败，请重试");
 			}
@@ -1145,7 +1145,7 @@ export default class SmartMPPlugin extends Plugin {
 			);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式标题生成失败:", error);
 				modal.showError("标题生成失败，请重试");
 			}
@@ -1195,7 +1195,7 @@ export default class SmartMPPlugin extends Plugin {
 			);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式摘要生成失败:", error);
 				modal.showError("摘要生成失败，请重试");
 			}
@@ -1232,7 +1232,7 @@ export default class SmartMPPlugin extends Plugin {
 			await this.aiClient.proofContentStream(content, (chunk) => modal.appendChunk(chunk), signal);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式校对失败:", error);
 				modal.showError("校对生成失败");
 			}
@@ -1269,7 +1269,7 @@ export default class SmartMPPlugin extends Plugin {
 			await this.aiClient.getSynonymsStream(content, (chunk) => modal.appendChunk(chunk), signal);
 			modal.finishStreaming();
 		} catch (error) {
-			if ((error as any).name !== 'AbortError') {
+			if (!(error instanceof Error && error.name === 'AbortError')) {
 				console.error("流式同义词失败:", error);
 				modal.showError("同义词获取失败");
 			}

@@ -205,12 +205,13 @@ export class CSSMerger {
 				this.pickVariables(ast, this.vars);
 				this.pickRules(ast, this.rules);
 				this.buildRuleIndex();
-			} catch (e: any) {
-				const errorMsg = `[CssMerger] CSS Parser Error: ${e.message}`;
+			} catch (e) {
+				const error = e as Error;
+				const errorMsg = `[CssMerger] CSS Parser Error: ${error.message}`;
 				console.error(errorMsg);
-				if (e.line) {
+				if ((error as any).line) {
 					const lines = sanitized.split('\n');
-					console.error(`[CssMerger] Failed at Line ${e.line}: "${lines[e.line - 1]?.trim()}"`);
+					console.error(`[CssMerger] Failed at Line ${(error as any).line}: "${lines[(error as any).line - 1]?.trim()}"`);
 				}
 				console.error('[CssMerger] Full Sanitized Input Sample (Lines 180-200):', sanitized.split('\n').slice(179, 201).join('\n'));
 				new Notice($t('render.failed-to-parse-custom-css', [e]));

@@ -843,9 +843,10 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					});
 					const models = await openai.models.list();
 					new Notice(`✅ 连接成功！发现 ${models.data.length} 个模型`);
-				} catch (error: any) {
-					console.error("API Test failed:", error);
-					new Notice(`❌ 连接失败: ${error.message || error}`);
+				} catch (error) {
+					const err = error as Error;
+					console.error("API Test failed:", err);
+					new Notice(`❌ 连接失败: ${err.message || err}`);
 				} finally {
 					btn.setButtonText("🔗 Test");
 					btn.setDisabled(false);
@@ -951,9 +952,10 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				// Auto-expand models list
 				this.expandedModelSections.add(provider.id);
 				this.display();
-			} catch (error: any) {
-				console.error("Fetch models failed:", error);
-				new Notice(`❌ 获取失败: ${error.message || error}`);
+			} catch (error) {
+				const err = error as Error;
+				console.error("Fetch models failed:", err);
+				new Notice(`❌ 获取失败: ${err.message || err}`);
 			} finally {
 				setIcon(fetchModelsBtn, "refresh-cw");
 				fetchModelsBtn.style.pointerEvents = 'auto';
