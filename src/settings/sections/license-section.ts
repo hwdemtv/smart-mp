@@ -16,7 +16,6 @@ export class LicenseSection extends SettingSection {
 
     private createLicenseSettings(container: HTMLElement) {
         // 初始状态为未知，异步检查后更新
-        const isPro = false; // logic to be updated by checkProStatus on load if we want sync, but simple render is fine
 
         const frame = this.createCollapsibleFrame("🔐 授权管理 (License)", true);
 
