@@ -7,7 +7,7 @@
  */
 
 import { MarkedExtension, Tokens } from "marked";
-import { sanitizeHTMLToDom, TFile } from "obsidian";
+import { TFile } from "obsidian";
 import { SmartMPMarkedExtension } from "./extension";
 
 

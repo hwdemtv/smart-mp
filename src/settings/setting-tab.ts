@@ -16,13 +16,12 @@ import { $t } from "src/lang/i18n";
 import { FolderSuggest } from "src/utils/folder-suggest";
 import { WECHAT_MP_WEB_PAGE } from "./mp-web-images";
 import {
-	AIChatAccountInfo,
 	AITaskAccountInfo,
 	WeChatAccountInfo,
 	SmartMPSetting,
 } from "./smart-mp-setting";
-import { LLMProvider, LLMProviderType, LLMModel } from "./llm-types";
-import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
+import { LLMProvider, LLMProviderType } from "./llm-types";
+import { PreviewPanel } from "../views/previewer";
 
 import { CryptoHelper } from "../utils/crypto-helper";
 import { ThemeCloneModal } from "../modals/theme-clone-modal";

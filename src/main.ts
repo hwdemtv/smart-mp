@@ -40,8 +40,6 @@ import { initDraftDB } from "./assets/draft-manager";
 import { AiClient } from "./utils/ai-client";
 import { MessageService } from "./utils/message-service";
 import {
-	proofreadPlugin,
-	proofreadStateField,
 	proofreadText,
 } from "./utils/proofread";
 import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
