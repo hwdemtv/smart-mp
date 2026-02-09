@@ -1031,7 +1031,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		void this.debouncedRender();
 	}
 	updateElementByID(id: string, html: string): void {
-		const item = this.articleDiv.querySelector("#" + id) as HTMLElement;
+		const item = this.articleDiv.querySelector<HTMLElement>("#" + id);
 		if (!item) return;
 		const doc = sanitizeHTMLToDom(html);
 
