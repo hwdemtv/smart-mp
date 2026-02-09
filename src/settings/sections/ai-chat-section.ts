@@ -142,56 +142,31 @@ export class AiChatSection extends SettingSection {
     private renderProviderList(container: HTMLElement) {
         const providers = this.plugin.settings.llmProviders || [];
         providers.forEach((provider, index) => {
-            const wrapper = container.createDiv({ cls: 'smart-mp-provider-wrapper' });
-            wrapper.style.border = '1px solid var(--background-modifier-border)';
-            wrapper.style.marginBottom = '10px';
-            wrapper.style.borderRadius = '5px';
-            wrapper.style.overflow = 'hidden';
+            const wrapper = container.createDiv({ cls: 'smart-mp-provider-wrapper smart-mp-account-wrapper' });
 
             // Collapsible Header
-            const headerEl = wrapper.createDiv({ cls: 'smart-mp-provider-header' });
-            headerEl.style.display = 'flex';
-            headerEl.style.alignItems = 'center';
-            headerEl.style.justifyContent = 'space-between';
-            headerEl.style.padding = '10px';
-            headerEl.style.cursor = 'pointer';
-            headerEl.style.backgroundColor = 'var(--background-secondary)';
+            const headerEl = wrapper.createDiv({ cls: 'smart-mp-provider-header smart-mp-account-header' });
 
             // Left side: chevron + icon + name + model count
-            const leftSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-left' });
-            leftSide.style.display = 'flex';
-            leftSide.style.alignItems = 'center';
-            leftSide.style.gap = '8px';
+            const leftSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-left smart-mp-account-left' });
 
-            const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron' });
+            const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron smart-mp-account-chevron' });
             chevron.textContent = '▶';
-            chevron.style.transition = 'transform 0.2s';
-            chevron.style.fontSize = '10px';
 
             // Provider type icon
-            const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon' });
-            iconSpan.style.fontSize = '16px';
+            const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon smart-mp-account-icon' });
             iconSpan.textContent = '🤖';
 
-            const nameSpan = leftSide.createSpan({ text: provider.name });
-            nameSpan.style.fontWeight = '500';
+            const nameSpan = leftSide.createSpan({ text: provider.name, cls: 'smart-mp-account-name' });
 
-            const countSpan = leftSide.createSpan({ text: `(${provider.models.length} Models)` });
-            countSpan.style.color = 'var(--text-muted)';
-            countSpan.style.fontSize = '12px';
+            const countSpan = leftSide.createSpan({ text: `(${provider.models.length} Models)`, cls: 'smart-mp-account-count' });
 
             // Right side: buttons (sorting, duplicate, delete)
-            const rightSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-right' });
-            rightSide.style.display = 'flex';
-            rightSide.style.gap = '4px';
-            rightSide.style.alignItems = 'center';
+            const rightSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-right smart-mp-account-right' });
 
             // Delete button
-            const deleteBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+            const deleteBtn = rightSide.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost' });
             setIcon(deleteBtn, "trash-2");
-            deleteBtn.style.background = 'none';
-            deleteBtn.style.border = 'none';
-            deleteBtn.style.cursor = 'pointer';
             deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 if (confirm(`Delete ${provider.name}?`)) {
@@ -201,17 +176,20 @@ export class AiChatSection extends SettingSection {
                 }
             });
 
-            const detailsEl = wrapper.createDiv({ cls: 'smart-mp-provider-details' });
-            detailsEl.style.padding = '10px';
+            const detailsEl = wrapper.createDiv({ cls: 'smart-mp-provider-details smart-mp-account-details' });
 
             const shouldExpand = this.expandedSections.has(provider.id);
-            detailsEl.style.display = shouldExpand ? 'block' : 'none';
-            chevron.style.transform = shouldExpand ? 'rotate(90deg)' : 'rotate(0deg)';
+            if (!shouldExpand) {
+                detailsEl.addClass('smart-mp-hidden');
+            }
+            if (shouldExpand) {
+                chevron.addClass('smart-mp-rotate-90');
+            }
 
             headerEl.addEventListener('click', () => {
-                const isCollapsed = detailsEl.style.display === 'none';
-                detailsEl.style.display = isCollapsed ? 'block' : 'none';
-                chevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+                const isCollapsed = detailsEl.hasClass('smart-mp-hidden');
+                detailsEl.toggleClass('smart-mp-hidden', !isCollapsed);
+                chevron.toggleClass('smart-mp-rotate-90', isCollapsed);
                 if (isCollapsed) {
                     this.expandedSections.add(provider.id);
                 } else {
