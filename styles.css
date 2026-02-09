@@ -2986,3 +2986,8 @@ proofreed
 .smart-mp-input-w200 {
 	width: 200px;
 }
+
+/* Borderless Setting */
+.smart-mp-setting-borderless {
+	border: none !important;
+}

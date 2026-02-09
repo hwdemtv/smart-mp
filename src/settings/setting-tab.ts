@@ -1530,6 +1530,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 				// Sorting buttons
 				new Setting(controls)
+					.setClass('smart-mp-setting-borderless')
 					.addExtraButton(b => {
 						b.setIcon("arrow-up")
 							.setTooltip($t("settings.assistant.move-up"))
@@ -1540,9 +1541,10 @@ export class SmartMPSettingTab extends PluginSettingTab {
 								this.display();
 							});
 						if (index === 0) b.extraSettingsEl.style.visibility = "hidden";
-					}).settingEl.style.border = "none";
+					});
 
 				new Setting(controls)
+					.setClass('smart-mp-setting-borderless')
 					.addExtraButton(b => {
 						b.setIcon("arrow-down")
 							.setTooltip($t("settings.assistant.move-down"))
@@ -1553,10 +1555,11 @@ export class SmartMPSettingTab extends PluginSettingTab {
 								this.display();
 							});
 						if (index === (this.plugin.settings.customAssistantList?.length || 0) - 1) b.extraSettingsEl.style.visibility = "hidden";
-					}).settingEl.style.border = "none";
+					});
 
 				// Delete Button
 				new Setting(controls)
+					.setClass('smart-mp-setting-borderless')
 					.addExtraButton(b => b
 						.setIcon("trash-2")
 						.setTooltip($t("settings.assistant.delete-assistant"))
@@ -1565,7 +1568,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 							void this.plugin.saveSettings();
 							this.display();
 						})
-					).settingEl.style.border = "none";
+					);
 
 				// Content
 				const content = assistantDetails.createDiv({ cls: 'smart-mp-assistant-content' });
