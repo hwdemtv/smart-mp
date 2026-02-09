@@ -296,7 +296,7 @@ export class CSSMerger {
 			universalRules: [...this.universalRules]
 		};
 
-		console.log('[CssMerger] Base State Cache Saved - variables:',
+		console.debug('[CssMerger] Base State Cache Saved - variables:',
 			Array.from(CSSMerger.BASE_STATE_CACHE.vars.entries()).filter(([key]) =>
 				key.includes('b08d55') || key.includes('D4AF37') || key.includes('1e1e1e')
 			)

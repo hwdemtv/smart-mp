@@ -472,10 +472,10 @@ export class Embed extends SmartMPMarkedExtension {
 						if (embedType == "image" || embedType == "webp") {
 							// images
 							let item = this.parseImageLink(token.href);
-							console.log('[Embed] Rendering image:', token.href, '→', item);
+							console.debug('[Embed] Rendering image:', token.href, '→', item);
 							if (item) {
 								const src = this.getImagePath(item.path);
-								console.log('[Embed] Resolved path:', item.path, '→', src);
+								console.debug('[Embed] Resolved path:', item.path, '→', src);
 
 								const width = item.width
 									? `width="${item.width}"`

@@ -158,13 +158,13 @@ export class Image extends SmartMPMarkedExtension {
 				const abstractFile = plugin.app.vault.getAbstractFileByPath(resolvedRelativePath);
 				if (abstractFile instanceof TFile) {
 					file = abstractFile;
-					console.log('[Image Extension] 从当前目录解析成功:', decodedPath, '→', resolvedRelativePath);
+					console.debug('[Image Extension] 从当前目录解析成功:', decodedPath, '→', resolvedRelativePath);
 				}
 			}
 
 			if (file instanceof TFile) {
 				const resolved = plugin.app.vault.getResourcePath(file);
-				console.log('[Image Extension] Vault File Resolved:', decodedPath, '→', resolved);
+				console.debug('[Image Extension] Vault File Resolved:', decodedPath, '→', resolved);
 				this.pathCache.set(cacheKey, resolved);
 				return resolved;
 			}
@@ -183,7 +183,7 @@ export class Image extends SmartMPMarkedExtension {
 						return `<img src="" alt="${token.text || ''}" class="smart-mp-image-fallback" />`;
 					}
 					const resolvedSrc = getImagePath(token.href);
-					console.log('[Image Extension] Original:', token.href, '→ Resolved:', resolvedSrc);
+					console.debug('[Image Extension] Original:', token.href, '→ Resolved:', resolvedSrc);
 					const titleAttr = token.title ? ` title="${token.title}"` : "";
 					return `<img src="${resolvedSrc}" alt="${token.text}"${titleAttr} />`;
 				}
