@@ -13,7 +13,7 @@ import { SafeHTML } from "../utils/sanitize-html";
 
 import matter from "gray-matter";
 import { Marked, Tokens, RendererObject, RendererThis } from "marked";
-import { Component, debounce, sanitizeHTMLToDom, TFile } from "obsidian";
+import { Component, TFile } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { WechatClient } from "../wechat-api/wechat-client";
 import { BlockquoteRenderer } from "./marked-extensions/blockquote";
@@ -315,7 +315,6 @@ export class WechatRender {
 
 		// Also inject line numbers for list items (finer granularity)
 		const listItems = wrapper.querySelectorAll('li');
-		let liLineOffset = 0;
 		listItems.forEach((li, index) => {
 			const htmlLi = li as HTMLElement;
 			// Find parent list's line number
@@ -451,10 +450,6 @@ export class WechatRender {
 				let attempts = 0;
 				const maxAttempts = 15;
 				let elementsFound = false;
-
-				// Pattern check to see if we should wait for specific elements
-				const needsExcalidraw = /!\[\[.*?\.excalidraw.*?\]\]/i.test(content);
-				const needsMermaid = /```\s*mermaid/i.test(content);
 
 				if (needsExcalidraw || needsMermaid) {
 					Logger.debug('WechatRender', `Waiting for dynamic elements (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid})`);
