@@ -159,7 +159,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.getArticleProperties();
 		this.articleProperties.set("custom_theme", theme);
 		await this.setArticleProperties();
-		await this.renderDraft();
+		// Fast refresh: only update theme styles, no full re-render
+		await this.refreshTheme();
+	}
+
+	// Refresh theme without re-rendering the entire preview
+	private async refreshTheme() {
+		const root = this.articleDiv.firstElementChild as HTMLElement | null;
+		if (root) {
+			await ThemeManager.getInstance(this.plugin).applyTheme(root);
+		}
 	}
 
 	onOpen(): Promise<void> {
@@ -637,20 +646,104 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
-		let content = "· · ·";
-		if (hrStyle === "lines") content = "— — —";
-		else if (hrStyle === "stars") content = "* * *";
-		else if (hrStyle === "custom") content = this.plugin.settings.customHrText || "· · ·";
+		// Determine content and class
+		let content = "";
+		let styleClass = "";
+
+		if (hrStyle === "dots") {
+			styleClass = "smart-mp-hr-dots";
+			content = ""; // CSS handles the visual with ::before, span, ::after
+		} else if (hrStyle === "lines") {
+			styleClass = "smart-mp-hr-lines";
+			content = ""; // CSS handles the visual
+		} else if (hrStyle === "stars") {
+			styleClass = "smart-mp-hr-stars";
+			content = "✦"; // Middle star content
+		} else if (hrStyle === "custom") {
+			styleClass = "smart-mp-hr-custom";
+			content = this.plugin.settings.customHrText || "· · ·";
+		} else {
+			// native or fallback
+			content = "· · ·";
+		}
 
 		const hrs = element.querySelectorAll("hr");
 		hrs.forEach((hr) => {
 			const div = document.createElement("div");
-			div.className = "smart-mp-hr-replacement";
-			div.textContent = content;
+			div.className = "smart-mp-hr-replacement" + (styleClass ? " " + styleClass : "");
+
+			// For styles that use ::before, span, ::after, create span element
+			if (hrStyle === "dots" || hrStyle === "lines" || hrStyle === "stars") {
+				div.innerHTML = `<span>${content}</span>`;
+			} else {
+				div.textContent = content;
+			}
+
 			hr.replaceWith(div);
 		});
 	}
 
+	// Refresh HR style without re-rendering the entire preview
+	refreshHRStyle() {
+		const hrStyle = this.plugin.settings.hrStyle || "dots";
+		const articleEl = this.articleDiv;
+
+		if (!articleEl) return;
+
+		// Find all existing HR replacement elements
+		const replacements = articleEl.querySelectorAll('.smart-mp-hr-replacement');
+
+		if (replacements.length === 0) {
+			console.log('[SmartMP] No HR replacements found');
+			return;
+		}
+
+		// Handle 'none' style - hide all replacements
+		if (hrStyle === 'none') {
+			replacements.forEach(el => el.remove());
+			return;
+		}
+
+		// Determine content and class
+		let content = "";
+		let styleClass = "";
+
+		if (hrStyle === "dots") {
+			styleClass = "smart-mp-hr-dots";
+			content = ""; // CSS handles the visual with ::before, span, ::after
+		} else if (hrStyle === "lines") {
+			styleClass = "smart-mp-hr-lines";
+			content = ""; // CSS handles the visual
+		} else if (hrStyle === "stars") {
+			styleClass = "smart-mp-hr-stars";
+			content = "✦"; // Middle star content
+		} else if (hrStyle === "custom") {
+			styleClass = "smart-mp-hr-custom";
+			content = this.plugin.settings.customHrText || "· · ·";
+		} else if (hrStyle === "native") {
+			// Native style - remove all style classes
+			styleClass = "";
+			content = "· · ·";
+		} else {
+			// Fallback
+			content = "· · ·";
+		}
+
+		// Update all replacements
+		replacements.forEach((replacement) => {
+			// Update class
+			replacement.className = "smart-mp-hr-replacement" + (styleClass ? " " + styleClass : "");
+
+			// Update content
+			if (hrStyle === "dots" || hrStyle === "lines" || hrStyle === "stars") {
+				replacement.innerHTML = `<span>${content}</span>`;
+			} else {
+				replacement.textContent = content;
+			}
+		});
+
+		console.log(`[SmartMP] Updated ${replacements.length} HR elements to style: ${hrStyle}`);
+	}
 	// Wrap tables in a scrollable container
 	wrapTables(element: HTMLElement) {
 		const tables = element.querySelectorAll("table");

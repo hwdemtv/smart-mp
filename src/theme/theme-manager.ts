@@ -323,6 +323,30 @@ export class ThemeManager {
 			return htmlRoot;
 		}
 
+		// [NEW] Inject custom theme CSS as <style> tag for class selector rules
+		// This allows rules like `.smart-mp h2 { border-left: ... }` to work
+		const existingStyleTag = htmlRoot.querySelector('style[data-smart-mp-custom-theme]');
+		if (existingStyleTag) {
+			existingStyleTag.remove();
+		}
+
+		// Extract custom theme CSS (everything after "/* --- Theme CSS Start --- */")
+		const themeStartMarker = '/* --- Theme CSS Start --- */';
+		const themeStartIndex = customCss.indexOf(themeStartMarker);
+		console.log('[ThemeManager] Theme start marker index:', themeStartIndex);
+		if (themeStartIndex !== -1) {
+			const customThemeCss = customCss.substring(themeStartIndex + themeStartMarker.length).trim();
+			console.log('[ThemeManager] Custom theme CSS length:', customThemeCss.length);
+			console.log('[ThemeManager] Custom theme CSS preview:', customThemeCss.substring(0, 200));
+			if (customThemeCss) {
+				const styleTag = document.createElement('style');
+				styleTag.setAttribute('data-smart-mp-custom-theme', 'true');
+				styleTag.textContent = customThemeCss;
+				htmlRoot.prepend(styleTag);
+				console.log('[ThemeManager] Style tag injected successfully');
+			}
+		}
+
 		const node = this.cssMerger.applyStyleToElement(htmlRoot);
 		node.dataset.SmartMPThemeKey = cssKey;
 		return node;

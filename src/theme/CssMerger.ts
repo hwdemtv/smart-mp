@@ -442,6 +442,24 @@ export class CSSMerger {
 			// [Optimization] Batch Styles
 			const finalStyles = new Map<string, string>();
 
+			// [Fix for Theme Mixing]
+			// 1. Restore original style if exists
+			const originalStyle = currentNode.getAttribute('data-original-style');
+			if (originalStyle !== null) {
+				// If data-original-style exists, it means we have applied a theme before.
+				// Restore it to clear previous theme styles.
+				if (originalStyle === '') {
+					currentNode.removeAttribute('style');
+				} else {
+					currentNode.setAttribute('style', originalStyle);
+				}
+			} else {
+				// First time applying theme (or fresh element)
+				// Save current style as original
+				const currentStyle = currentNode.getAttribute('style') || '';
+				currentNode.setAttribute('data-original-style', currentStyle);
+			}
+
 			// 1. Existing Inline Styles (Highest Priority for vars, but we need to resolve them? 
 			// Actually, existing inline styles usually come from Obsidian/Users and shouldn't be touched unless they use vars we know)
 			// For performance, let's keep the existing logic: resolve vars in inline style.

@@ -1810,14 +1810,128 @@ proofreed
 	font-weight: normal !important;
 }
 
-/* HR Replacement Div */
+/* HR Replacement Div - Base Styles */
 .smart-mp-hr-replacement {
-	margin: 1.5em auto !important;
+	margin: 2.5em auto !important;
 	text-align: center !important;
-	font-size: 1.5em !important;
-	color: #bbb !important;
-	letter-spacing: 0.5em !important;
-	font-weight: bold !important;
+	position: relative !important;
+	height: 2px !important;
+	overflow: visible !important;
+}
+
+/* Dots Style - Elegant gradient dots */
+.smart-mp-hr-replacement.smart-mp-hr-dots {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 12px !important;
+	height: auto !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-dots::before {
+	content: "" !important;
+	display: inline-block !important;
+	width: 6px !important;
+	height: 6px !important;
+	border-radius: 50% !important;
+	background: radial-gradient(circle, var(--colors-primary, #3498db) 0%, transparent 70%) !important;
+	box-shadow: 0 0 8px rgba(52, 152, 219, 0.4) !important;
+}
+
+/* Middle dot - largest */
+.smart-mp-hr-replacement.smart-mp-hr-dots>span {
+	display: inline-block !important;
+	width: 8px !important;
+	height: 8px !important;
+	border-radius: 50% !important;
+	background: radial-gradient(circle, var(--colors-primary, #3498db) 0%, transparent 70%) !important;
+	box-shadow: 0 0 12px rgba(52, 152, 219, 0.6) !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-dots::after {
+	content: "" !important;
+	display: inline-block !important;
+	width: 6px !important;
+	height: 6px !important;
+	border-radius: 50% !important;
+	background: radial-gradient(circle, var(--colors-primary, #3498db) 0%, transparent 70%) !important;
+	box-shadow: 0 0 8px rgba(52, 152, 219, 0.4) !important;
+}
+
+/* Lines Style - Triple gradient lines */
+.smart-mp-hr-replacement.smart-mp-hr-lines {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 8px !important;
+	height: auto !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-lines::before {
+	content: "" !important;
+	display: inline-block !important;
+	width: 20px !important;
+	height: 2px !important;
+	background: linear-gradient(to right, transparent, var(--colors-primary, #3498db), transparent) !important;
+}
+
+/* Middle line - longest */
+.smart-mp-hr-replacement.smart-mp-hr-lines>span {
+	display: inline-block !important;
+	width: 30px !important;
+	height: 2px !important;
+	background: linear-gradient(to right, transparent, var(--colors-primary, #3498db), transparent) !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-lines::after {
+	content: "" !important;
+	display: inline-block !important;
+	width: 20px !important;
+	height: 2px !important;
+	background: linear-gradient(to right, transparent, var(--colors-primary, #3498db), transparent) !important;
+}
+
+/* Stars Style - Decorative star pattern */
+.smart-mp-hr-replacement.smart-mp-hr-stars {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 10px !important;
+	height: auto !important;
+	font-size: 16px !important;
+	color: var(--colors-primary, #3498db) !important;
+	font-family: Arial, sans-serif !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-stars::before {
+	content: "✦" !important;
+	font-size: 14px !important;
+	opacity: 0.6 !important;
+	text-shadow: 0 0 8px rgba(52, 152, 219, 0.4) !important;
+}
+
+/* Middle star - largest */
+.smart-mp-hr-replacement.smart-mp-hr-stars>span {
+	display: inline-block !important;
+	font-size: 18px !important;
+	opacity: 0.8 !important;
+	text-shadow: 0 0 12px rgba(52, 152, 219, 0.6) !important;
+}
+
+.smart-mp-hr-replacement.smart-mp-hr-stars::after {
+	content: "✦" !important;
+	font-size: 14px !important;
+	opacity: 0.6 !important;
+	text-shadow: 0 0 8px rgba(52, 152, 219, 0.4) !important;
+}
+
+/* Custom Text Style */
+.smart-mp-hr-replacement.smart-mp-hr-custom {
+	height: auto !important;
+	font-size: 14px !important;
+	color: #999 !important;
+	letter-spacing: 0.3em !important;
+	font-weight: 500 !important;
 	font-family: Arial, sans-serif !important;
 }
 

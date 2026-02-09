@@ -313,6 +313,67 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					});
 			});
 
+		new Setting(frame)
+			.setName($t("settings.hr-title") || "分割线样式")
+			.setDesc($t("settings.hr-desc") || "选择预览中分割线的显示方式")
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("native", $t("settings.hr-style.native") || "🎨 主题/原生 (推荐)")
+					.addOption("dots", $t("settings.hr-style.dots") || "· · · (点状)")
+					.addOption("lines", $t("settings.hr-style.lines") || "— — — (线状)")
+					.addOption("stars", $t("settings.hr-style.stars") || "* * * (星状)")
+					.addOption("custom", $t("settings.hr-style.custom") || "自定义文本")
+					.addOption("none", $t("settings.hr-style.none") || "隐藏")
+					.setValue(this.plugin.settings.hrStyle || "native")
+					.onChange(async (value) => {
+						this.plugin.settings.hrStyle = value;
+						await this.plugin.saveSettings();
+
+						// Fast refresh: only update HR elements, no full re-render
+						console.log('[SmartMP] HR style changed to:', value);
+						setTimeout(() => {
+							const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
+							console.log('[SmartMP] Found preview leaves:', leaves.length);
+							for (const leaf of leaves) {
+								console.log('[SmartMP] Leaf view type:', leaf.view.getViewType());
+								if (leaf.view.getViewType() === "smart-mp-article-preview") {
+									console.log('[SmartMP] Calling refreshHRStyle() - fast update');
+									// Use fast refresh instead of full renderDraft
+									(leaf.view as any).refreshHRStyle();
+								}
+							}
+						}, 0);
+
+						this.display(); // 刷新以显示/隐藏自定义文本框
+					});
+			});
+
+		if (this.plugin.settings.hrStyle === "custom") {
+			new Setting(frame)
+				.setName($t("settings.custom-hr-text") || "自定义分割线文本")
+				.addText((text) =>
+					text
+						.setValue(this.plugin.settings.customHrText || "")
+						.onChange(async (value) => {
+							this.plugin.settings.customHrText = value;
+							await this.plugin.saveSettings();
+
+							// Fast refresh: only update HR elements
+							console.log('[SmartMP] Custom HR text changed to:', value);
+							setTimeout(() => {
+								const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
+								console.log('[SmartMP] Found preview leaves:', leaves.length);
+								for (const leaf of leaves) {
+									if (leaf.view.getViewType() === "smart-mp-article-preview") {
+										console.log('[SmartMP] Calling refreshHRStyle() for custom text');
+										(leaf.view as any).refreshHRStyle();
+									}
+								}
+							}, 0);
+						})
+				);
+		}
+
 	}
 
 	createSecuritySettings(container: HTMLElement) {

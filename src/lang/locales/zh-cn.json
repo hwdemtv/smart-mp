@@ -118,6 +118,10 @@
     "custom-themes-folder": "自定义主题文件夹",
     "clone-theme-from-url": "从链接克隆主题",
     "clone-theme-desc": "提取微信文章样式生成新主题 (Beta)",
+    "clone-theme-url": "文章链接",
+    "clone-theme-url-desc": "请粘贴微信公众号文章的 URL",
+    "clone-theme-name": "新主题名称",
+    "clone-theme-name-desc": "为克隆的主题起个名字",
     "clone-theme-btn": "开始克隆",
     "pro-feature-alert": "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。",
     "clone-theme-invalid-url": "请输入有效的微信文章链接",
@@ -175,6 +179,17 @@
       "restore-last": "恢复上一次设置",
       "restore-default": "恢复默认设置"
     },
+    "hr-title": "分割线样式",
+    "hr-desc": "选择预览中分割线的显示方式。若使用克隆主题，建议选择「主题/原生」。",
+    "hr-style": {
+      "native": "🎨 主题/原生 (推荐)",
+      "dots": "· · · (点状)",
+      "lines": "— — — (线状)",
+      "stars": "* * * (星状)",
+      "custom": "自定义文本",
+      "none": "隐藏"
+    },
+    "custom-hr-text": "自定义分割线文本",
     "material-view": "素材管理",
     "materials": "素材",
     "new-account": "新建账号",

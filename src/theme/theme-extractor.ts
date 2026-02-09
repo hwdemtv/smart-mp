@@ -22,7 +22,13 @@ export class ThemeExtractor {
             const h1Style = this.extractElementStyle($, '#js_content h1, #activity-name');
             const h2Style = this.extractElementStyle($, '#js_content h2');
             const pStyle = this.extractElementStyle($, '#js_content p');
-            const blockquoteStyle = this.extractElementStyle($, '#js_content blockquote');
+            let blockquoteStyle = this.extractElementStyle($, '#js_content blockquote');
+            if (Object.keys(blockquoteStyle).length === 0) {
+                // 如果没有标准的 blockquote，尝试提取“伪引用样式”（带左边框的元素）
+                blockquoteStyle = this.extractFakeQuoteStyle($);
+            }
+            const highlightStyle = this.extractHighlightStyle($);
+            const hrStyle = this.extractElementStyle($, '#js_content hr');
 
             // 构造 CSS
             const css = this.generateCss({
@@ -31,7 +37,9 @@ export class ThemeExtractor {
                 h1Style,
                 h2Style,
                 pStyle,
-                blockquoteStyle
+                blockquoteStyle,
+                highlightStyle,
+                hrStyle
             });
 
             return css;
@@ -109,13 +117,44 @@ export class ThemeExtractor {
 
         // Cheerio 只能解析内联 style 属性，无法获取计算样式
         // 微信文章大多使用内联样式，所以这里尝试解析 style 属性
-        const styleStr = el.attr('style') || '';
+        let styleStr = el.attr('style') || '';
+
+        // [ENHANCED] 如果是标题元素(H1-H6)，尝试探测其父级容器的样式
+        // 微信编辑器常将背景和装饰边框放在标题的外层 section/div 上
+        const isHeading = /h[1-6]/i.test(selector);
+        if (isHeading) {
+            // 尝试多层父级容器,优先查找有 style 属性的
+            let container = el.parent();
+            let depth = 0;
+            const maxDepth = 3; // 最多向上查找3层
+
+            while (container.length > 0 && depth < maxDepth) {
+                const containerStyle = container.attr('style') || '';
+                if (containerStyle) {
+                    // 如果父级容器有 style 属性,合并到当前样式中
+                    // 优先使用父级的 background-color 和 border 相关属性
+                    styleStr = containerStyle + ';' + styleStr;
+
+                    // 如果找到了 background-color 或 border,就不再向上查找
+                    if (containerStyle.includes('background') || containerStyle.includes('border')) {
+                        break;
+                    }
+                }
+                container = container.parent();
+                depth++;
+            }
+        }
+
         const styles: Record<string, string> = {};
 
         styleStr.split(';').forEach(pair => {
-            const [key, value] = pair.split(':');
-            if (key && value) {
-                styles[key.trim().toLowerCase()] = value.trim();
+            const index = pair.indexOf(':');
+            if (index > -1) {
+                const key = pair.substring(0, index).trim().toLowerCase();
+                const value = pair.substring(index + 1).trim();
+                if (key && value) {
+                    styles[key] = value;
+                }
             }
         });
 
@@ -144,8 +183,92 @@ export class ThemeExtractor {
         return ['black', 'white', 'gray', 'grey'].includes(color.toLowerCase());
     }
 
+    private extractFakeQuoteStyle($: cheerio.CheerioAPI): Record<string, string> {
+        let bestStyle: Record<string, string> = {};
+
+        // Priority: elements with border-left that look like quotes
+        $('#js_content [style*="border-left"]').each((i, el) => {
+            // Basic check to ensure it's not a tiny separator
+            if ($(el).text().trim().length === 0) return;
+
+            const styleStr = $(el).attr('style') || '';
+            const styles: Record<string, string> = {};
+
+            styleStr.split(';').forEach(pair => {
+                const index = pair.indexOf(':');
+                if (index > -1) {
+                    const key = pair.substring(0, index).trim().toLowerCase();
+                    const value = pair.substring(index + 1).trim();
+                    if (key && value) styles[key] = value;
+                }
+            });
+
+            if (styles['border-left'] || styles['border-left-width']) {
+                // Found a candidate
+                bestStyle = styles;
+                return false; // break
+            }
+        });
+
+        return bestStyle;
+    }
+
+    private extractHighlightStyle($: cheerio.CheerioAPI): Record<string, string> {
+        const styleCounts: Record<string, number> = {};
+        const styleMap: Record<string, Record<string, string>> = {};
+
+        $('#js_content strong[style], #js_content span[style], #js_content mark[style]').each((i, el) => {
+            const style = $(el).attr('style') || '';
+
+            // Exclude fake quotes (prevent interference)
+            if (style.includes('border-left')) return;
+
+            let key = '';
+            let props: Record<string, string> = {};
+
+            // 1. Check for background-color
+            const bgMatch = style.match(/background-color:\s*([^;]+)/i);
+            if (bgMatch && bgMatch[1]) {
+                const color = bgMatch[1].trim();
+                if (color !== 'transparent' && color !== '#ffffff' && color !== 'rgba(0, 0, 0, 0)' && color !== 'rgb(255, 255, 255)' && !this.isGrayscale(color)) {
+                    key += `bg:${color};`;
+                    props['background-color'] = color;
+                }
+            }
+
+            // 2. Check for gradient (background or background-image)
+            const gradMatch = style.match(/(background|background-image):\s*(linear-gradient\([^;]+\))/i);
+            if (gradMatch && gradMatch[2]) {
+                const val = gradMatch[2].trim();
+                key += `grad:${val};`;
+                props['background'] = val;
+            }
+
+            if (key) {
+                const colorMatch = style.match(/color:\s*([^;]+)/i);
+                if (colorMatch && colorMatch[1]) {
+                    props['color'] = colorMatch[1].trim();
+                }
+
+                styleCounts[key] = (styleCounts[key] || 0) + 1;
+                styleMap[key] = props;
+            }
+        });
+
+        // Find max frequency
+        let maxCount = 0;
+        let bestStyle = {};
+        for (const [key, count] of Object.entries(styleCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                bestStyle = styleMap[key];
+            }
+        }
+        return bestStyle;
+    }
+
     private generateCss(data: any): string {
-        const { primaryColor, h2Style, h1Style } = data;
+        const { primaryColor, h2Style, h1Style, hrStyle } = data;
 
         // 构建 CSS 变量覆盖
         let css = ':root {\n';
@@ -156,7 +279,27 @@ export class ThemeExtractor {
         css += '/* Extracted Theme Styles */\n\n';
 
         // H1
-        css += '.smart-mp-article h1 {\n';
+        css += '.smart-mp h1 {\n';
+        if (h1Style['border-left']) {
+            let borderLeft = h1Style['border-left'];
+            if (!borderLeft.includes('!important')) borderLeft += ' !important';
+            css += `    border-left: ${borderLeft};\n`;
+        }
+        if (h1Style['border-bottom']) {
+            let borderBottom = h1Style['border-bottom'];
+            if (!borderBottom.includes('!important')) borderBottom += ' !important';
+            css += `    border-bottom: ${borderBottom};\n`;
+        }
+        if (h1Style['background-color']) {
+            let bgColor = h1Style['background-color'];
+            if (!bgColor.includes('!important')) bgColor += ' !important';
+            css += `    background-color: ${bgColor};\n`;
+        }
+        if (h1Style['background']) {
+            let bg = h1Style['background'];
+            if (!bg.includes('!important')) bg += ' !important';
+            css += `    background: ${bg};\n`;
+        }
         if (h1Style['font-size']) css += `    font-size: ${h1Style['font-size']};\n`;
         if (h1Style['color']) css += `    color: ${h1Style['color']};\n`;
         // 强制居中判断 (简单启发)
@@ -164,12 +307,29 @@ export class ThemeExtractor {
         css += '}\n\n';
 
         // H2 (通常是小标题)
-        css += '.smart-mp-article h2 {\n';
+        css += '.smart-mp h2 {\n';
         // 重点：尝试还原 H2 的装饰效果
         // 微信编辑器常见样式：左边框、下边框、背景色
-        if (h2Style['border-left']) css += `    border-left: ${h2Style['border-left']};\n`;
-        if (h2Style['border-bottom']) css += `    border-bottom: ${h2Style['border-bottom']};\n`;
-        if (h2Style['background-color']) css += `    background-color: ${h2Style['background-color']};\n`;
+        if (h2Style['border-left']) {
+            let borderLeft = h2Style['border-left'];
+            if (!borderLeft.includes('!important')) borderLeft += ' !important';
+            css += `    border-left: ${borderLeft};\n`;
+        }
+        if (h2Style['border-bottom']) {
+            let borderBottom = h2Style['border-bottom'];
+            if (!borderBottom.includes('!important')) borderBottom += ' !important';
+            css += `    border-bottom: ${borderBottom};\n`;
+        }
+        if (h2Style['background-color']) {
+            let bgColor = h2Style['background-color'];
+            if (!bgColor.includes('!important')) bgColor += ' !important';
+            css += `    background-color: ${bgColor};\n`;
+        }
+        if (h2Style['background']) {
+            let bg = h2Style['background'];
+            if (!bg.includes('!important')) bg += ' !important';
+            css += `    background: ${bg};\n`;
+        }
         if (h2Style['color']) {
             css += `    color: ${h2Style['color']};\n`;
         } else {
@@ -184,11 +344,87 @@ export class ThemeExtractor {
 
         // Blockquote
         if (data.blockquoteStyle && Object.keys(data.blockquoteStyle).length > 0) {
-            css += '.smart-mp-article blockquote {\n';
-            if (data.blockquoteStyle['background-color']) css += `    background-color: ${data.blockquoteStyle['background-color']};\n`;
-            if (data.blockquoteStyle['border-left']) css += `    border-left: ${data.blockquoteStyle['border-left']};\n`;
+            css += '.smart-mp blockquote {\n';
+            const allowedProps = [
+                'background-color', 'background',
+                'border', 'border-left', 'border-right', 'border-top', 'border-bottom',
+                'border-color', 'border-left-color', 'border-right-color', 'border-top-color', 'border-bottom-color',
+                'border-width', 'border-left-width', 'border-right-width', 'border-top-width', 'border-bottom-width',
+                'border-style', 'border-left-style', 'border-right-style', 'border-top-style', 'border-bottom-style',
+                'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
+                'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
+                'color', 'font-size', 'font-style', 'font-weight',
+                'border-radius'
+            ];
+
+            allowedProps.forEach(prop => {
+                if (data.blockquoteStyle[prop]) {
+                    let value = data.blockquoteStyle[prop];
+                    // Add !important to border properties to override default styles
+                    if (prop.startsWith('border') && !value.includes('!important')) {
+                        value += ' !important';
+                    }
+                    css += `    ${prop}: ${value};\n`;
+                }
+            });
             css += '}\n\n';
         }
+
+        // Highlight (Mark)
+        if (data.highlightStyle && Object.keys(data.highlightStyle).length > 0) {
+            css += '.smart-mp mark {\n';
+            if (data.highlightStyle['background']) {
+                let bg = data.highlightStyle['background'];
+                if (!bg.includes('!important')) bg += ' !important';
+                css += `    background: ${bg};\n`;
+            }
+            if (data.highlightStyle['background-color']) {
+                let bgColor = data.highlightStyle['background-color'];
+                if (!bgColor.includes('!important')) bgColor += ' !important';
+                css += `    background-color: ${bgColor};\n`;
+            }
+            if (data.highlightStyle['color']) css += `    color: ${data.highlightStyle['color']};\n`;
+            css += '}\n\n';
+        }
+
+        // Horizontal Rule (hr) - Enhanced with gradient effect
+        css += '.smart-mp hr {\n';
+        css += `    border: none !important;\n`;
+
+        // Determine the color for the gradient
+        let hrColor = primaryColor; // Default to primary color
+
+        if (hrStyle && Object.keys(hrStyle).length > 0) {
+            // If we extracted a background-color, use it for the gradient
+            if (hrStyle['background-color']) {
+                hrColor = hrStyle['background-color'];
+            } else if (hrStyle['border-top']) {
+                // Try to extract color from border-top
+                const borderColorMatch = hrStyle['border-top'].match(/#[0-9a-f]{3,6}|rgb\([^)]+\)/i);
+                if (borderColorMatch) {
+                    hrColor = borderColorMatch[0];
+                }
+            } else if (hrStyle['border']) {
+                // Try to extract color from border
+                const borderColorMatch = hrStyle['border'].match(/#[0-9a-f]{3,6}|rgb\([^)]+\)/i);
+                if (borderColorMatch) {
+                    hrColor = borderColorMatch[0];
+                }
+            }
+        }
+
+        // Generate gradient background
+        css += `    background: linear-gradient(to right, transparent, ${hrColor}, transparent) !important;\n`;
+        css += `    height: 2px !important;\n`;
+
+        // Use extracted margin if available, otherwise use default
+        if (hrStyle && hrStyle['margin']) {
+            css += `    margin: ${hrStyle['margin']} !important;\n`;
+        } else {
+            css += `    margin: 40px auto !important;\n`;
+        }
+
+        css += '}\n\n';
 
         return css;
     }

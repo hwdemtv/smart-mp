@@ -38,16 +38,38 @@ export class PreviewDOMController {
             return;
         }
 
-        let content = "· · ·";
-        if (hrStyle === "lines") content = "— — —";
-        else if (hrStyle === "stars") content = "* * *";
-        else if (hrStyle === "custom") content = this.plugin.settings.customHrText || "· · ·";
+        // Skip replacement if style is 'native' (keeps original <hr> for theme styles)
+        if (hrStyle === 'native') {
+            return;
+        }
 
         const hrs = element.querySelectorAll("hr");
         hrs.forEach((hr) => {
             const div = document.createElement("div");
             div.className = "smart-mp-hr-replacement";
-            div.textContent = content;
+
+            // Add style-specific class and middle element for CSS styling
+            if (hrStyle === "dots") {
+                div.classList.add("smart-mp-hr-dots");
+                // Add middle dot as span for CSS targeting
+                const middleDot = document.createElement("span");
+                div.appendChild(middleDot);
+            } else if (hrStyle === "lines") {
+                div.classList.add("smart-mp-hr-lines");
+                // Add middle line as span
+                const middleLine = document.createElement("span");
+                div.appendChild(middleLine);
+            } else if (hrStyle === "stars") {
+                div.classList.add("smart-mp-hr-stars");
+                // Add middle star as span with text content
+                const middleStar = document.createElement("span");
+                middleStar.textContent = "✦";
+                div.appendChild(middleStar);
+            } else if (hrStyle === "custom") {
+                div.classList.add("smart-mp-hr-custom");
+                div.textContent = this.plugin.settings.customHrText || "· · ·";
+            }
+
             hr.replaceWith(div);
         });
     }

@@ -3,7 +3,7 @@ import { sanitizeHTMLToDom } from "obsidian";
 const ALLOWED_TAGS = new Set([
     "svg", "path", "g", "circle", "rect", "line", "polyline", "polygon", "text", "defs", "marker", "style", "use", "image", "foreignobject", "clippath", "textpath", "tspan", "lineargradient", "radialgradient", "stop", "pattern", "mask", "symbol", // SVG & Excalidraw
     "math", "maction", "maligngroup", "malignmark", "menclose", "merror", "mfenced", "mfrac", "mglyph", "mi", "mlabeledtr", "mlongdiv", "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom", "mroot", "mrow", "ms", "mscarries", "mscarry", "msgroup", "msline", "mspace", "msqrt", "msrow", "mstack", "mstyle", "msub", "msup", "msubsup", "mtable", "mtd", "mtext", "mtr", "munder", "munderover", // MathML
-    "div", "span", "p", "br", "hr", "strong", "em", "b", "i", "u", "s", "strike", "del", "code", "pre", "blockquote", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6", "table", "thead", "tbody", "tr", "th", "td", "img", "a", "section", "article", "aside", "header", "footer", "nav", "details", "summary", "figure", "figcaption", "audio", "video", "source", "track", // Standard HTML - iframe removed
+    "div", "span", "p", "br", "hr", "strong", "em", "b", "i", "u", "s", "strike", "del", "code", "pre", "blockquote", "mark", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6", "table", "thead", "tbody", "tr", "th", "td", "img", "a", "section", "article", "aside", "header", "footer", "nav", "details", "summary", "figure", "figcaption", "audio", "video", "source", "track", // Standard HTML - iframe removed, mark added
     "mjx-container", "mjx-assistive-mml" // MathJax
 ]);
 

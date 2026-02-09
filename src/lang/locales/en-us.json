@@ -117,6 +117,10 @@
     "custom-themes-folder": "Custom themes folder",
     "clone-theme-from-url": "Clone Theme from URL",
     "clone-theme-desc": "Extract styles from a WeChat article to create a new theme (Beta)",
+    "clone-theme-url": "Article URL",
+    "clone-theme-url-desc": "Please paste the WeChat article URL",
+    "clone-theme-name": "New Theme Name",
+    "clone-theme-name-desc": "Name for the cloned theme",
     "clone-theme-btn": "Clone Theme",
     "pro-feature-alert": "This is a Pro feature. Please activate Pro to clone themes.",
     "clone-theme-invalid-url": "Please enter a valid WeChat article URL",
@@ -174,6 +178,17 @@
       "restore-last": "Restore Last",
       "restore-default": "Restore Default"
     },
+    "hr-title": "Separator Style",
+    "hr-desc": "Choose how to display horizontal rules in preview. 'Native' is recommended for cloned themes.",
+    "hr-style": {
+      "native": "🎨 Theme/Native (Rec.)",
+      "dots": "· · · (Dots)",
+      "lines": "— — — (Lines)",
+      "stars": "* * * (Stars)",
+      "custom": "Custom Text",
+      "none": "Hide"
+    },
+    "custom-hr-text": "Custom Separator Text",
     "material-view": "Material management",
     "materials": "Materials",
     "new-account": "New account",
