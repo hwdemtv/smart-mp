@@ -2991,3 +2991,25 @@ proofreed
 .smart-mp-setting-borderless {
 	border: none !important;
 }
+
+/* Error Placeholders (Refactored from inline styles) */
+.smart-mp-error-text {
+	color: var(--text-error) !important;
+	font-size: 12px;
+}
+
+.smart-mp-error-placeholder {
+	border: 1px dashed var(--text-error);
+	padding: 10px;
+}
+
+.smart-mp-missing-image {
+	color: var(--text-muted);
+	padding: 10px;
+	display: block;
+	text-align: center;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	margin: 8px 0;
+	border: 1px solid var(--background-modifier-border);
+}

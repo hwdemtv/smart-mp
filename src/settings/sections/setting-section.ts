@@ -1,5 +1,5 @@
 
-import { App, PluginSettingTab } from "obsidian";
+import { App } from "obsidian";
 import SmartMPPlugin from "src/main";
 
 export abstract class SettingSection {

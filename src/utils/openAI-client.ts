@@ -9,6 +9,7 @@ import prompt from "./prompt.json";
 import { buildPrompt, Prompt } from "./ai-client";
 import { ChatCompletionMessage } from "openai/resources";
 import { obsidianFetch } from "./fetch";
+
 import { Logger } from "./logger";
 export class OpenAIClient {
 	private static instance: OpenAIClient;

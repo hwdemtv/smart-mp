@@ -260,7 +260,7 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
 
             // 替换为文字提示
             const placeholder = document.createElement('span');
-            placeholder.style.cssText = 'color: #999; padding: 10px; display: block; text-align: center; background: #f5f5f5; border-radius: 4px; margin: 8px 0;';
+            placeholder.addClass('smart-mp-missing-image');
             placeholder.textContent = `[图片未找到: ${originalPath}]`;
             img.replaceWith(placeholder);
             return;
@@ -455,8 +455,7 @@ export async function convertAssetsToDataURLs(
             console.error('[convertAssetsToDataURLs] SVG conversion failed. Replacing with error placeholder.', error);
             // Fallback: simple text to avoid "Image paste failed" error blocking the whole article
             const placeholder = document.createElement('div');
-            placeholder.style.border = '1px dashed red';
-            placeholder.style.padding = '10px';
+            placeholder.addClass('smart-mp-error-placeholder');
             placeholder.innerText = `⚠️ SVG 图片转换失败`;
             svg.replaceWith(placeholder);
         } finally {
@@ -504,8 +503,7 @@ export async function convertAssetsToDataURLs(
             console.error(`[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
             // Replace broken image with a text placeholder to avoid WeChat "paste failed" error
             const placeholder = document.createElement('span');
-            placeholder.style.color = 'red';
-            placeholder.style.fontSize = '12px';
+            placeholder.addClass('smart-mp-error-text');
             placeholder.innerText = `[图片加载失败]`;
             img.replaceWith(placeholder);
         } finally {

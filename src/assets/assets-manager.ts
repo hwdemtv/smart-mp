@@ -44,13 +44,7 @@ PouchDB.plugin(PouchDBFind);
 
 
 
-type ASSETS = {
-    images: Array<MaterialMeidaItem>,
-    videos: Array<MaterialMeidaItem>
-    voices: Array<MaterialMeidaItem>
-    news: Array<MaterialNewsItem>
-    drafts: Array<DraftItem>
-}
+
 const MAX_COUNT = 20;
 export const initAssetsDB = () => {
     const db = new PouchDB('smart-mp-wechat-assets');
@@ -155,8 +149,7 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const json = await this.plugin.wechatClient.getBatchMaterial(accountName, 'news', offset, MAX_COUNT);
-            const { errcode, item, total_count, item_count } = json;
+            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchMaterial(accountName, 'news', offset, MAX_COUNT);
             if (errcode !== undefined && errcode !== 0) {
                 new Notice(getErrorMessage(errcode), 0)
                 break;
@@ -182,8 +175,7 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const json = await this.plugin.wechatClient.getBatchDraftList(accountName, offset, MAX_COUNT);
-            const { errcode, item, total_count, item_count } = json;
+            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchDraftList(accountName, offset, MAX_COUNT);
             if (errcode !== undefined && errcode !== 0) {
                 new Notice(getErrorMessage(errcode), 0)
                 break;
@@ -220,8 +212,7 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const json = await this.plugin.wechatClient.getBatchMaterial(accountName, type, offset, MAX_COUNT);
-            const { errcode, item, total_count, item_count } = json;
+            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchMaterial(accountName, type, offset, MAX_COUNT);
             if (errcode !== undefined && errcode !== 0) {
                 new Notice(getErrorMessage(errcode), 0)
                 break;
