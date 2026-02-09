@@ -47,7 +47,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
     body: body,
   };
 
-  return await requestUrl(param).then(
+  return requestUrl(param).then(
     (res) => {
       console.debug(`[${requestId}] Fetch completed in ${Date.now() - startTime}ms: ${urlString}`);
       return {

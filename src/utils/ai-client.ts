@@ -55,11 +55,11 @@ export class AiClient {
 	}
 	public async getModelList(): Promise<string[]> {
 		const client = this.getClient();
-		return await client.getModelList();
+		return client.getModelList();
 	}
 	public async generateSummary(content: string): Promise<string | null> {
 		const client = this.getClient();
-		return await client.generateSummary(content);
+		return client.generateSummary(content);
 	}
 
 	/**
@@ -72,7 +72,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('generateSummaryStream' in client) {
-			return await (client as any).generateSummaryStream(content, onChunk, signal);
+			return (client as any).generateSummaryStream(content, onChunk, signal);
 		} else {
 			// 降级：非流式输出
 			const result = await client.generateSummary(content);
@@ -87,7 +87,7 @@ export class AiClient {
 		// If client doesn't support generateTitle (e.g. older Ollama impl), return empty
 		if ('generateTitle' in client) {
 			// @ts-ignore
-			return await client.generateTitle(content);
+			return client.generateTitle(content);
 		}
 		return [];
 	}
@@ -102,7 +102,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('generateTitleStream' in client) {
-			return await (client as any).generateTitleStream(content, onChunk, signal);
+			return (client as any).generateTitleStream(content, onChunk, signal);
 		} else {
 			// 降级：非流式输出
 			const results = await this.generateTitle(content);
@@ -115,14 +115,14 @@ export class AiClient {
 
 	public async proofContent(content: string): Promise<DeepSeekResult | null> {
 		const client = this.getClient();
-		return await client.proofContent(content);
+		return client.proofContent(content);
 	}
 
 	public async polishContent(
 		content: string
 	): Promise<DeepSeekResult | null> {
 		const client = this.getClient();
-		return await client.polishContent(content);
+		return client.polishContent(content);
 	}
 
 	/**
@@ -135,7 +135,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('polishContentStream' in client) {
-			return await (client as any).polishContentStream(content, onChunk, signal);
+			return (client as any).polishContentStream(content, onChunk, signal);
 		} else {
 			// 降级：非流式输出，一次性返回
 			const result = await (client as any).polishContent(content);
@@ -157,7 +157,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('translateTextStream' in client) {
-			return await (client as any).translateTextStream(content, sourceLang, targetLang, onChunk, signal);
+			return (client as any).translateTextStream(content, sourceLang, targetLang, onChunk, signal);
 		} else {
 			// 降级：非流式输出，一次性返回
 			const result = await (client as any).translateText(content, sourceLang, targetLang);
@@ -171,23 +171,23 @@ export class AiClient {
 		negative_prompt: string = "",
 		size: string = "1440*613"
 	): Promise<string> {
-		return await this.imageClient.generateCoverImageFromText(prompt, negative_prompt, size);
+		return this.imageClient.generateCoverImageFromText(prompt, negative_prompt, size);
 	}
 
 
 	public async generateMermaid(content: string): Promise<string> {
 		const client = this.getClient();
-		return await client.generateMermaid(content);
+		return client.generateMermaid(content);
 	}
 
 	public async generateLaTeX(content: string): Promise<string> {
 		const client = this.getClient();
-		return await client.generateLaTeX(content);
+		return client.generateLaTeX(content);
 	}
 
 	public async synonym(content: string): Promise<string[]> {
 		const client = this.getClient();
-		return await client.synonym(content);
+		return client.synonym(content);
 	}
 
 	public async translateText(
@@ -196,7 +196,7 @@ export class AiClient {
 		targetLang: string = "Chinese"
 	): Promise<string> {
 		const client = this.getClient();
-		return await client.translateText(content, sourceLang, targetLang);
+		return client.translateText(content, sourceLang, targetLang);
 	}
 
 	/**
@@ -231,7 +231,7 @@ export class AiClient {
 		const targetModelId = modelId || this.plugin.settings.selectedLLMModelId;
 
 		// @ts-ignore - generateCustom with model override
-		return await client.generateCustomWithModel(promptTemplate, content, provider, targetModelId);
+		return client.generateCustomWithModel(promptTemplate, content, provider, targetModelId);
 	}
 	/**
 	 * 流式校对内容
@@ -243,7 +243,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('proofContentStream' in client) {
-			return await (client as any).proofContentStream(content, onChunk, signal);
+			return (client as any).proofContentStream(content, onChunk, signal);
 		} else {
 			// 降级：非流式
 
@@ -306,7 +306,7 @@ export class AiClient {
 	): Promise<string> {
 		const client = this.getClient();
 		if ('getSynonymsStream' in client) {
-			return await (client as any).getSynonymsStream(content, onChunk, signal);
+			return (client as any).getSynonymsStream(content, onChunk, signal);
 		} else {
 			const result = await client.synonym(content);
 			const text = result.join(", ");

@@ -108,7 +108,7 @@ export class ObsidianMarkdownRenderer {
         element: Element,
         p: Record<string, unknown> = {}
     ): Promise<string> {
-        return await domtoimage.toPng(element, p)
+        return domtoimage.toPng(element, p)
     }
     waitForSelector(
         container: HTMLElement,

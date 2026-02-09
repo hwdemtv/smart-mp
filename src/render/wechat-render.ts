@@ -221,7 +221,7 @@ export class WechatRender {
 		tempMarked.use(lineTracker);
 
 		// Use original marked for actual parsing (extensions already applied)
-		return await this.marked.parse(content);
+		return this.marked.parse(content);
 	}
 
 	public async postprocess(html: string): Promise<HTMLElement> {
@@ -363,7 +363,7 @@ export class WechatRender {
 			if (cached && cached.hash === hash) {
 				Logger.debug('WechatRender', `Cache HIT for ${path}`);
 				// Skip Obsidian Render & Marked Parse
-				return await this.postprocess(cached.html);
+				return this.postprocess(cached.html);
 			}
 		}
 

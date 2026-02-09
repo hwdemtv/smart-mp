@@ -152,7 +152,7 @@ export class QwenImageClient {
 			);
 		}
 		const result: QwenImageTaskResponse = response.json;
-		return await this.pollImageTask(result.output.task_id);
+		return this.pollImageTask(result.output.task_id);
 	}
 
 	async checkImageGenerationStatus(taskId: string): Promise<QwenImageTaskResponse> {

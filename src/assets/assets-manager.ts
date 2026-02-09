@@ -211,10 +211,10 @@ export class AssetsManager {
     }
     public async getAllMaterialOfType(type: MediaType, callback: (item: MaterialItem) => void, accountName: string | undefined) {
         if (type === 'news') {
-            return await this.getAllNews(callback, accountName);
+            return this.getAllNews(callback, accountName);
         }
         if (type === 'draft') {
-            return await this.getAllDrafts(callback, accountName);
+            return this.getAllDrafts(callback, accountName);
         }
         const list = []
         let offset = 0;

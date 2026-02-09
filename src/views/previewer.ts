@@ -415,7 +415,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 
 	async checkCoverImage() {
-		return await this.draftHeader.checkCoverImage();
+		return this.draftHeader.checkCoverImage();
 	}
 	async sendArticleToDraftBox() {
 		const notice = new Notice("开始处理文章...", 0);
