@@ -633,7 +633,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	processHR(element: HTMLElement) {
 		const hrStyle = this.plugin.settings.hrStyle || "dots";
 		if (hrStyle === 'none') {
-			element.querySelectorAll('hr').forEach(hr => hr.style.display = 'none');
+			element.querySelectorAll('hr').forEach(hr => hr.classList.add('smart-mp-hidden'));
 			return;
 		}
 
@@ -835,10 +835,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (!this.articleStats) return;
 
 		if (this.plugin.settings.showArticleStats === false) {
-			this.articleStats.style.display = "none";
+			this.articleStats.addClass('smart-mp-hidden');
 			return;
 		} else {
-			this.articleStats.style.display = "block";
+			this.articleStats.removeClass('smart-mp-hidden');
 		}
 
 		const { totalWords, readingTime } = this.currentArticleStats;

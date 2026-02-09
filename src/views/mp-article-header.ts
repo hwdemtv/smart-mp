@@ -563,15 +563,18 @@ export class MPArticleHeader {
 		const currentLength = this._digest.value.length;
 		this._digestCounter.textContent = `${currentLength} / 120`;
 
+		// 清除所有状态类
+		this._digestCounter.removeClass('smart-mp-text-error', 'smart-mp-text-warning', 'smart-mp-text-muted');
+		this._digest.removeClass('smart-mp-border-error', 'smart-mp-border-warning');
+
 		if (currentLength > 120) {
-			this._digestCounter.style.color = "var(--text-error)";
-			this._digest.style.borderColor = "var(--background-modifier-error)";
+			this._digestCounter.addClass('smart-mp-text-error');
+			this._digest.addClass('smart-mp-border-error');
 		} else if (currentLength > 100) {
-			this._digestCounter.style.color = "var(--text-warning)";
-			this._digest.style.borderColor = "var(--background-modifier-warning)";
+			this._digestCounter.addClass('smart-mp-text-warning');
+			this._digest.addClass('smart-mp-border-warning');
 		} else {
-			this._digestCounter.style.color = "var(--text-muted)";
-			this._digest.style.borderColor = "";
+			this._digestCounter.addClass('smart-mp-text-muted');
 		}
 	}
 

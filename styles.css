@@ -2588,3 +2588,145 @@ proofreed
 	padding: 6px 10px;
 	min-width: auto;
 }
+
+/* ================================= 
+   Utility Classes (替代内联样式)
+   ================================= */
+
+/* 隐藏元素 */
+.smart-mp-hidden {
+	display: none !important;
+}
+
+/* 显示元素 (块级) */
+.smart-mp-block {
+	display: block !important;
+}
+
+/* Flex 布局 */
+.smart-mp-flex {
+	display: flex !important;
+}
+
+.smart-mp-flex-center {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+}
+
+.smart-mp-flex-column {
+	display: flex !important;
+	flex-direction: column !important;
+}
+
+.smart-mp-flex-between {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+}
+
+/* 文本样式 */
+.smart-mp-text-bold {
+	font-weight: bold !important;
+}
+
+.smart-mp-text-muted {
+	color: var(--text-muted) !important;
+}
+
+.smart-mp-text-error {
+	color: var(--text-error) !important;
+}
+
+.smart-mp-text-warning {
+	color: var(--text-warning) !important;
+}
+
+.smart-mp-text-strikethrough {
+	text-decoration: line-through !important;
+}
+
+/* 边框样式 */
+.smart-mp-border-error {
+	border-color: var(--background-modifier-error) !important;
+}
+
+.smart-mp-border-warning {
+	border-color: var(--background-modifier-warning) !important;
+}
+
+/* 按钮样式 */
+.smart-mp-btn-ghost {
+	background: none !important;
+	border: none !important;
+	cursor: pointer !important;
+}
+
+/* 间距 */
+.smart-mp-gap-sm {
+	gap: 4px !important;
+}
+
+.smart-mp-gap-md {
+	gap: 8px !important;
+}
+
+/* 动画旋转 (用于展开/收起图标) */
+.smart-mp-rotate-90 {
+	transform: rotate(90deg) !important;
+}
+
+.smart-mp-rotate-0 {
+	transform: rotate(0deg) !important;
+}
+
+/* 设置面板账户项 */
+.smart-mp-account-wrapper {
+	border: 1px solid var(--background-modifier-border);
+	margin-bottom: 10px;
+	border-radius: 5px;
+	overflow: hidden;
+}
+
+.smart-mp-account-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px;
+	cursor: pointer;
+	background-color: var(--background-secondary);
+}
+
+.smart-mp-account-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.smart-mp-account-chevron {
+	transition: transform 0.2s;
+	font-size: 10px;
+}
+
+.smart-mp-account-icon {
+	font-size: 16px;
+}
+
+.smart-mp-account-name {
+	font-weight: 500;
+}
+
+.smart-mp-account-count {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+
+.smart-mp-account-right {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.smart-mp-account-details {
+	padding: 10px;
+}

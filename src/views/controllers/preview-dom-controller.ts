@@ -34,7 +34,7 @@ export class PreviewDOMController {
     private processHR(element: HTMLElement) {
         const hrStyle = this.plugin.settings.hrStyle || "dots";
         if (hrStyle === 'none') {
-            element.querySelectorAll('hr').forEach(hr => hr.style.display = 'none');
+            element.querySelectorAll('hr').forEach(hr => hr.classList.add('smart-mp-hidden'));
             return;
         }
 
