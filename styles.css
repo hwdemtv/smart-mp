@@ -2880,3 +2880,47 @@ proofreed
 	color: var(--text-normal);
 	border-bottom: 2px solid var(--interactive-accent);
 }
+
+/* Models Section */
+.smart-mp-models-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	padding: 5px 0;
+}
+
+.smart-mp-models-title {
+	font-weight: 500;
+}
+
+.smart-mp-models-list {
+	padding-left: 18px;
+}
+
+.smart-mp-model-header {
+	display: flex;
+	gap: 10px;
+	padding: 0 0 5px 0;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	margin-top: 10px;
+}
+
+.smart-mp-model-header-col {
+	flex: 1;
+	padding-left: 5px;
+}
+
+.smart-mp-btn-auto-left {
+	margin-left: auto;
+}
+
+.smart-mp-btn-ml-4 {
+	margin-left: 4px;
+}
+
+.smart-mp-model-header-spacer {
+	width: 70px;
+}

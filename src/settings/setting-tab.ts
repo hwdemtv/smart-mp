@@ -576,35 +576,19 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	renderProviderList(container: HTMLElement) {
 		const providers = this.plugin.settings.llmProviders || [];
 		providers.forEach((provider, index) => {
-			const wrapper = container.createDiv({ cls: 'smart-mp-provider-wrapper' });
-			wrapper.style.border = '1px solid var(--background-modifier-border)';
-			wrapper.style.marginBottom = '10px';
-			wrapper.style.borderRadius = '5px';
-			wrapper.style.overflow = 'hidden';
+			const wrapper = container.createDiv({ cls: 'smart-mp-provider-wrapper smart-mp-account-wrapper' });
 
 			// Collapsible Header
-			const headerEl = wrapper.createDiv({ cls: 'smart-mp-provider-header' });
-			headerEl.style.display = 'flex';
-			headerEl.style.alignItems = 'center';
-			headerEl.style.justifyContent = 'space-between';
-			headerEl.style.padding = '10px';
-			headerEl.style.cursor = 'pointer';
-			headerEl.style.backgroundColor = 'var(--background-secondary)';
+			const headerEl = wrapper.createDiv({ cls: 'smart-mp-provider-header smart-mp-account-header' });
 
 			// Left side: chevron + icon + name + model count
-			const leftSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-left' });
-			leftSide.style.display = 'flex';
-			leftSide.style.alignItems = 'center';
-			leftSide.style.gap = '8px';
+			const leftSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-left smart-mp-account-left' });
 
-			const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron' });
+			const chevron = leftSide.createSpan({ cls: 'smart-mp-chevron smart-mp-account-chevron' });
 			chevron.textContent = '▶';
-			chevron.style.transition = 'transform 0.2s';
-			chevron.style.fontSize = '10px';
 
 			// Provider type icon
-			const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon' });
-			iconSpan.style.fontSize = '16px';
+			const iconSpan = leftSide.createSpan({ cls: 'smart-mp-provider-icon smart-mp-account-icon' });
 			switch (provider.type) {
 				case LLMProviderType.DeepSeek:
 					iconSpan.textContent = '🐋';
@@ -643,27 +627,18 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					iconSpan.title = 'Custom';
 			}
 
-			const nameSpan = leftSide.createSpan({ text: provider.name });
-			nameSpan.style.fontWeight = '500';
+			const nameSpan = leftSide.createSpan({ text: provider.name, cls: 'smart-mp-account-name' });
 
-			const countSpan = leftSide.createSpan({ text: `(${provider.models.length} Models)` });
-			countSpan.style.color = 'var(--text-muted)';
-			countSpan.style.fontSize = '12px';
+			const countSpan = leftSide.createSpan({ text: `(${provider.models.length} Models)`, cls: 'smart-mp-account-count' });
 
 			// Right side: buttons (sorting, duplicate, delete)
-			const rightSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-right' });
-			rightSide.style.display = 'flex';
-			rightSide.style.gap = '4px';
-			rightSide.style.alignItems = 'center';
+			const rightSide = headerEl.createDiv({ cls: 'smart-mp-provider-header-right smart-mp-account-right' });
 
 			// Move Up button
 			if (index > 0) {
-				const upBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+				const upBtn = rightSide.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost' });
 				setIcon(upBtn, "arrow-up");
 				upBtn.title = $t("settings.assistant.move-up");
-				upBtn.style.background = 'none';
-				upBtn.style.border = 'none';
-				upBtn.style.cursor = 'pointer';
 				upBtn.addEventListener('click', async (e) => {
 					e.stopPropagation();
 					const list = this.plugin.settings.llmProviders!;
@@ -675,12 +650,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 			// Move Down button
 			if (index < providers.length - 1) {
-				const downBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+				const downBtn = rightSide.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost' });
 				setIcon(downBtn, "arrow-down");
 				downBtn.title = $t("settings.assistant.move-down");
-				downBtn.style.background = 'none';
-				downBtn.style.border = 'none';
-				downBtn.style.cursor = 'pointer';
 				downBtn.addEventListener('click', async (e) => {
 					e.stopPropagation();
 					const list = this.plugin.settings.llmProviders!;
@@ -691,12 +663,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			}
 
 			// Duplicate button
-			const dupBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+			const dupBtn = rightSide.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost' });
 			setIcon(dupBtn, "copy");
 			dupBtn.title = $t("settings.llm-provider.duplicate") || 'Duplicate';
-			dupBtn.style.background = 'none';
-			dupBtn.style.border = 'none';
-			dupBtn.style.cursor = 'pointer';
 			dupBtn.addEventListener('click', async (e) => {
 				e.stopPropagation();
 				const newProvider: LLMProvider = {
@@ -712,12 +681,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			});
 
 			// Delete button
-			const deleteBtn = rightSide.createEl('button', { cls: 'clickable-icon' });
+			const deleteBtn = rightSide.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost' });
 			setIcon(deleteBtn, "trash-2");
 			deleteBtn.title = $t("settings.llm-provider.delete-confirm") || 'Delete Provider';
-			deleteBtn.style.background = 'none';
-			deleteBtn.style.border = 'none';
-			deleteBtn.style.cursor = 'pointer';
 			deleteBtn.addEventListener('click', async (e) => {
 				e.stopPropagation();
 				const confirmMsg = $t("settings.llm-provider.delete-confirm") || `确定要删除 ${provider.name} 吗？`;
@@ -740,19 +706,22 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			});
 
 			// Details section (collapsible)
-			const detailsEl = wrapper.createDiv({ cls: 'smart-mp-provider-details' });
-			detailsEl.style.padding = '10px';
+			const detailsEl = wrapper.createDiv({ cls: 'smart-mp-provider-details smart-mp-account-details' });
 
 			// Check if this provider should be expanded (e.g., newly added)
 			const shouldExpand = this.expandedSections.has(provider.id);
-			detailsEl.style.display = shouldExpand ? 'block' : 'none';
-			chevron.style.transform = shouldExpand ? 'rotate(90deg)' : 'rotate(0deg)';
+			if (!shouldExpand) {
+				detailsEl.addClass('smart-mp-hidden');
+			}
+			if (shouldExpand) {
+				chevron.addClass('smart-mp-rotate-90');
+			}
 
 			// Toggle collapse on header click
 			headerEl.addEventListener('click', () => {
-				const isCollapsed = detailsEl.style.display === 'none';
-				detailsEl.style.display = isCollapsed ? 'block' : 'none';
-				chevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+				const isCollapsed = detailsEl.hasClass('smart-mp-hidden');
+				detailsEl.toggleClass('smart-mp-hidden', !isCollapsed);
+				chevron.toggleClass('smart-mp-rotate-90', isCollapsed);
 				// Track expanded state
 				if (isCollapsed) {
 					this.expandedSections.add(provider.id);
@@ -859,32 +828,18 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		// Models Header (clickable to collapse)
 		const modelsHeader = modelsWrapper.createDiv({ cls: 'smart-mp-models-header' });
-		modelsHeader.style.display = 'flex';
-		modelsHeader.style.alignItems = 'center';
-		modelsHeader.style.gap = '8px';
-		modelsHeader.style.cursor = 'pointer';
-		modelsHeader.style.padding = '5px 0';
 
-		const modelsChevron = modelsHeader.createSpan({ cls: 'smart-mp-chevron' });
+		const modelsChevron = modelsHeader.createSpan({ cls: 'smart-mp-chevron smart-mp-account-chevron' });
 		modelsChevron.textContent = '▶';
-		modelsChevron.style.transition = 'transform 0.2s';
-		modelsChevron.style.fontSize = '10px';
 
-		const modelsTitle = modelsHeader.createSpan({ text: $t("settings.llm-provider.models") });
-		modelsTitle.style.fontWeight = '500';
+		const modelsTitle = modelsHeader.createSpan({ text: $t("settings.llm-provider.models"), cls: 'smart-mp-models-title' });
 
-		const modelsCount = modelsHeader.createSpan({ text: `(${provider.models.length})` });
-		modelsCount.style.color = 'var(--text-muted)';
-		modelsCount.style.fontSize = '12px';
+		const modelsCount = modelsHeader.createSpan({ text: `(${provider.models.length})`, cls: 'smart-mp-account-count' });
 
 		// Add Model button
-		const addModelBtn = modelsHeader.createEl('button', { cls: 'clickable-icon' });
+		const addModelBtn = modelsHeader.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost smart-mp-btn-auto-left' });
 		setIcon(addModelBtn, "plus");
 		addModelBtn.title = 'Add Model';
-		addModelBtn.style.marginLeft = 'auto';
-		addModelBtn.style.background = 'none';
-		addModelBtn.style.border = 'none';
-		addModelBtn.style.cursor = 'pointer';
 		addModelBtn.addEventListener('click', async (e) => {
 			e.stopPropagation();
 			provider.models.push({
@@ -899,13 +854,9 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		});
 
 		// Fetch Models button
-		const fetchModelsBtn = modelsHeader.createEl('button', { cls: 'clickable-icon' });
+		const fetchModelsBtn = modelsHeader.createEl('button', { cls: 'clickable-icon smart-mp-btn-ghost smart-mp-btn-ml-4' });
 		setIcon(fetchModelsBtn, "refresh-cw");
 		fetchModelsBtn.title = $t("settings.llm-provider.fetch-models") || 'Fetch Models from API';
-		fetchModelsBtn.style.background = 'none';
-		fetchModelsBtn.style.border = 'none';
-		fetchModelsBtn.style.cursor = 'pointer';
-		fetchModelsBtn.style.marginLeft = '4px';
 		fetchModelsBtn.addEventListener('click', async (e) => {
 			e.stopPropagation();
 			if (!provider.baseUrl) {
@@ -955,16 +906,18 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		// Check expanded state
 		const isModelsExpanded = this.expandedModelSections.has(provider.id);
-		modelsListEl.style.display = isModelsExpanded ? 'block' : 'none';
-		modelsChevron.style.transform = isModelsExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
-
-		modelsListEl.style.paddingLeft = '18px';
+		if (!isModelsExpanded) {
+			modelsListEl.addClass('smart-mp-hidden');
+		}
+		if (isModelsExpanded) {
+			modelsChevron.addClass('smart-mp-rotate-90');
+		}
 
 		// Toggle collapse on header click
 		modelsHeader.addEventListener('click', () => {
-			const isCollapsed = modelsListEl.style.display === 'none';
-			modelsListEl.style.display = isCollapsed ? 'block' : 'none';
-			modelsChevron.style.transform = isCollapsed ? 'rotate(90deg)' : 'rotate(0deg)';
+			const isCollapsed = modelsListEl.hasClass('smart-mp-hidden');
+			modelsListEl.toggleClass('smart-mp-hidden', !isCollapsed);
+			modelsChevron.toggleClass('smart-mp-rotate-90', isCollapsed);
 
 			if (isCollapsed) {
 				this.expandedModelSections.add(provider.id);
@@ -976,26 +929,13 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		// Models List Header (only if models exist)
 		if (provider.models.length > 0) {
 			const headerEl = modelsListEl.createDiv({ cls: 'smart-mp-model-header' });
-			headerEl.style.display = 'flex';
-			headerEl.style.gap = '10px';
-			headerEl.style.padding = '0 0 5px 0'; // Match Setting padding roughly
-			headerEl.style.color = 'var(--text-muted)';
-			headerEl.style.fontSize = '12px';
-			headerEl.style.fontWeight = '500';
-			headerEl.style.marginTop = '10px'; // Space from provider header
 
-			const idHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-id-header") || "Model ID" });
-			idHeader.style.flex = '1';
-			idHeader.style.paddingLeft = '5px'; // Align with input text visually
+			const idHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-id-header") || "Model ID", cls: 'smart-mp-model-header-col' });
 
-			const nameHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-name-header") || "Display Name" });
-			nameHeader.style.flex = '1';
-			nameHeader.style.paddingLeft = '5px';
+			const nameHeader = headerEl.createSpan({ text: $t("settings.llm-provider.model-name-header") || "Display Name", cls: 'smart-mp-model-header-col' });
 
 			// Spacer for controls (Toggle + Delete)
-			// Toggle is roughly 40px, Delete is roughly 30px, plus gaps
-			const spacer = headerEl.createSpan();
-			spacer.style.width = '70px';
+			const spacer = headerEl.createSpan({ cls: 'smart-mp-model-header-spacer' });
 		}
 
 		// Models List Items
