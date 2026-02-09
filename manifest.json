@@ -1,7 +1,7 @@
 {
 	"id": "smart-mp",
 	"name": "Smart MP",
-	"version": "1.5.1",
+	"version": "1.5.2",
 	"minAppVersion": "1.7.0",
 	"description": "An advanced workspace for writing and publishing articles to WeChat MP with powerful AI assistants and premium UI.",
 	"author": "hwdemtv",

@@ -378,13 +378,9 @@ export class CSSMerger {
 					rule.walkDecls(decl => {
 						const baseDecl = selectedRule!.get(decl.prop);
 						if (baseDecl === undefined || !baseDecl.important || decl.important) {
-							// [Optimization] Pre-resolve variables here
-							// Clone the decl to avoid mutating the original AST if cached
-							const optimizedDecl = decl.clone();
-							if (optimizedDecl.value.includes('var(')) {
-								optimizedDecl.value = this.resolveCssVars(optimizedDecl.value, this.vars);
-							}
-							selectedRule!.set(decl.prop, optimizedDecl);
+							// [Optimization] NO Pre-resolve variables here to support theme overriding
+							// We must resolve variables at apply-time to ensure we use the latest values 
+							selectedRule!.set(decl.prop, decl.clone());
 						}
 					})
 				});
@@ -523,9 +519,15 @@ export class CSSMerger {
 						} else {
 							// Main Element Rules
 							rule.forEach((decl, prop) => {
-								// Values are already pre-resolved in pickRules!
+
+								// Resolve variables dynamically
+								let value = decl.value;
+								if (value.includes('var(')) {
+									value = this.resolveCssVars(value, this.vars);
+								}
+
 								// Just need security check
-								const lowerValue = decl.value.toLowerCase();
+								const lowerValue = value.toLowerCase();
 								if (lowerValue.includes('javascript:') || lowerValue.includes('vbscript:') || (lowerValue.includes('url(') && lowerValue.includes('data:') && !lowerValue.includes('data:image/'))) {
 									return;
 								}
@@ -536,7 +538,7 @@ export class CSSMerger {
 									return;
 								}
 
-								const fullValue = decl.important ? `${decl.value} !important` : decl.value;
+								const fullValue = decl.important ? `${value} !important` : value;
 								themeStyleBatch.push(`${prop}: ${fullValue}`);
 							})
 						}

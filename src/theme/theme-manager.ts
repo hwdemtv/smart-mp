@@ -276,13 +276,20 @@ export class ThemeManager {
 	private async getThemeProperties(file: TFile): Promise<WeChatTheme | undefined> {
 		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		const { data } = matter(fileContent); // 解析前置元数据
-		if (data.theme_name === undefined || !data.theme_name.trim()) {
+
+		const rawName = data.theme_name;
+		if (rawName === undefined || rawName === null) {
+			return;
+		}
+
+		const themeName = String(rawName).trim();
+		if (!themeName) {
 			// it is not a valid theme.
 			return;
 		}
 
 		return {
-			name: data.theme_name,
+			name: themeName,
 			path: file.path,
 		};
 	}
@@ -330,8 +337,9 @@ export class ThemeManager {
 		}
 
 		// Create file content with frontmatter
+		// Force quote theme_name to prevent number parsing (e.g. "00000")
 		const fileContent = `---
-theme_name: ${name}
+theme_name: "${name}"
 desc: Cloned from WeChat Article
 ---
 
