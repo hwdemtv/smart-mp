@@ -1,4 +1,4 @@
-export  class Spinner { 
+export class Spinner {
 	private spinnerEl: HTMLElement;
 	private spinnerText: HTMLDivElement;
 	constructor(spinnerEl: HTMLElement) {
@@ -14,18 +14,21 @@ export  class Spinner {
 			dot.setCssProps({ 'animation-delay': `${i * 0.3}s` });
 		}
 		this.spinnerText = this.spinnerEl.createDiv({
-			cls: "spinner-text"});
+			cls: "spinner-text"
+		});
 	}
 	showSpinner(text: string = "") {
-		this.spinnerEl.setCssProps({ display: "flex" });
+		this.spinnerEl.removeClass("smart-mp-spinner-hidden");
+		this.spinnerEl.addClass("smart-mp-spinner-visible");
 		this.spinnerText.setText(text);
 	}
 	isSpinning() {
-		return getComputedStyle(this.spinnerEl).display !== "none";
+		return this.spinnerEl.hasClass("smart-mp-spinner-visible");
 	}
 
 	hideSpinner() {
-		this.spinnerEl.setCssProps({ display: "none" });
+		this.spinnerEl.removeClass("smart-mp-spinner-visible");
+		this.spinnerEl.addClass("smart-mp-spinner-hidden");
 	}
 	unload() {
 		this.spinnerEl.remove();

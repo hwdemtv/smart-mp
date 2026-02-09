@@ -103,10 +103,7 @@ export class MaterialView extends ItemView {
     }
 
     this.contentEl.setChildrenInPlace([rootEl]);
-    this.contentEl.setCssProps({
-      'padding': '0',
-      'margin': '0',
-    });
+    this.contentEl.addClass('smart-mp-material-view-content');
 
     new ButtonComponent(tabHeader)
       .setIcon('school')

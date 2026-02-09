@@ -50,14 +50,39 @@ graph TD
 
 ---
 
-## 5. LaTeX 数学公式 (MathJax 渲染)
-行内公式测试：$E = mc^2$ 运行正常。
+## 5. LaTeX 数学公式 (MathJax 渲染) - 扩展测试
 
-块级公式：
+**基础公式：**
+- $E = mc^2$ (质能方程)
+- $a^2 + b^2 = c^2$ (勾股定理)
+- $\pi \approx 3.14159$ (圆周率)
+
+**复杂公式：**
 $$
-x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 $$
-$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+$$
+\lim_{x \to 0} \frac{\sin(x)}{x} = 1
+$$
+
+**矩阵：**
+$$
+\begin{bmatrix}
+a & b & c \\
+d & e & f \\
+g & h & i
+\end{bmatrix}
+$$
+
+**分数和根号：**
+$$
+\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
 
 ---
 

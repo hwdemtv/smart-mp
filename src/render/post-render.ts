@@ -126,8 +126,9 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
 
             // 3. Replace dynamic CSS variables (var(--...)) with static color because they fail in Blob context
             svgString = svgString.replace(/var\(--[^)]+\)/g, '#333');
-            // 4. Replace currentColor
-            svgString = svgString.replace(/currentColor/g, '#333');
+            // 4. [Fix] Do NOT replace currentColor globally!
+            // MathJax uses currentColor for fills, and replacing it breaks rendering (e.g. roots).
+            // svgString = svgString.replace(/currentColor/g, '#333');
 
             const hash = simpleHash(svgString);
 
@@ -182,7 +183,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                     // Show error placeholder only if it's likely a math formula we care about
                     if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
                         const errorSpan = document.createElement('span');
-                        errorSpan.style.color = 'red';
+                        errorSpan.addClass('smart-mp-math-error');
                         errorSpan.innerText = '[公式上传失败]';
                         svg.replaceWith(errorSpan);
                     }
@@ -193,7 +194,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                 // But usually WeChat strips base64 images in articles. Better to show error.
                 if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
                     const errorSpan = document.createElement('span');
-                    errorSpan.style.color = 'red';
+                    errorSpan.addClass('smart-mp-math-error');
                     errorSpan.innerText = '[公式转换错误]';
                     svg.replaceWith(errorSpan);
                 }
@@ -435,7 +436,8 @@ export async function convertAssetsToDataURLs(
             }
 
             svgString = svgString.replace(/var\(--[^)]+\)/g, '#333');
-            svgString = svgString.replace(/currentColor/g, '#333');
+            // [Fix] Do NOT replace currentColor globally!
+            // svgString = svgString.replace(/currentColor/g, '#333');
 
             const blob = await svgToPng(svgString);
             const reader = new FileReader();
@@ -443,7 +445,13 @@ export async function convertAssetsToDataURLs(
                 reader.onloadend = () => {
                     const img = document.createElement('img');
                     img.src = reader.result as string;
-                    svg.replaceWith(img);
+
+                    const parent = svg.parentElement;
+                    if (parent && parent.tagName.toLowerCase() === 'mjx-container') {
+                        parent.replaceWith(img);
+                    } else {
+                        svg.replaceWith(img);
+                    }
                     resolve();
                 };
                 reader.onerror = () => {
@@ -523,12 +531,7 @@ export async function convertAssetsToDataURLs(
         if (!src || (!src.startsWith('http') && !src.startsWith('data:'))) {
             console.warn(`[convertAssetsToDataURLs] Removing invalid image src after processing: ${src}`);
             const placeholder = document.createElement('span');
-            placeholder.style.border = '1px solid #eee';
-            placeholder.style.backgroundColor = '#f5f5f5';
-            placeholder.style.padding = '4px 8px';
-            placeholder.style.color = '#666';
-            placeholder.style.fontSize = '12px';
-            placeholder.style.borderRadius = '4px';
+            placeholder.addClass('smart-mp-invalid-image');
             // Try to be helpful with the filename if possible
             const name = src ? src.split('/').pop() : 'Invalid Image';
             placeholder.innerText = `[无效图片: ${name}]`;

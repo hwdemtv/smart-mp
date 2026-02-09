@@ -10,23 +10,36 @@ import { parseMath } from "../mathjax";
 import { MarkedExtension, Token, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
 
-const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/;
-const blockRule = /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
+// 修正后的正则表达式 - 支持转义符和中文
+// Inline: $...$, support escaped \$
+const inlineRule = /^(\$)((?:\\.|[^$\n])+)\$/;
+// Block: $$...$$, allow multiline, allow leading whitespace
+const blockRule = /^\s*(\$\$)([\s\S]*?)\$\$/;
 
 export class MathRenderer extends SmartMPMarkedExtension {
 
     // Simple in-memory cache for rendered math
     private static mathCache = new Map<string, string>();
     private static readonly MAX_CACHE_SIZE = 500;
-    private static readonly MAX_FORMULA_SIZE = 1000;
+    private static readonly MAX_FORMULA_SIZE = 5000;
+
+    private generateCacheKey(text: string, inline: boolean): string {
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+            const char = text.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return `${inline ? 'inline' : 'block'}:${hash}`;
+    }
 
     renderer(token: Tokens.Generic, inline: boolean, type: string = '') {
         // Skip caching for very large formulas
-        if (token.text.length > MathRenderer.MAX_FORMULA_SIZE) {
+        if (token && token.text && token.text.length > MathRenderer.MAX_FORMULA_SIZE) {
             return this.renderMathDirect(token.text, inline, type);
         }
 
-        const cacheKey = `${inline ? 'inline' : 'block'}:${token.text}`;
+        const cacheKey = this.generateCacheKey(token.text, inline);
         if (MathRenderer.mathCache.has(cacheKey)) {
             return MathRenderer.mathCache.get(cacheKey)!;
         }
@@ -51,16 +64,19 @@ export class MathRenderer extends SmartMPMarkedExtension {
 
         let result = '';
         try {
-            const svg = parseMath(text);
+            // [Fix] Pass displayMode correctly!
+            // inline=true -> displayMode=false
+            // inline=false -> displayMode=true
+            const svg = parseMath(text, !inline);
             if (!svg) {
                 result = inline
                     ? `<span class="math-error">Math Parse Error</span>`
                     : `<div class="math-error">Math Parse Error</div>`;
             } else {
                 if (inline) {
-                    result = `<span class="inline-math" style="color: #333; fill: #333;">${svg}</span>`;
+                    result = `<span class="inline-math" style="display: inline-block; vertical-align: middle;">${svg}</span>`;
                 } else {
-                    result = `<section class="block-math" style="color: #333; fill: #333; text-align: center;">${svg}</section>`;
+                    result = `<div class="block-math" style="display: flex; justify-content: center; margin: 1em 0; overflow-x: auto;">${svg}</div>`;
                 }
             }
         } catch (e) {
@@ -87,22 +103,18 @@ export class MathRenderer extends SmartMPMarkedExtension {
             name: 'InlineMath',
             level: 'inline',
             start(src: string) {
-
-                // 
                 let index;
                 let indexSrc = src;
 
                 while (indexSrc) {
                     index = indexSrc.indexOf('$');
                     if (index === -1) {
-                        // no '$' in the string
                         return;
                     }
 
                     const possibleKatex = indexSrc.substring(index);
-
-                    //from the index, check if match the inline rule
-                    if (possibleKatex.match(inlineRule)) {
+                    const match = possibleKatex.match(inlineRule);
+                    if (match) {
                         return index;
                     }
 
@@ -112,12 +124,16 @@ export class MathRenderer extends SmartMPMarkedExtension {
             tokenizer(src: string, tokens: Token[]) {
                 const match = src.match(inlineRule);
                 if (match) {
-                    return {
-                        type: 'InlineMath',
-                        raw: match[0],
-                        text: match[2].trim(),
-                        displayMode: match[1].length === 2
-                    };
+                    // match[1] is delimiter '$', match[2] is content
+                    const text = match[2]?.trim();
+                    if (text) {
+                        return {
+                            type: 'InlineMath',
+                            raw: match[0],
+                            text: text,
+                            displayMode: false
+                        };
+                    }
                 }
             },
             renderer: (token: Tokens.Generic) => {
@@ -129,15 +145,23 @@ export class MathRenderer extends SmartMPMarkedExtension {
         return {
             name: 'BlockMath',
             level: 'block',
+            // [Fix] Add start function for performance and correctness
+            start(src: string) {
+                return src.indexOf('$$');
+            },
             tokenizer(src: string) {
                 const match = src.match(blockRule);
                 if (match) {
-                    return {
-                        type: 'BlockMath',
-                        raw: match[0],
-                        text: match[2].trim(),
-                        displayMode: match[1].length === 2
-                    };
+                    // match[1] is delimiter '$$', match[2] is content
+                    const text = match[2]?.trim();
+                    if (text) {
+                        return {
+                            type: 'BlockMath',
+                            raw: match[0],
+                            text: text,
+                            displayMode: true
+                        };
+                    }
                 }
             },
             renderer: (token: Tokens.Generic) => {

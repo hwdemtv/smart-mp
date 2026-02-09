@@ -803,28 +803,18 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const currentTheme = this.plugin.settings.custom_theme || "";
 		if (currentTheme.includes("互为螺旋·金") || currentTheme.includes("互为螺旋")) {
 			// 金色主题样式
-			statsDiv.style.cssText = `
-				text-align: center;
-				font-size: 13px;
-				color: #b08d55;
-				padding: 12px 20px;
-				margin: 0 0 24px 0;
-				background: linear-gradient(135deg, rgba(252, 244, 218, 0.6) 0%, rgba(255, 251, 240, 0.8) 100%);
-				border-radius: 8px;
-				border: 1px solid rgba(212, 175, 55, 0.3);
-				box-shadow: 0 2px 8px rgba(176, 141, 85, 0.08);
-				letter-spacing: 1px;
-			`;
+			// 金色主题样式
+			statsDiv.addClass("smart-mp-stats-golden-theme");
 		}
 
 		const p = statsDiv.createEl("p", {
 			text: `📖 ` + $t("views.previewer.article-stats", [String(totalWords), String(readingTime)])
 		});
 
-		// 继承父元素颜色
-		if (currentTheme.includes("互为螺旋·金") || currentTheme.includes("互为螺旋")) {
+		// 继承父元素颜色 (handled by CSS)
+		/*if (currentTheme.includes("互为螺旋·金") || currentTheme.includes("互为螺旋")) {
 			p.style.cssText = "margin: 0; color: #b08d55;";
-		}
+		}*/
 
 		if (element.firstChild) {
 			element.insertBefore(statsDiv, element.firstChild);

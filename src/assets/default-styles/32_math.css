@@ -1,16 +1,73 @@
-.smart-mp .inline-math{
+/* src/assets/default-styles/32_math.css */
+
+.smart-mp .inline-math {
     display: inline-block;
-    padding: 0 0.5rem;
+    padding: 0 0.2rem;
+    vertical-align: middle;
 }
 
 .smart-mp .block-math {
     display: flex;
     width: 100%;
     overflow: auto;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    justify-content: center;
+    align-items: center;
+    margin: 1em 0;
+    min-height: 2.5em;
+    /* 增加最小高度 */
+    line-height: 1.6;
 }
 
+/* 优化MathJax SVG样式 */
+.smart-mp .inline-math svg,
 .smart-mp .block-math svg {
-    width: fit-content;
-    margin: auto;
+    width: auto !important;
+    max-width: 100%;
+    height: auto !important;
+    display: inline-block;
+    vertical-align: middle;
+    min-height: 1.2em;
+    /* 确保最小高度 */
+    min-width: 1.2em;
+    /* 确保最小宽度 */
+    overflow: visible !important;
+    /* 确保不截断 */
+}
+
+/* 确保根号和其他数学符号正确显示 - [Fix] 移除强制样式，交还给 MathJax 控制 */
+/* .smart-mp .inline-math svg path,
+.smart-mp .block-math svg path,
+.smart-mp .inline-math svg rect,
+.smart-mp .block-math svg rect,
+.smart-mp .inline-math svg polygon,
+.smart-mp .block-math svg polygon {
+    fill: currentColor;
+    stroke: none;
+    stroke-width: 0;
+} */
+
+/* 修复根号显示问题 */
+/* 修复根号显示问题 - [Revert] 净化器修复后不再需要字体放大 */
+/* .smart-mp .block-math svg {
+    font-size: 1.1em;
+} */
+
+/* 修复MathJax生成的SVG样式 */
+.smart-mp mjx-container[jax="SVG"] {
+    outline: none !important;
+}
+
+.smart-mp mjx-container[jax="SVG"][display="true"] {
+    display: block;
+    text-align: center;
+    margin: 1.5em 0;
+}
+
+
+
+.smart-mp .smart-mp-math-error {
+    color: var(--smart-mp-error, red);
+    font-weight: bold;
+    font-size: 0.9em;
 }

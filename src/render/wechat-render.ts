@@ -376,12 +376,7 @@ export class WechatRender {
 		// [Fixed] Reuse persistent temp container to avoid DOM thrashing
 		if (!this.tempContainer) {
 			this.tempContainer = createDiv();
-			this.tempContainer.style.position = 'absolute';
-			this.tempContainer.style.left = '-9999px';
-			this.tempContainer.style.top = '-9999px';
-			this.tempContainer.style.width = '1200px';
-			this.tempContainer.style.height = '2000px';
-			this.tempContainer.addClasses(['markdown-preview-view', 'markdown-rendered', 'node-insert-event']);
+			this.tempContainer.addClasses(['smart-mp-temp-container', 'markdown-preview-view', 'markdown-rendered', 'node-insert-event']);
 			document.body.appendChild(this.tempContainer);
 		}
 		const tempContainer = this.tempContainer;
@@ -448,7 +443,7 @@ export class WechatRender {
 
 				// Enhanced waiting mechanism: check if elements actually appeared
 				let attempts = 0;
-				const maxAttempts = 15;
+				const maxAttempts = 20;
 				let elementsFound = false;
 
 				if (needsExcalidraw || needsMermaid) {
@@ -464,22 +459,21 @@ export class WechatRender {
 						// If we found what we need, we can proceed
 						if ((needsExcalidraw && excalidrawFound) || (needsMermaid && mermaidFound)) {
 							elementsFound = true;
-							console.debug(`[WechatRender] Dynamic elements found after ${attempts} attempts`);
+							Logger.debug('WechatRender', `Dynamic elements found after ${attempts} attempts`);
 							break;
 						}
 
-						// If user has both, we wait for at least one to appear, assuming renderer handles the rest
+						// If user has both, we wait for at least one to appear
 						if (needsExcalidraw && needsMermaid && (excalidrawFound || mermaidFound)) {
-							if (attempts > 5) { // Give a bit more time for the second one
-								elementsFound = true;
-								break;
-							}
+							elementsFound = true;
+							Logger.debug('WechatRender', `Partial dynamic elements found after ${attempts} attempts`);
+							break;
 						}
 
 						await new Promise(resolve => setTimeout(resolve, 100));
 					}
 					if (!elementsFound) {
-						console.warn(`[WechatRender] Timeout waiting for dynamic elements after ${attempts} attempts`);
+						Logger.warn('WechatRender', `Timeout waiting for dynamic elements after ${attempts} attempts`);
 					}
 				} else {
 					// Check for callouts or just wait a tiny bit

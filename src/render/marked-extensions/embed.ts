@@ -557,15 +557,16 @@ export class Embed extends SmartMPMarkedExtension {
 						// Remove width/height attributes to allow responsive scaling
 						svg.removeAttribute('width');
 						svg.removeAttribute('height');
-						svg.style.width = '100%';
-						svg.style.height = 'auto';
+						svg.removeAttribute('width');
+						svg.removeAttribute('height');
+						svg.addClass("smart-mp-embed-full");
 
 						const serializer = new XMLSerializer();
 						const svgString = serializer.serializeToString(svg);
 
 						// Direct embedding of SVG for better compatibility and styling
 						// This avoids base64 encoding issues and allows CSS to work on SVG
-						token.html = `<section class="excalidraw" style="width: 100%;">${svgString}</section>`;
+						token.html = `<section class="excalidraw smart-mp-excalidraw">${svgString}</section>`;
 						console.debug(`[Excalidraw] Rendered via ExcalidrawAutomate API (Direct SVG): ${href}`);
 						return;
 					} else {
@@ -646,7 +647,7 @@ export class Embed extends SmartMPMarkedExtension {
 			if (image) {
 				image.setAttr("width", "100%");
 				image.setAttr("height", "100%");
-				image.setAttr("style", "width:100%;height:100%");
+				image.addClass("smart-mp-embed-full");
 			}
 			const dataUrl = await renderer.domToImage(root);
 

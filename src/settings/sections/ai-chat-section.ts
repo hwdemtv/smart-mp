@@ -387,18 +387,12 @@ export class AiChatSection extends SettingSection {
 
                 const summary = assistantDetails.createEl("summary");
 
-                const titleSpan = summary.createEl("span", { text: assistant.name });
-                titleSpan.style.fontWeight = "bold";
-                titleSpan.style.flexGrow = "1";
+                const titleSpan = summary.createEl("span", { text: assistant.name, cls: "smart-mp-assistant-title" });
                 if (assistant.enabled === false) {
-                    titleSpan.style.textDecoration = "line-through";
-                    titleSpan.style.color = "var(--text-muted)";
+                    titleSpan.addClass("is-disabled");
                 }
 
-                const controls = summary.createDiv();
-                controls.style.display = "flex";
-                controls.style.gap = "8px";
-                controls.style.alignItems = "center";
+                const controls = summary.createDiv({ cls: "smart-mp-assistant-controls" });
 
                 // Stop propagation so clicking buttons doesn't toggle details
                 controls.onClickEvent((e) => e.stopPropagation());
@@ -411,18 +405,15 @@ export class AiChatSection extends SettingSection {
                         .onChange(async (val) => {
                             assistant.enabled = val;
                             if (val) {
-                                titleSpan.style.textDecoration = "none";
-                                titleSpan.style.color = "var(--text-normal)";
+                                titleSpan.removeClass("is-disabled");
                             } else {
-                                titleSpan.style.textDecoration = "line-through";
-                                titleSpan.style.color = "var(--text-muted)";
+                                titleSpan.addClass("is-disabled");
                             }
                             await this.plugin.saveSettings();
                         })
                     );
                 toggle.infoEl.remove();
-                toggle.settingEl.style.border = "none";
-                toggle.settingEl.style.padding = "0";
+                toggle.settingEl.addClass("smart-mp-setting-no-border");
 
                 // Sorting buttons
                 new Setting(controls)
@@ -435,8 +426,8 @@ export class AiChatSection extends SettingSection {
                                 void this.plugin.saveSettings();
                                 this.refresh();
                             });
-                        if (index === 0) b.extraSettingsEl.style.visibility = "hidden";
-                    }).settingEl.style.border = "none";
+                        if (index === 0) b.extraSettingsEl.addClass("smart-mp-invisible");
+                    }).settingEl.addClass("smart-mp-setting-no-border");
 
                 new Setting(controls)
                     .addExtraButton(b => {
@@ -448,8 +439,8 @@ export class AiChatSection extends SettingSection {
                                 void this.plugin.saveSettings();
                                 this.refresh();
                             });
-                        if (index === (this.plugin.settings.customAssistantList?.length || 0) - 1) b.extraSettingsEl.style.visibility = "hidden";
-                    }).settingEl.style.border = "none";
+                        if (index === (this.plugin.settings.customAssistantList?.length || 0) - 1) b.extraSettingsEl.addClass("smart-mp-invisible");
+                    }).settingEl.addClass("smart-mp-setting-no-border");
 
                 // Delete Button
                 new Setting(controls)
@@ -461,13 +452,10 @@ export class AiChatSection extends SettingSection {
                             void this.plugin.saveSettings();
                             this.refresh();
                         })
-                    ).settingEl.style.border = "none";
+                    ).settingEl.addClass("smart-mp-setting-no-border");
 
                 // Content
-                const content = assistantDetails.createDiv();
-                content.style.marginTop = "10px";
-                content.style.borderTop = "1px solid var(--background-modifier-border)";
-                content.style.paddingTop = "10px";
+                const content = assistantDetails.createDiv({ cls: "smart-mp-assistant-content" });
 
                 new Setting(content)
                     .setName($t("settings.assistant.assistant-name"))

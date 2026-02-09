@@ -13,7 +13,7 @@
 	--article-background-repeat: repeat;
 	--article-background-size: auto;
 	--article-background-position: left top;
-	
+
 }
 
 .smart-mp {
@@ -21,10 +21,39 @@
 	min-width: var(--article-min-width);
 	padding: var(--article-padding);
 	margin: var(--article-margin);
-	background-color: var(--article-background-color);
+	background-color: #ffffff;
 	background-image: var(--article-background-image);
 	background-repeat: var(--article-background-repeat);
 	background-size: var(--article-background-size);
 	background-position: var(--article-background-position);
-	
+
+}
+
+.smart-mp-temp-container {
+	position: absolute !important;
+	left: -9999px !important;
+	top: -9999px !important;
+	width: 1200px !important;
+	height: 2000px !important;
+	visibility: hidden !important;
+	overflow: hidden !important;
+}
+
+.smart-mp-setting-section-summary {
+	outline: none;
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+.smart-mp-spinner-visible {
+	display: flex !important;
+}
+
+.smart-mp-spinner-hidden {
+	display: none !important;
+}
+
+.smart-mp-material-view-content {
+	padding: 0 !important;
+	margin: 0 !important;
 }

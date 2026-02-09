@@ -9,6 +9,7 @@ const ALLOWED_TAGS = new Set([
 
 const ALLOWED_ATTRS = new Set([
     "class", "style", "id", "width", "height", "viewbox", "fill", "stroke", "d", "xmlns", "xmlns:xlink", "version", "baseprofile", // SVG/Global (lowercased)
+    "x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", // SVG Positioning
     "src", "href", "target", "rel", "alt", "title", "poster", "controls", "loop", "muted", "autoplay", "preload", "type", // Media/Links
     "rowspan", "colspan", "role", "aria-label", "aria-hidden", "data-type", "align", "valign", // Table/A11y
     "open", // details

@@ -25,10 +25,7 @@ export abstract class SettingSection {
             details.setAttribute('open', '');
         }
 
-        const summary = details.createEl('summary');
-        summary.style.outline = 'none';
-        summary.style.fontWeight = 'bold';
-        summary.style.fontSize = '1.1em';
+        const summary = details.createEl('summary', { cls: 'smart-mp-setting-section-summary' });
         summary.setText(title);
 
         const content = details.createDiv();
