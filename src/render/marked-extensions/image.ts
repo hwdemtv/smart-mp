@@ -9,6 +9,7 @@
 import { MarkedExtension, Tokens } from "marked";
 import { TFile } from "obsidian";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 
 
 export class Image extends SmartMPMarkedExtension {
@@ -67,7 +68,7 @@ export class Image extends SmartMPMarkedExtension {
 						figureEl.prepend(currentImg);
 					});
 				} catch (imgError) {
-					console.warn(`[SmartMP] Skipped image ${i} due to error:`, imgError);
+					Logger.warn('ImageExtension', `[SmartMP] Skipped image ${i} due to error:`, imgError);
 					errors.push(imgError instanceof Error ? imgError : new Error(String(imgError)));
 				}
 			}
@@ -77,11 +78,11 @@ export class Image extends SmartMPMarkedExtension {
 				try {
 					op();
 				} catch (domError) {
-					console.error("[SmartMP] DOM operation failed:", domError);
+					Logger.error('ImageExtension', "[SmartMP] DOM operation failed:", domError);
 				}
 			});
 		} catch (error) {
-			console.error("Error processing images:", error);
+			Logger.error('ImageExtension', "Error processing images:", error);
 		}
 	}
 	postprocess(dom: HTMLElement): Promise<HTMLElement> {
@@ -158,19 +159,19 @@ export class Image extends SmartMPMarkedExtension {
 				const abstractFile = plugin.app.vault.getAbstractFileByPath(resolvedRelativePath);
 				if (abstractFile instanceof TFile) {
 					file = abstractFile;
-					console.debug('[Image Extension] 从当前目录解析成功:', decodedPath, '→', resolvedRelativePath);
+					Logger.debug('ImageExtension', '[Image Extension] 从当前目录解析成功:', { decodedPath, resolvedRelativePath });
 				}
 			}
 
 			if (file instanceof TFile) {
 				const resolved = plugin.app.vault.getResourcePath(file);
-				console.debug('[Image Extension] Vault File Resolved:', decodedPath, '→', resolved);
+				Logger.debug('ImageExtension', '[Image Extension] Vault File Resolved:', { decodedPath, resolved });
 				this.pathCache.set(cacheKey, resolved);
 				return resolved;
 			}
 
 			// 图片未找到，返回特殊标记以便后续处理
-			console.warn('[Image Extension] 图片未找到:', path, 'decoded:', decodedPath);
+			Logger.warn('ImageExtension', '[Image Extension] 图片未找到:', { path, decodedPath });
 			return `__MISSING_IMAGE__${path}`;
 		};
 
@@ -179,11 +180,11 @@ export class Image extends SmartMPMarkedExtension {
 				image(this: any, token: Tokens.Image) {
 					// 安全检查：确保 token.href 存在
 					if (!token.href) {
-						console.warn('[Image Extension] Missing href for image:', token.text);
+						Logger.warn('ImageExtension', '[Image Extension] Missing href for image:', token.text);
 						return `<img src="" alt="${token.text || ''}" class="smart-mp-image-fallback" />`;
 					}
 					const resolvedSrc = getImagePath(token.href);
-					console.debug('[Image Extension] Original:', token.href, '→ Resolved:', resolvedSrc);
+					Logger.debug('ImageExtension', '[Image Extension] Original:', { href: token.href, resolvedSrc });
 					const titleAttr = token.title ? ` title="${token.title}"` : "";
 					return `<img src="${resolvedSrc}" alt="${token.text}"${titleAttr} />`;
 				}

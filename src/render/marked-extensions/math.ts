@@ -9,6 +9,7 @@
 import { parseMath } from "../mathjax";
 import { MarkedExtension, Token, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 
 // 修正后的正则表达式 - 支持转义符和中文
 // Inline: $...$, support escaped \$
@@ -64,9 +65,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
 
         let result = '';
         try {
-            // [Fix] Pass displayMode correctly!
-            // inline=true -> displayMode=false
-            // inline=false -> displayMode=true
+            // [Fix] Pass display mode to parseMath (false for inline, true for block)
             const svg = parseMath(text, !inline);
             if (!svg) {
                 result = inline
@@ -80,7 +79,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
                 }
             }
         } catch (e) {
-            console.error('Math render error:', e);
+            Logger.error('MathRenderer', 'Math render error:', e);
             result = inline
                 ? `<span class="math-error">Math Render Error</span>`
                 : `<div class="math-error">Math Render Error</div>`;

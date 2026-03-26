@@ -13,6 +13,7 @@ import { $t } from "src/lang/i18n";
 import { replaceDivWithSection, serializeElement } from "../../utils/utils.js";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 import { Notice } from "obsidian";
 import hljs from "highlight.js";
 
@@ -74,7 +75,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 				highlighted = hljs.highlightAuto(highlighted).value;
 			}
 		} catch (err) {
-			console.error(err);
+			Logger.error('CodeRenderer', err);
 			highlighted = code;
 		}
 
@@ -164,7 +165,6 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 		let color = '#abb2bf';
 		let headerBg = '#21252b';
 
-		// @ts-ignore
 		if (theme === 'github' || theme === 'github-light') {
 			currentThemeMap = githubThemeColorMap;
 			bg = '#f6f8fa';
@@ -197,24 +197,25 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 			if (styles.length > 0) {
 				const mergedStyle = styles.join('; ');
-				console.debug(`[Code Highlight] Classes: ${classString} → Styles: ${mergedStyle}`);
+				Logger.debug('CodeRenderer', `[Code Highlight] Classes: ${classString} → Styles: ${mergedStyle}`);
 				return `<span style="${mergedStyle};">`;
 			}
 
-			console.warn(`[Code Highlight] Unmapped classes: ${classString}`);
+			Logger.warn('CodeRenderer', `[Code Highlight] Unmapped classes: ${classString}`);
 			return `<span>`; // Strip class to prevent WeChat filtering issues
 		});
 
-		// Basic Code Block Styles
-		const codeStyle = `background:${bg} !important;color:${color} !important;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:6px !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0.5em 0 !important;`;
+		// Basic Code Block Styles - Using CSS Variables with hardcoded fallbacks
+		// This allows themes to override these via :root variables since CssMerger resolves them
+		const codeStyle = `background:var(--code-bg, ${bg}) !important;color:var(--code-text, ${color}) !important;font-family:var(--code-font, ui-monospace,SFMono-Regular,Menlo,Consolas,monospace) !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:var(--code-radius, 6px) !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0.5em 0 !important;border:var(--code-border, none) !important;`;
 
 		let codeSection = '';
 		if (this.plugin.settings.showCodeMacHeader !== false && lang) {
-			const headerStyle = `background:${headerBg};padding:4px 12px;display:flex;align-items:center;gap:6px;border-radius:6px 6px 0 0;`;
+			const headerStyle = `display:var(--code-header-display, flex);background:var(--code-header-bg, ${headerBg});padding:4px 12px;align-items:center;gap:6px;border-radius:6px 6px 0 0;`;
 			const dotStyle = 'width:8px;height:8px;border-radius:50%;display:inline-block;';
-			const labelStyle = 'margin-left:auto;font-size:11px;color:#6a737d;font-weight:bold;text-transform:uppercase;';
+			const labelStyle = 'margin-left:auto;font-size:11px;color:var(--code-header-text, #6a737d);font-weight:bold;text-transform:uppercase;';
 
-			codeSection = `<pre style="${headerStyle}"><span style="${dotStyle}background:#ff5f56;"></span><span style="${dotStyle}background:#ffbd2e;"></span><span style="${dotStyle}background:#27c93f;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle};border-radius:0 0 6px 6px;">${highlighted}</pre>`;
+			codeSection = `<pre style="${headerStyle}"><span style="${dotStyle}background:#ff5f56;"></span><span style="${dotStyle}background:#ffbd2e;"></span><span style="${dotStyle}background:#27c93f;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle};border-radius:var(--code-header-display, flex) === 'none' ? var(--code-radius, 6px) : 0 0 6px 6px;">${highlighted}</pre>`;
 		} else {
 			codeSection = `<pre style="${codeStyle}">${highlighted}</pre>`;
 		}
@@ -333,7 +334,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	}
 
 	async renderMermaidAsync(token: Tokens.Generic) {
-		console.debug(`[Mermaid] Starting render for diagram #${this.mermaidIndex}`);
+		Logger.debug('CodeRenderer', `[Mermaid] Starting render for diagram #${this.mermaidIndex}`);
 
 		// [Enhancement] Pre-process icons for WeChat compatibility
 		token.text = this.processMermaidIcons(token.text);
@@ -348,7 +349,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 		// 1. Wait for preview container availability
 		if (!renderer.previewEl) {
-			console.debug(`[Mermaid] Preview element not ready, waiting...`);
+			Logger.debug('CodeRenderer', `[Mermaid] Preview element not ready, waiting...`);
 			await new Promise(resolve => setTimeout(resolve, 100));
 		}
 
@@ -358,7 +359,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			renderer.queryElement(index, '.block-language-mermaid');
 
 		if (!root) {
-			console.debug(`[Mermaid] Root not found immediately, retrying...`);
+			Logger.debug('CodeRenderer', `[Mermaid] Root not found immediately, retrying...`);
 			// Retry loop for root element
 			const maxRetries = 15;
 			const retryInterval = 300;
@@ -373,13 +374,13 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 		}
 
 		if (!root) {
-			console.error(`[Mermaid] Failed to find root element for diagram #${index}`);
+			Logger.error('CodeRenderer', `[Mermaid] Failed to find root element for diagram #${index}`);
 			// Fallback: show raw code block
 			token.html = `<pre class="mermaid-block-fallback"><code>${token.text}</code></pre>`;
 			return;
 		}
 
-		console.debug(`[Mermaid] Found root element, waiting for SVG...`);
+		Logger.debug('CodeRenderer', `[Mermaid] Found root element, waiting for SVG...`);
 
 		// 3. Wait for SVG generation (Mermaid rendering is async)
 		let svg = root.querySelector<SVGElement>("svg");
@@ -388,12 +389,12 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 				await renderer.waitForSelector(root, "svg", 5000);
 				svg = root.querySelector<SVGElement>("svg");
 			} catch (e) {
-				console.warn(`[Mermaid] Timeout waiting for SVG:`, e);
+				Logger.warn('CodeRenderer', `[Mermaid] Timeout waiting for SVG:`, e);
 			}
 		}
 
 		if (!svg) {
-			console.error(`[Mermaid] SVG not found after wait.`);
+			Logger.error('CodeRenderer', `[Mermaid] SVG not found after wait.`);
 			token.html = `<pre class="mermaid-block-fallback"><code>${token.text}</code></pre>`;
 			return;
 		}
@@ -415,7 +416,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 			token.html = `<section id="smart-mp-mermaid-${index}" class="mermaid"><img src="${dataUrl}" class="mermaid-image" style="width:${width}px;height:auto;"></section>`;
 		} catch (error) {
-			console.error(error);
+			Logger.error('CodeRenderer', error);
 		} finally {
 			if (previewer && !previewerHadClass) {
 				previewer.classList.remove("smart-mp-render-preview-visible");
@@ -453,8 +454,8 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	renderCharts(_token: Tokens.Generic) {
 		//the MarkdownRender doen't work well with it. use the preview instead.
 		if (!this.isPluginInstlled('obsidian-charts')) {
-			console.debug(`charts plugin not installed.`);
-			new Notice($t('rnder.charts-plugin-not-installed'))
+			Logger.debug('CodeRenderer', `charts plugin not installed.`);
+			new Notice($t('render.charts-plugin-not-installed'))
 			return false;
 		}
 		const root = this.plugin.resourceManager.getMarkdownRenderedElement(this.chartsIndex, '.block-language-chart')

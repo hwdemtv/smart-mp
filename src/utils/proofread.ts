@@ -13,6 +13,7 @@ import {
 	ViewUpdate,
 } from "@codemirror/view";
 import { Editor, MarkdownView, Notice } from "obsidian";
+import { $t } from "../lang/i18n";
 // ==========  CodeMirror 6 高亮错误文本 ==========
 export interface PROOFREAD_SUGGESTION {
 	type?: string;
@@ -183,7 +184,7 @@ export function proofreadText(
 	const cmEditor = (view.editor as EditorWithCm).cm;
 
 	if (!cmEditor) {
-		new Notice("无法获取编辑器实例");
+		new Notice($t("notice.proofread.cannot-get-editor") ?? "无法获取编辑器实例");
 		return;
 	}
 

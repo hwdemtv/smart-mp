@@ -14,15 +14,15 @@ export class ResourceManager {
         this.plugin = plugin;
         this.init();
     }
-    static getInstance(plugin: SmartMPPlugin) {
-        if (!this.instance) {
-            this.instance = new ResourceManager(plugin);
+    public static getInstance(plugin: SmartMPPlugin): ResourceManager {
+        if (!ResourceManager.instance) {
+            ResourceManager.instance = new ResourceManager(plugin);
         }
-        return this.instance;
+        return ResourceManager.instance;
     }
 
-    static onPluginUnload() {
-        this.instance = undefined as any;
+    public static onPluginUnload(): void {
+        ResourceManager.instance = undefined as any;
     }
     private init() {
     }

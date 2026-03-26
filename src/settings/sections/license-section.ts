@@ -2,16 +2,29 @@
 import { Notice, Setting } from "obsidian";
 import { SettingSection } from "./setting-section";
 import { CryptoHelper } from "src/utils/crypto-helper";
+import { $t } from "src/lang/i18n";
 
 export class LicenseSection extends SettingSection {
     render(): void {
-        this.createLicenseSettings(this.container);
+        const container = this.container;
+        this.createLicenseSettings(container);
+
+        // 注册监听器，当后台认证初始化完成时刷新 UI
+        this.plugin.messageService.registerListener("auth-initialized", () => {
+            const banner = container.querySelector('.smart-mp-license-status') as HTMLElement;
+            if (banner) {
+                this.updateStatusBanner(banner);
+            }
+            // 同时更新设备 ID 显示
+            const deviceIdInput = container.querySelector('.smart-mp-license-input-device') as HTMLInputElement;
+            if (deviceIdInput) {
+                deviceIdInput.value = this.plugin.authService.getDeviceId();
+            }
+        });
     }
 
     private async checkProStatus(): Promise<boolean> {
-        const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
-        const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
-        return userPasswordHash === PRO_SECRET_HASH;
+        return await this.plugin.authService.isProActive();
     }
 
     private createLicenseSettings(container: HTMLElement) {
@@ -22,33 +35,134 @@ export class LicenseSection extends SettingSection {
 
         this.updateStatusBanner(statusBanner);
 
-        // Activation Input
+        // Current Device Info
         new Setting(frame)
-            .setName("激活码")
-            .setDesc("输入激活码以解锁 Pro 功能（去除水印、优先支持等）")
-            .addText((text) => {
-                text.inputEl.type = "password";
-                text.inputEl.addClass("smart-mp-license-input");
-                text
-                    .setPlaceholder("请输入激活码")
-                    .setValue(this.plugin.settings.proPassword || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.proPassword = value;
-                        await this.plugin.saveSettings();
-                    });
+            .setName($t("settings.license.current-device"))
+            .setDesc($t("settings.license.current-device-desc"))
+            .addText(text => {
+                text.inputEl.addClass("smart-mp-license-input-device");
+                text.inputEl.style.width = "200px";
+                text.setDisabled(true).setValue(this.plugin.authService.getDeviceId());
             })
             .addButton((btn) => {
-                btn.setButtonText("验证")
+                btn.setButtonText("解除绑定")
+                    .setWarning()
+                    .onClick(async () => {
+                        const isPro = await this.checkProStatus();
+                        if (!isPro) {
+                            new Notice($t("notice.auth.not-bound") ?? "当前设备并未绑定激活码");
+                            return;
+                        }
+                        const unbinded = await this.plugin.authService.unbindDevice();
+                        if (unbinded) {
+                            this.updateStatusBanner(statusBanner); // Refresh banner
+                        }
+                    });
+            });
+
+        // Activation Input
+        let isPasswordVisible = false;
+        let realPassword = this.plugin.settings.proPassword || "";
+
+        new Setting(frame)
+            .setName($t("settings.license.activation-code"))
+            .setDesc($t("settings.license.activation-code-desc"))
+            .addText((text) => {
+                text.inputEl.addClass("smart-mp-license-input");
+
+                text.inputEl.type = "text";
+
+                if (realPassword) {
+                    text.setValue("•".repeat(realPassword.length));
+                } else {
+                    text.setPlaceholder("请输入激活码");
+                }
+
+                let maskTimeout: number | null = null;
+                text.inputEl.addEventListener('input', (e) => {
+                    const inputEl = e.target as HTMLInputElement;
+                    const value = inputEl.value;
+                    const cursorPosition = inputEl.selectionStart || 0;
+
+                    if (isPasswordVisible) {
+                        realPassword = value;
+                        this.plugin.settings.proPassword = realPassword;
+                        return;
+                    }
+
+                    let newRealPassword = "";
+                    let newDisplayedValue = "";
+                    let realIndex = 0;
+
+                    for (let i = 0; i < value.length; i++) {
+                        const char = value[i];
+                        if (char === "•") {
+                            if (realIndex < realPassword.length) {
+                                newRealPassword += realPassword[realIndex];
+                                newDisplayedValue += "•";
+                                realIndex++;
+                            }
+                        } else {
+                            newRealPassword += char;
+                            newDisplayedValue += char;
+                        }
+                    }
+
+                    realPassword = newRealPassword;
+                    this.plugin.settings.proPassword = realPassword;
+                    inputEl.value = newDisplayedValue;
+                    inputEl.setSelectionRange(cursorPosition, cursorPosition);
+
+                    if (maskTimeout) window.clearTimeout(maskTimeout);
+                    maskTimeout = window.setTimeout(() => {
+                        if (!isPasswordVisible) {
+                            const currentCursor = inputEl.selectionStart;
+                            inputEl.value = "•".repeat(realPassword.length);
+                            if (currentCursor !== null) {
+                                inputEl.setSelectionRange(currentCursor, currentCursor);
+                            }
+                        }
+                    }, 800);
+                });
+
+                const eyeIcon = document.createElement('span');
+                eyeIcon.addClass('smart-mp-eye-icon');
+                eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+                eyeIcon.style.cursor = 'pointer';
+                eyeIcon.style.marginLeft = '8px';
+                eyeIcon.style.opacity = '0.5';
+                eyeIcon.onclick = () => {
+                    isPasswordVisible = !isPasswordVisible;
+                    if (isPasswordVisible) {
+                        text.inputEl.value = realPassword; // 恢复明文
+                        eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.579 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
+                        eyeIcon.style.opacity = '1';
+                    } else {
+                        text.inputEl.value = "•".repeat(realPassword.length); // 恢复掩码
+                        eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+                        eyeIcon.style.opacity = '0.5';
+                    }
+                };
+                text.inputEl.insertAdjacentElement('afterend', eyeIcon);
+            })
+            .addButton((btn) => {
+                btn.setButtonText("联网验证")
                     .setCta()
                     .onClick(async () => {
-                        const isValid = await this.checkProStatus();
-                        if (isValid) {
-                            new Notice("✅ 激活成功！Pro 功能已解锁");
-                        } else {
-                            new Notice("❌ 激活码无效，请检查后重试");
+                        btn.setButtonText("验证中...");
+                        btn.setDisabled(true);
+                        const password = this.plugin.settings.proPassword;
+                        if (!password) {
+                            new Notice($t("notice.settings.license-key-required") ?? "⚠️ 激活码不能为空");
+                            btn.setButtonText("联网验证").setDisabled(false);
+                            return;
                         }
-                        // Refresh banner
-                        this.updateStatusBanner(statusBanner);
+                        const isVerified = await this.plugin.authService.verifyLicense(password);
+                        if (isVerified) {
+                            this.updateStatusBanner(statusBanner);
+                        } else {
+                            btn.setButtonText("联网验证").setDisabled(false);
+                        }
                     });
             });
 
@@ -61,7 +175,7 @@ export class LicenseSection extends SettingSection {
 				🎨 <b>主题克隆</b>：一键复刻任意公众号排版<br>
 				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
 				📦 <b>永久更新</b>：包含所有未来本地新功能<br>
-				🎁 <b>云端特权</b>：未来云服务上线享折扣/赠送
+				🎁 <b>多端漫游</b>：支持最多3台个人设备自动漫游验证
 			</div>
 			<div class="smart-mp-license-benefits-footer">
 			<a href="https://github.com/hwdemtv/smart-mp#pro-features">

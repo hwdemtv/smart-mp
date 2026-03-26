@@ -66,6 +66,14 @@ export class Logger {
     }
 
     /**
+     * 信息日志 - 始终输出
+     * 用于记录重要的流程信息
+     */
+    static info(context: string, message: string, data?: unknown): void {
+        console.log(`${this.prefix}:${context}] ${message}`, this.scrub(data ?? ''));
+    }
+
+    /**
      * 警告日志 - 始终输出
      * 用于记录非致命但可能有问题的情况
      */

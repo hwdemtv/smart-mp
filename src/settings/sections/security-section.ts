@@ -25,14 +25,24 @@ export class SecuritySection extends SettingSection {
 
         new Setting(frame)
             .setName($t("settings.use-center-token-server"))
-            .setDesc(($t("settings.if-your-device-cannot-get-static-pubic-i") || "") + " (功能已暂时关闭，请待自建服务器后开启)")
+            .setDesc($t("settings.center-token-server-desc") || "使用反代服务器获取微信 access_token，无需配置 IP 白名单。适用于无法获取静态公网 IP 的设备。")
             .addToggle((toggle) => {
                 toggle
-                    .setValue(false) // Force false in UI
-                    .setDisabled(true) // Disable interaction
-                    .onChange((value) => {
+                    .setValue(this.plugin.settings.useCenterToken ?? false)
+                    .onChange(async (value) => {
                         this.plugin.settings.useCenterToken = value;
-                        void this.plugin.saveSettings();
+                        await this.plugin.saveSettings();
+
+                        // 清除缓存的中心令牌
+                        if (!value) {
+                            const { WechatClient } = await import("src/wechat-api/wechat-client");
+                            WechatClient.getInstance(this.plugin).clearCenterTokenCache();
+                        }
+
+                        new Notice(value
+                            ? $t("wechat-api.center-token-enabled")
+                            : $t("wechat-api.center-token-disabled")
+                        );
                     });
             });
     }

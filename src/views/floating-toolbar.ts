@@ -1,6 +1,7 @@
 import { Editor, Menu, Notice, setIcon } from "obsidian";
 import SmartMPPlugin from "../main";
 import { Logger } from "../utils/logger";
+import { $t } from "../lang/i18n";
 
 export class FloatingToolbar {
     private toolbarEl: HTMLElement;
@@ -38,8 +39,8 @@ export class FloatingToolbar {
                         try {
                             await btn.action(editor, selection);
                         } catch (err) {
-                            console.error("Action failed", err);
-                            new Notice("执行失败");
+                            Logger.error("FloatingToolbar", "Action failed", err);
+                            new Notice($t("notice.floating-toolbar.action-failed") ?? "执行失败");
                         }
                     });
             });
@@ -48,8 +49,8 @@ export class FloatingToolbar {
         menu.addSeparator();
         menu.addItem(item => {
             item.setIcon('more-horizontal')
-                .setTitle('更多')
-                .onClick(() => new Notice("更多 AI 功能敬请期待"));
+                .setTitle($t('floating-toolbar.more'))
+                .onClick(() => new Notice($t("notice.theme.more-features-coming") ?? "更多 AI 功能敬请期待"));
         });
 
         const selectionRange = window.getSelection();
@@ -82,8 +83,8 @@ export class FloatingToolbar {
         buttons.push({
             id: 'polish',
             icon: 'sun',
-            label: '润色',
-            tooltip: '润色选中文本',
+            label: $t('floating-toolbar.polish'),
+            tooltip: $t('floating-toolbar.polish-tooltip'),
             action: async (editor: Editor, sel: string) => {
                 await this.plugin.polishContentWithStreaming(editor, sel);
             }
@@ -93,8 +94,8 @@ export class FloatingToolbar {
         buttons.push({
             id: 'proofread',
             icon: 'clipboard-check', // or 'check-circle'
-            label: '校对',
-            tooltip: '校对选中文本',
+            label: $t('floating-toolbar.proofread'),
+            tooltip: $t('floating-toolbar.proofread-tooltip'),
             action: async (editor: Editor, sel: string) => {
                 await this.plugin.proofContentWithStreaming(editor, sel);
             }
@@ -105,8 +106,8 @@ export class FloatingToolbar {
             buttons.push({
                 id: 'synonyms',
                 icon: 'book-a',
-                label: '同义词',
-                tooltip: '查找同义词',
+                label: $t('floating-toolbar.synonyms'),
+                tooltip: $t('floating-toolbar.synonyms-tooltip'),
                 action: async (editor: Editor, sel: string) => {
                     await this.plugin.getSynonymsWithStreaming(editor, sel);
                 }
@@ -119,8 +120,8 @@ export class FloatingToolbar {
             buttons.push({
                 id: 'translate',
                 icon: 'languages',
-                label: '翻译',
-                tooltip: '翻译',
+                label: $t('floating-toolbar.translate'),
+                tooltip: $t('floating-toolbar.translate-tooltip'),
                 action: async (editor: Editor, sel: string) => {
                     const hasChinese = /[\u4e00-\u9fa5]/.test(sel);
                     if (hasChinese) {
@@ -137,8 +138,8 @@ export class FloatingToolbar {
             buttons.push({
                 id: 'headline',
                 icon: 'heading',
-                label: '标题',
-                tooltip: '生成爆款标题',
+                label: $t('floating-toolbar.headline'),
+                tooltip: $t('floating-toolbar.headline-tooltip'),
                 action: async (editor: Editor, sel: string) => {
                     await this.plugin.generateTitleWithStreaming(editor, sel);
                 }
@@ -150,8 +151,8 @@ export class FloatingToolbar {
             buttons.push({
                 id: 'summary',
                 icon: 'file-text',
-                label: '摘要',
-                tooltip: '生成摘要',
+                label: $t('floating-toolbar.summary'),
+                tooltip: $t('floating-toolbar.summary-tooltip'),
                 action: async (editor: Editor, sel: string) => {
                     await this.plugin.generateSummaryWithStreaming(editor, sel);
                 }

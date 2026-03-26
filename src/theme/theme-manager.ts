@@ -66,7 +66,7 @@ export class ThemeManager {
 
 					const fileResponse = await requestUrl(`${url}${theme.file}`);
 					if (fileResponse.status !== 200) {
-						console.warn(`Failed to download ${theme.file}: ${fileResponse.text}`);
+						Logger.warn('ThemeManager', `Failed to download ${theme.file}: ${fileResponse.text}`);
 						continue;
 					}
 
@@ -85,7 +85,7 @@ export class ThemeManager {
 
 					await this.plugin.app.vault.create(filePath, fileContent);
 				} catch (error) {
-					console.error(error);
+					Logger.error('ThemeManager', 'Download check failed', error);
 					const message =
 						error instanceof Error ? error.message : String(error);
 					new Notice($t('views.theme-manager.error-downloading-theme') + message);
@@ -94,7 +94,7 @@ export class ThemeManager {
 			}
 			new Notice($t('views.theme-manager.total-themes-length-themes-downloaded', [themes.length]))
 		} catch (error) {
-			console.error("Error downloading themes:", error);
+			Logger.error("ThemeManager", "Error downloading themes:", error);
 			new Notice($t('views.theme-manager.error-downloading-themes'));
 		}
 	}
@@ -295,27 +295,49 @@ export class ThemeManager {
 	}
 
 	public async applyTheme(htmlRoot: HTMLElement) {
-		const customCss = await this.getCSS();
+		let customCss = "";
+		try {
+			customCss = await this.getCSS();
+		} catch (error) {
+			Logger.error('ThemeManager', '读取自定义 CSS 失败:', error);
+			return htmlRoot; // Read failed, return unstyled
+		}
 
-		const cssKey = customCss;
+		if (!customCss || customCss.trim() === "") {
+			Logger.debug('ThemeManager', 'No custom CSS to apply.');
+			// Still might want to clear previous theme keys
+			delete htmlRoot.dataset.SmartMPThemeKey;
+			return htmlRoot;
+		}
+
+		// Use hash key instead of full CSS content for cache efficiency
+		const cssKey = CSSCache.generateKey(customCss);
 		const cache = CSSCache.getInstance();
-		const cachedState = cache.get(cssKey);
+		
+		try {
+			const cachedState = await cache.get(cssKey);
 
-		if (!this.cssMerger || this.cachedCssKey !== cssKey) {
-			this.cssMerger = new CSSMerger();
+			if (!this.cssMerger || this.cachedCssKey !== cssKey) {
+				this.cssMerger = new CSSMerger();
 
-			if (cachedState) {
-				// Cache Hit: Restore state instantly
-				this.cssMerger.restoreState(cachedState.state);
-			} else {
-				// Cache Miss: Perform expensive init
-				await this.cssMerger.init(customCss);
-				// Cache the resulting state
-				const mergerState = this.cssMerger.getState();
-				cache.set(cssKey, null as any, mergerState.vars, mergerState);
+				if (cachedState && cachedState.state) {
+					// Cache Hit: Restore state instantly
+					this.cssMerger.restoreState(cachedState.state);
+					Logger.debug('ThemeManager', 'Restored CSSMerger state from cache.');
+				} else {
+					// Cache Miss: Perform expensive init
+					await this.cssMerger.init(customCss);
+					// Cache the resulting state
+					const mergerState = this.cssMerger.getState();
+					await cache.set(cssKey, null as any, mergerState.vars, mergerState);
+					Logger.debug('ThemeManager', 'Initialized CSSMerger and saved to cache.');
+				}
+
+				this.cachedCssKey = cssKey;
 			}
-
-			this.cachedCssKey = cssKey;
+		} catch (mergerError) {
+			Logger.error('ThemeManager', 'CSS 合并初始化失败:', mergerError);
+			return htmlRoot; // Initialization failed, return unstyled
 		}
 
 		// Optimization: Skip DOM traversal if same theme already applied
@@ -324,32 +346,32 @@ export class ThemeManager {
 		}
 
 		// [NEW] Inject custom theme CSS as <style> tag for class selector rules
-		// This allows rules like `.smart-mp h2 { border-left: ... }` to work
-		const existingStyleTag = htmlRoot.querySelector('style[data-smart-mp-custom-theme]');
-		if (existingStyleTag) {
-			existingStyleTag.remove();
-		}
-
-		// Extract custom theme CSS (everything after "/* --- Theme CSS Start --- */")
 		const themeStartMarker = '/* --- Theme CSS Start --- */';
 		const themeStartIndex = customCss.indexOf(themeStartMarker);
-		console.log('[ThemeManager] Theme start marker index:', themeStartIndex);
+		
 		if (themeStartIndex !== -1) {
 			const customThemeCss = customCss.substring(themeStartIndex + themeStartMarker.length).trim();
-			console.log('[ThemeManager] Custom theme CSS length:', customThemeCss.length);
-			console.log('[ThemeManager] Custom theme CSS preview:', customThemeCss.substring(0, 200));
 			if (customThemeCss) {
+				const existingStyleTag = htmlRoot.querySelector('style[data-smart-mp-custom-theme]');
+				if (existingStyleTag) {
+					existingStyleTag.remove();
+				}
 				const styleTag = document.createElement('style');
 				styleTag.setAttribute('data-smart-mp-custom-theme', 'true');
 				styleTag.textContent = customThemeCss;
 				htmlRoot.prepend(styleTag);
-				console.log('[ThemeManager] Style tag injected successfully');
+				Logger.debug('ThemeManager', 'Injected custom theme style tag.');
 			}
 		}
 
-		const node = this.cssMerger.applyStyleToElement(htmlRoot);
-		node.dataset.SmartMPThemeKey = cssKey;
-		return node;
+		try {
+			const node = this.cssMerger.applyStyleToElement(htmlRoot);
+			node.dataset.SmartMPThemeKey = cssKey;
+			return node;
+		} catch (applyError) {
+			Logger.error('ThemeManager', '应用样式到 DOM 失败:', applyError);
+			return htmlRoot;
+		}
 	}
 
 	public async saveTheme(name: string, css: string): Promise<void> {
@@ -390,7 +412,7 @@ ${css}
 		await this.loadThemes();
 	}
 
-	onPluginUnload() {
+	public static onPluginUnload() {
 		// Clean up caches
 		CSSCache.getInstance().clear();
 		CSSMerger.clearCaches();

@@ -11,10 +11,34 @@
     "video": "Video",
     "voice": "Voice"
   },
+  "imageGenerateModal": {
+    "promptPlaceholder": "Enter image description, e.g., a cute cat napping in the sunlight",
+    "negativePromptPlaceholder": "Enter elements to avoid, e.g., blurry, low quality, watermark"
+  },
+  "errors": {
+    "api-error": "API error occurred",
+    "wechat-error": "WeChat API error",
+    "render-error": "Render error"
+  },
+  "commands": {
+    "polish": "SmartMP: Polish Selected Text",
+    "translate-en": "SmartMP: Translate to English",
+    "translate-zh": "SmartMP: Translate to Chinese",
+    "mermaid": "SmartMP: Generate Mermaid Diagram",
+    "latex": "SmartMP: Generate LaTeX Formula",
+    "summary": "SmartMP: Generate Article Summary",
+    "headline": "SmartMP: Generate Viral Headline",
+    "insert-mode": {
+      "replace": "🔄 Replace Selected Text",
+      "append": "➕ Append After Selection",
+      "prepend": "⬆️ Prepend Before Selection",
+      "copy": "📋 Copy to Clipboard"
+    }
+  },
+  "set-as-cover-of-current-draft": "Set as cover for current draft",
+  "set-cover-tu-pian-mediaitemname": "Set \"{0}\" as cover image",
   "main": {
     "chat-llm-has-not-been-configured": "Chat LLM has not been configured.",
-    "generate-latex": "Generate LaTeX",
-    "generate-mermaid": "Generate Mermaid",
     "get-synonyms": "Get Synonyms...",
     "no-wechat-mp-account-selected": "No WeChat MP account selected.",
     "please-check-you-appid-and-appsecret": "Please check your App ID and App Secret.",
@@ -22,10 +46,8 @@
     "polishing": "Polishing...",
     "proof": "Proof",
     "proofing": "Proofing...",
-    "synonyms": "synonyms",
     "generating-latex": "Generate LaTeX",
     "generating-mermaid": "Generate Mermaid",
-    "summarizing": "Summarizing...",
     "text-to-image": "Text to image",
     "to-chinese": "Translate to Chinese",
     "to-english": "Translate to English",
@@ -35,10 +57,9 @@
     "open-material-view": "Material management",
     "open-previewer": "Article render previewer",
     "image-generation-failed": "Image generation failed.",
-    "fetch-wechat-profile": "Fetching WeChat profile"
+    "toggle-scroll-sync": "Toggle scroll sync"
   },
   "modals": {
-    "be-careful": "Caution!",
     "cancel": "Cancel",
     "caution": "Caution!",
     "confirm": "Confirm",
@@ -48,8 +69,6 @@
       "title": "Confirm Delete",
       "warning": "This action is permanent and cannot be undone."
     },
-    "enter": "Enter",
-    "escape": "Escape",
     "image-generation": {
       "generate": "Generate",
       "negative-prompt": "Negative prompt:",
@@ -70,15 +89,22 @@
       "title": "Confirm publish",
       "warning": "Publishing outside of WeChat MP may not be as efficient and some features might not work as expected (e.g., tags, pushing to public accounts)."
     },
-    "space": "Space"
+    "diff": {
+      "title": "AI Modification Comparison (Diff View)",
+      "original": "Original Content",
+      "suggestion": "AI Suggestion",
+      "confirm": "Confirm Replace",
+      "copy": "Copy Modified Content"
+    }
   },
   "render": {
     "admonition-failed": "<section>Admonition rendering failed</section>",
-    "callout-failed": "<span>Callout rendering failed</span>",
     "charts-failed": "<section>Charts rendering failed</section>",
     "excalidraw-failed": "Excalidraw rendering failed",
+    "excalidraw-plugin-not-installed": "<section>Excalidraw plugin not installed, cannot render</section>",
     "faild-canvas-context": "Failed to get canvas context.",
     "failed-to-convert-canvas-to-blob": "Failed to convert canvas to Blob.",
+    "failed-to-load-image": "Failed to load image",
     "file-not-found": "File not found: {0}",
     "mermaid-failed": "<section>Mermaid rendering failed</section>",
     "pdf-crop-failed": "<span>Pdf cropping failed</span>",
@@ -92,26 +118,31 @@
   "settings": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "account": {
+      "info": "Account Info"
+    },
+    "invalid-wewerite-settings-file": "Invalid settings file format",
     "account-info": "Account info",
     "account-name": "Account name",
     "account-name-for-your-wechat-official": "Account name for your WeChat official account",
-    "add-ip-address-ipv4-0-to-wechat-mp-ip-wh": "Add IP address [{0}] to WeChat MP IP whitelist.",
     "app-id": "App ID",
     "app-secret": "App secret",
     "app-secret-for-your-wechat-official": "App secret for your WeChat official account",
     "appid-for-your-wechat-official-account": "AppID for Your Wechat Official Account",
     "enable-strict-security-mode": "Enable Strict Security Mode",
     "enable-strict-security-mode-desc": "Enables strict global HTML whitelist filtering to prevent XSS. Disable this if you encounter issues with **LaTeX Formulas (MathJax)**, **Excalidraw**, or other complex content. (Default: ON)",
+    "general-section": {
+      "enable-floating-toolbar": "Enable Smart Floating Toolbar",
+      "enable-floating-toolbar-desc": "Automatically show AI assistant bar when text is selected"
+    },
     "be-carefull-delete-account": "Be carefull! This will delete all settings and data for this account.",
     "check-if-your-account-setting-is-correct": "Check if your account settings are correct.",
     "click-to-connect-wechat-server": "Click to connect to WeChat server",
     "successfully-connected-to-wechat-server": "Successfully connected to WeChat server.",
     "fetching": "Fetching...",
     "failed-to-connect-to-wechat-server": "Failed to connect to WeChat server.",
-    "copy-ip-address-to-clipboard": "Copy IP address to clipboard",
     "copy-ip-to-clipboard": "Copy IP to clipboard",
     "create-new-account": "Create new account",
-    "create-new-chat-llm-account": "Create new chat LLM account",
     "create-new-draw-llm-account": "Create New draw LLM account",
     "custom-themes": "Custom themes",
     "custom-themes-folder": "Custom themes folder",
@@ -122,28 +153,34 @@
     "clone-theme-name": "New Theme Name",
     "clone-theme-name-desc": "Name for the cloned theme",
     "clone-theme-btn": "Clone Theme",
-    "pro-feature-alert": "This is a Pro feature. Please activate Pro to clone themes.",
-    "clone-theme-invalid-url": "Please enter a valid WeChat article URL",
-    "clone-theme-empty-name": "Please enter a theme name",
     "clone-theme-extracting": "Extracting...",
-    "clone-theme-analyzing": "Analyzing article styles, this may take a few seconds...",
-    "clone-theme-success": "Theme \"{0}\" cloned successfully! Added to theme list.",
-    "clone-theme-failed": "Clone failed: {0}",
+    "clone-theme-name-placeholder": "e.g., Geek Park style",
+    "pro-feature-alert": "This is a Pro feature. Please activate Pro to clone themes.",
     "extraction-failed-invalid-url": "Cannot extract theme from this URL. Please check if the link is valid.",
-    "clone-theme-start": "Start Clone",
     "delete-account": "Delete account",
     "draft-previewer-wechat-id": "Draft previewer WeChat ID",
     "draft-only-visible-for-the-wechat-user-o": "Draft visible only to the WeChat user. Only valid for certified MP accounts.",
     "enable-real-time-rendering": "Enable real-time rendering of markdown content",
     "real-time-render": "Real-time Render",
-    "failed-to-get-wechat-access-token": "Failed to get WeChat access token.",
-    "if-your-device-cannot-get-static-pubic-i": "If your device cannot get a static public IP, use our center token server to get tokens. We will not misuse your App ID or secret.",
     "import-account-info": "Import Account Info",
     "export-account-info": "Export Account Info",
+    "scroll-sync-section": {
+      "precision": "Scroll Sync Precision",
+      "precision-desc": "Adjust the sensitivity of synchronization between editor and preview",
+      "highlight-style": "Sync Highlight Style",
+      "highlight-style-desc": "Choose the style for the highlighted line in the editor during scroll sync",
+      "line-level-sync": "Code Block Line-level Sync",
+      "line-level-sync-desc": "Enable line-level alignment within ultra-long code blocks (requires re-rendering preview)",
+      "sync-mode": "Sync Alignment Algorithm",
+      "sync-mode-desc": "Choose how the scroll position is calculated. If there's a large offset in Live Preview with many images, 'Smooth Proportional' is recommended.",
+      "sync-mode-options": {
+        "precise": "🎯 Precise Anchor (Line-based)",
+        "proportional": "🌊 Smooth Proportional (Percentage-based)"
+      }
+    },
     "import-export-smart-mp-account": "Import/Export Account Information",
     "import-or-export-your-account-info-for-b": "Import or export your account info for backup and restore.",
     "invalid-json-file": "Invalid JSON file.",
-    "invalid-smart-mp-settings-file": "Invalid SmartMP settings file.",
     "ip-copied-to-clipboard": "IP copied to clipboard.",
     "llm-access-api-key": "LLM access API key",
     "llm-access-base-url": "LLM access base URL",
@@ -156,7 +193,6 @@
     "custom-prompt-desc": "Here you can customize the instruction templates for various AI assistants. Use {{content}} as a placeholder for the content to be processed. Leave empty to use system default prompts.",
     "restore-defaults": "Restore Defaults",
     "confirm-restore-defaults": "Are you sure you want to restore all assistant prompts to defaults? This will clear all your custom instructions.",
-    "prompt-placeholder": "{0} assistant core instructions...",
     "assistant": {
       "polish": "Polish",
       "proofread": "Proofread",
@@ -176,7 +212,8 @@
       "move-down": "Move Down",
       "enable-assistant": "Enable Assistant",
       "restore-last": "Restore Last",
-      "restore-default": "Restore Default"
+      "restore-default": "Restore Default",
+      "text-to-image": "Text to Image"
     },
     "hr-title": "Separator Style",
     "hr-desc": "Choose how to display horizontal rules in preview. 'Native' is recommended for cloned themes.",
@@ -189,10 +226,7 @@
       "none": "Hide"
     },
     "custom-hr-text": "Custom Separator Text",
-    "material-view": "Material management",
-    "materials": "Materials",
     "new-account": "New account",
-    "new-chat-llm-account": "Chat-LLM-Account",
     "new-draw-llm-account": "Draw-LLM-Account",
     "no-ip-address": "No IP address",
     "public-ip-address": "Public IP address",
@@ -203,7 +237,6 @@
     "show-image-captions-desc": "Automatically convert image Alt text to captions below.",
     "select-account": "Select account",
     "select-wechat-mp-account": "Select WeChat MP account",
-    "send-article-to-draft-box-successfully": "Article sent to draft box successfully.",
     "settings-exported": "Settings exported successfully.",
     "settings-exporting-failed": "Failed to export settings.",
     "settings-imported-error": "Error importing settings.",
@@ -217,22 +250,21 @@
     "the-folder-where-your-custom-themes": "Folder where your custom themes are stored.",
     "themes-folder-path": "Themes folder path",
     "use-center-token-server": "Use center token server",
+    "center-token-server-desc": "Use proxy server to get WeChat access_token, no need to configure IP whitelist. Suitable for devices without static public IP.",
     "wechat-account": "WeChat account",
-    "code-theme": "Code Theme",
-    "choose-syntax-highlighting-theme": "Choose a syntax highlighting theme for your code blocks.",
-    "show-mac-header": "Show Mac-style Header",
-    "show-mac-style-code-block-header": "Add a Mac-style decorative header (with three dots and language label) to code blocks.",
     "you-should-add-this-ip-to-ip-whitelist-o": "Add this IP address to whitelist. Click the image in \"account information\" below to visit the WeChat MP platform.",
-    "your-wechat-official-account": "Your WeChat official account",
     "no-chat-account-selected": "No AI provider selected",
+    "license": {
+      "current-device": "Current Device",
+      "current-device-desc": "Your device hardware ID is used as authentication credential",
+      "activation-code": "Activation Code",
+      "activation-code-desc": "Enter activation code to unlock Pro features, supports binding multiple devices"
+    },
     "llm-provider": {
       "default-provider": "Default Provider",
       "default-model": "Default Model",
       "manage-providers": "Manage Providers",
       "add-provider": "Add Provider",
-      "add-deepseek": "+ DeepSeek",
-      "add-openai": "+ OpenAI",
-      "add-ollama": "+ Ollama",
       "add-custom": "+ Custom",
       "provider-name": "Name",
       "base-url": "Base URL",
@@ -242,20 +274,18 @@
       "models": "Models",
       "model-id-placeholder": "Model ID (e.g. gpt-4)",
       "model-name-placeholder": "Display Name (e.g. GPT-4)",
-      "confirm-delete": "Are you sure you want to delete {0}?",
-      "models-count": "{0} Models",
       "duplicate": "Duplicate",
       "delete-confirm": "Are you sure you want to delete {{name}}?",
       "unnamed-provider": "Unnamed Provider",
       "fetch-models": "Fetch Models from API",
       "model-id-header": "Model ID",
-      "model-name-header": "Display Name"
+      "model-name-header": "Display Name",
+      "model-select-desc": "Select the provider and model for this assistant (leave empty to use global default)"
     }
   },
   "utils": {
     "missing-api-configuration": "Missing API configuration.",
     "no-ai-server-key-given": "No AI server key provided.",
-    "no-ai-server-model-given": "No AI server model provided.",
     "no-ai-server-url-given": "No AI server URL provided."
   },
   "views": {
@@ -273,6 +303,7 @@
       "digest-text": "Enter digest here...",
       "edit-title": "Edit Final Title:",
       "save-candidates": "Save Candidates to Note",
+      "edit-title-placeholder": "Edit final title here...",
       "generate-cover-image-by-ai": "Generate Cover by AI",
       "generate-digest-by-ai": "Generate Digest by AI",
       "generating-digest": "Generating Digest...",
@@ -280,8 +311,8 @@
       "only-fans-can-comment": "Only Fans Can Comment",
       "only-fans-can-comment-description": "Only users who follow the official account can comment",
       "open-comments": "Open Comments",
-      "testing-button": "Testing Button",
-      "title": "Article Title"
+      "title": "Article Title",
+      "upload-cover-image-error": "Failed to upload cover image, please try again"
     },
     "delete-draft": "Delete draft",
     "delete-image": "Delete image",
@@ -304,19 +335,15 @@
     "previewer": {
       "article-copied-to-clipboard": "Article copied to clipboard.",
       "article-render-failed": "Failed to render article.",
-      "article-title": "Article title",
       "copy-article-to-clipboard": "Copy article to clipboard",
       "file-not-found-path": "File not found: {0}",
-      "not-a-markdown-view": "Not a markdown view",
       "please-set-cover-image": "Please set a cover image.",
       "render-article": "Render article",
       "send-article-to-draft-box": "Send article to draft box",
-      "testing-button": "Testing button",
-      "to-verify-the-images-in-article": "Verify images in the article",
       "smart-mp-previewer": "SmartMP previewer",
       "article-stats": "~{0} words / Est. {1} min read",
-      "show-stats": "Show statistics in preview",
-      "embed-stats": "Embed statistics in article (header)"
+      "scroll-sync-on": "Scroll sync: ON",
+      "scroll-sync-off": "Scroll sync: OFF"
     },
     "send-mass-message": "Send mass message",
     "theme-manager": {
@@ -329,13 +356,123 @@
     }
   },
   "wechat-api": {
-    "add-ip-address-ipv4-0-to-wechat-mp-ip-wh": "Add IP address [{0}] to WeChat MP IP whitelist.",
-    "failed-to-get-wechat-access-token": "Failed to get WeChat access token.",
+    "center-token-request-failed": "Failed to get center token, please check network connection or try again later",
+    "center-token-enabled": "Center token server enabled",
+    "center-token-disabled": "Center token server disabled, please ensure IP whitelist is configured",
     "image-size-exceeds-10m": "Image size exceeds 10MB limit",
     "video-size-exceeds-10m": "Video size exceeds 10MB limit",
     "voice-size-exceeds-2m": "Voice size exceeds 2MB limit",
-    "select-an-wechat-mp-account-first": "Select a WeChat MP account first.",
     "send-article-to-draft-box-successfully": "Article sent to draft box successfully.",
-    "uploading-material-type": "uploading material {0}"
+    "uploading-material-type": "uploading material {0}",
+    "article-content-exceeds-limit": "Article content exceeds limit, please manually split (must be less than 20,000 characters), or use 'Copy All' to manually paste to WeChat editor"
+  },
+  "streaming-diff-modal": {
+    "title": "AI Modification Comparison (Streaming)",
+    "original-content": "📄 Original Content",
+    "ai-suggestion": "✨ AI Suggestion",
+    "edit-hint": "💡 You can manually edit after AI generation completes",
+    "generating": "⏳ AI is generating...",
+    "generating-progress": "📝 AI is generating... ({0} chars)",
+    "complete": "✅ AI generation complete ({0} chars) - Editable",
+    "error": "❌ {0}",
+    "stopped": "⏸️ Generation stopped ({0} chars)",
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)",
+    "regenerate": "Regenerate",
+    "stop": "⏹️ Stop",
+    "confirm": "✅ Confirm",
+    "cancel": "❌ Cancel",
+    "regenerating": "⏳ AI is regenerating...",
+    "regenerate-failed": "AI regeneration failed, please retry"
+  },
+  "floating-toolbar": {
+    "more": "More",
+    "polish": "Polish",
+    "polish-tooltip": "Polish selected text",
+    "proofread": "Proofread",
+    "proofread-tooltip": "Proofread selected text",
+    "synonyms": "Synonyms",
+    "synonyms-tooltip": "Find synonyms",
+    "translate": "Translate",
+    "translate-tooltip": "Translate",
+    "headline": "Headline",
+    "headline-tooltip": "Generate catchy headline",
+    "summary": "Summary",
+    "summary-tooltip": "Generate summary"
+  },
+  "spinner": {
+    "generating-title": "Generating catchy title...",
+    "summarizing": "Generating summary..."
+  },
+  "scroll-sync": {
+    "enabled": "Scroll sync enabled",
+    "disabled": "Scroll sync disabled",
+    "switch-to-desktop": "Switch to desktop view",
+    "switch-to-mobile": "Switch to mobile view"
+  },
+  "notice": {
+    "auth": {
+      "activation-success": "Activation successful",
+      "activation-failed": "Activation failed, please check if the activation code is correct",
+      "activation-network-error": "Unable to connect to verification server, please check network",
+      "not-bound": "Current device is not bound to an activation code",
+      "unbind-success": "Unbind successful",
+      "unbind-failed": "Unbind failed",
+      "unbind-network-error": "Unable to connect to server for unbind"
+    },
+    "main": {
+      "generate-title-failed": "Failed to generate title",
+      "select-text-first": "Please select text first",
+      "copied-to-clipboard": "Copied to clipboard",
+      "select-insert-mode": "Please select insert mode",
+      "assistant-failed": "Assistant execution failed: {0}",
+      "ai-modification-applied": "AI modification applied",
+      "translation-applied": "Translation applied",
+      "title-applied": "Title applied",
+      "summary-applied": "Summary applied",
+      "proofread-applied": "Proofread applied",
+      "synonym-replaced": "Synonyms replaced",
+      "select-text-to-polish": "Please select text to polish",
+      "select-text-to-translate": "Please select text to translate",
+      "select-text-to-convert": "Please select text to convert",
+      "select-text-to-summarize": "Please select text to summarize",
+      "article-content-too-short": "Article content too short to generate title"
+    },
+    "previewer": {
+      "preparing-clipboard": "Preparing clipboard content...",
+      "media-processing-failed": "Media processing failed, some images may not display",
+      "image-processing-failed": "Image processing failed, some images may not display",
+      "content-empty": "Generated content is empty, cannot send to draft box. Please check article content.",
+      "processing-article": "Starting to process article...",
+      "cannot-get-draft-info": "Cannot get current draft info",
+      "send-draft-failed": "Failed to send draft, please check console error log",
+      "send-draft-success": "Sent to draft box successfully!"
+    },
+    "article": {
+      "digest-truncated": "Description max 120 characters, automatically truncated",
+      "titles-saved": "All candidate titles saved to note properties",
+      "save-title-failed": "Failed to save title",
+      "generate-title-failed": "Failed to generate valid title, please retry"
+    },
+    "settings": {
+      "template-exists": "Template already exists, no need to add again",
+      "base-url-required": "Base URL is required",
+      "license-key-required": "Activation code cannot be empty",
+      "migrate-success": "SmartMP: LLM Settings migrated to new format.",
+      "restore-assistants-success": "SmartMP: Default AI Assistants restored."
+    },
+    "theme": {
+      "clone-invalid-url": "Please enter a valid WeChat article URL",
+      "clone-name-required": "Please enter a theme name",
+      "clone-analyzing": "Analyzing article styles, this may take a few seconds...",
+      "clone-failed": "Clone failed: {0}",
+      "more-features-coming": "More AI features coming soon"
+    },
+    "proofread": {
+      "cannot-get-editor": "Cannot get editor instance"
+    },
+    "floating-toolbar": {
+      "action-failed": "Action failed"
+    }
   }
 }

@@ -140,5 +140,3 @@ export function parseHTML(html: string): string {
 
   return result;
 }
-
-

@@ -14,9 +14,7 @@ export class AppearanceSection extends SettingSection {
     }
 
     private async checkProStatus(): Promise<boolean> {
-        const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
-        const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
-        return userPasswordHash === PRO_SECRET_HASH;
+        return await this.plugin.authService.isProActive();
     }
 
     private creatCSSStyleSetting(container: HTMLElement) {

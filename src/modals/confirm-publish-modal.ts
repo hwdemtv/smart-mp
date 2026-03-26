@@ -7,6 +7,7 @@ import { Modal, Notice } from 'obsidian';
 import SmartMPPlugin from 'src/main';
 import { DraftItem } from './../wechat-api/wechat-types';
 import { $t } from 'src/lang/i18n';
+import Logger from 'src/utils/logger';
 
 export class ConfirmPublishModal extends Modal {
     plugin: SmartMPPlugin;
@@ -54,10 +55,13 @@ export class ConfirmPublishModal extends Modal {
         const id = this.draftItem.media_id
         if (id !== undefined && id) {
             this.plugin.wechatClient.publishDraft(id)
-                .then(() => {
-                    new Notice($t('modals.publish.success'));
+                .then((publishId) => {
+                    if (publishId) {
+                        new Notice($t('modals.publish.success'));
+                    }
                 })
                 .catch((error: unknown) => {
+                    Logger.error('ConfirmPublishModal.publish', "Publish failed:", error);
                     new Notice($t('modals.publish.failed'));
                 })
         }

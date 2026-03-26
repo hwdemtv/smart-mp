@@ -2,8 +2,78 @@ import { requestUrl, Notice } from "obsidian";
 import * as cheerio from "cheerio";
 import { THEME_VARIABLES } from "./variables";
 import { $t } from "../lang/i18n";
+import Logger from "../utils/logger";
+
+/**
+ * 全局排版参数接口
+ */
+interface GlobalTypography {
+    lineHeight: string;
+    letterSpacing: string;
+    fontSize: string;
+    color: string;
+    textAlign: string;
+}
+
+/**
+ * 卡片模式检测结果
+ */
+interface CardModeResult {
+    isCardMode: boolean;
+    cardSections: Array<{
+        selector: string;
+        boxShadow: string;
+        borderRadius: string;
+        backgroundColor: string;
+    }>;
+}
+
+/**
+ * 图片样式接口
+ */
+interface ImageStyles {
+    borderRadius: string;
+    boxShadow: string;
+    maxWidth: string;
+    margin: string;
+}
+
+/**
+ * 代码块样式接口
+ */
+interface CodeBlockStyles {
+    backgroundColor: string;
+    color: string;
+    borderRadius: string;
+    fontFamily: string;
+    fontSize: string;
+    padding: string;
+}
+
+/**
+ * 增强的提取数据接口
+ */
+interface ExtractedThemeData {
+    primaryColor: string;
+    backgroundColor: string;
+    globalTypography: GlobalTypography;
+    pagePadding: string;
+    isCardMode: boolean;
+    cardStyles: CardModeResult['cardSections'];
+    h1Style: Record<string, string>;
+    h2Style: Record<string, string>;
+    pStyle: Record<string, string>;
+    blockquoteStyle: Record<string, string>;
+    highlightStyle: Record<string, string>;
+    hrStyle: Record<string, string>;
+    imageStyles: ImageStyles;
+    codeBlockStyles: CodeBlockStyles;
+}
 
 export class ThemeExtractor {
+
+    // 基准字号（用于单位转换）
+    private baseFontSize = 16;
 
     /**
      * 从 URL 提取主题样式 CSS
@@ -18,33 +88,52 @@ export class ThemeExtractor {
             const primaryColor = this.extractPrimaryColor($);
             const backgroundColor = this.extractBackgroundColor($);
 
+            // [NEW] 提取全局排版参数
+            const globalTypography = this.extractGlobalTypography($);
+            const pagePadding = this.extractPagePadding($);
+
+            // [NEW] 检测卡片模式
+            const cardMode = this.detectCardMode($);
+
             // 提取排版样式
             const h1Style = this.extractElementStyle($, '#js_content h1, #activity-name');
             const h2Style = this.extractElementStyle($, '#js_content h2');
             const pStyle = this.extractElementStyle($, '#js_content p');
             let blockquoteStyle = this.extractElementStyle($, '#js_content blockquote');
             if (Object.keys(blockquoteStyle).length === 0) {
-                // 如果没有标准的 blockquote，尝试提取“伪引用样式”（带左边框的元素）
+                // 如果没有标准的 blockquote，尝试提取"伪引用样式"（带左边框的元素）
                 blockquoteStyle = this.extractFakeQuoteStyle($);
             }
             const highlightStyle = this.extractHighlightStyle($);
             const hrStyle = this.extractElementStyle($, '#js_content hr');
 
+            // [NEW] 提取图片样式
+            const imageStyles = this.extractImageStyles($);
+
+            // [NEW] 提取代码块样式
+            const codeBlockStyles = this.extractCodeBlockStyles($);
+
             // 构造 CSS
             const css = this.generateCss({
                 primaryColor,
                 backgroundColor,
+                globalTypography,
+                pagePadding,
+                isCardMode: cardMode.isCardMode,
+                cardStyles: cardMode.cardSections,
                 h1Style,
                 h2Style,
                 pStyle,
                 blockquoteStyle,
                 highlightStyle,
-                hrStyle
+                hrStyle,
+                imageStyles,
+                codeBlockStyles
             });
 
             return css;
         } catch (error) {
-            console.error("Theme extraction failed:", error);
+            Logger.error("ThemeExtractor", "Theme extraction failed:", error);
             throw new Error($t("settings.extraction-failed-invalid-url") || "无法从该链接提取主题，请检查链接是否有效。");
         }
     }
@@ -56,6 +145,183 @@ export class ThemeExtractor {
             throw new Error(`Failed to fetch URL: ${response.status}`);
         }
         return response.text;
+    }
+
+    /**
+     * [NEW] 提取全局排版参数
+     * 从正文章段落中提取 line-height、letter-spacing、font-size 等
+     */
+    private extractGlobalTypography($: cheerio.CheerioAPI): GlobalTypography {
+        const defaultResult: GlobalTypography = {
+            lineHeight: '1.6',
+            letterSpacing: '0px',
+            fontSize: '16px',
+            color: 'rgba(0, 0, 0, 0.85)',
+            textAlign: 'justify'
+        };
+
+        // 寻找基准元素：#js_content 内第一个非空的 p 标签
+        const $p = $('#js_content p').filter((i, el) => {
+            const text = $(el).text().trim();
+            return text.length > 10; // 至少10个字符
+        }).first();
+
+        if ($p.length === 0) {
+            return defaultResult;
+        }
+
+        // 尝试从内联样式获取
+        const styleStr = $p.attr('style') || '';
+
+        // 解析样式
+        const styles: Record<string, string> = {};
+        styleStr.split(';').forEach(pair => {
+            const index = pair.indexOf(':');
+            if (index > -1) {
+                const key = pair.substring(0, index).trim().toLowerCase();
+                const value = pair.substring(index + 1).trim();
+                if (key && value) {
+                    styles[key] = value;
+                }
+            }
+        });
+
+        // 提取并标准化单位
+        return {
+            lineHeight: styles['line-height'] || defaultResult.lineHeight,
+            letterSpacing: this.normalizeUnit(styles['letter-spacing'] || defaultResult.letterSpacing),
+            fontSize: this.normalizeUnit(styles['font-size'] || defaultResult.fontSize, true),
+            color: styles['color'] || defaultResult.color,
+            textAlign: styles['text-align'] || defaultResult.textAlign
+        };
+    }
+
+    /**
+     * [NEW] 提取页面内边距（边缘留白）
+     */
+    private extractPagePadding($: cheerio.CheerioAPI): string {
+        const $content = $('#js_content');
+        const styleStr = $content.attr('style') || '';
+
+        const paddingMatch = styleStr.match(/padding:\s*([^;]+)/i);
+        if (paddingMatch && paddingMatch[1]) {
+            return this.normalizeUnit(paddingMatch[1].trim());
+        }
+
+        // 尝试单独匹配
+        const paddingLeft = styleStr.match(/padding-left:\s*([^;]+)/i);
+        const paddingRight = styleStr.match(/padding-right:\s*([^;]+)/i);
+
+        if (paddingLeft && paddingRight) {
+            return `${this.normalizeUnit(paddingLeft[1])} ${this.normalizeUnit(paddingRight[1])}`;
+        }
+
+        return THEME_VARIABLES.wechat.padding; // 默认
+    }
+
+    /**
+     * [NEW] 卡片模式检测
+     * 通过统计学特征判断是否为卡片主题
+     */
+    private detectCardMode($: cheerio.CheerioAPI): CardModeResult {
+        const cardSections: CardModeResult['cardSections'] = [];
+        let cardCount = 0;
+        let totalSections = 0;
+
+        $('#js_content section').each((i, el) => {
+            if (i > 50) return; // 限制扫描数量
+
+            const styleStr = $(el).attr('style') || '';
+            totalSections++;
+
+            // 检查是否是卡片：box-shadow 或 border-radius > 4px
+            const hasBoxShadow = styleStr.includes('box-shadow') && !styleStr.includes('box-shadow: none');
+            const borderRadiusMatch = styleStr.match(/border-radius:\s*(\d+)/i);
+            const borderRadius = borderRadiusMatch ? parseInt(borderRadiusMatch[1]) : 0;
+
+            // 检查是否有子元素（卡片通常包含多个子元素）
+            const childCount = $(el).children().length;
+
+            if ((hasBoxShadow || borderRadius > 4) && childCount >= 2) {
+                cardCount++;
+
+                // 提取卡片样式
+                const bgMatch = styleStr.match(/background(-color)?:\s*([^;]+)/i);
+                const shadowMatch = styleStr.match(/box-shadow:\s*([^;]+)/i);
+
+                cardSections.push({
+                    selector: `section.card-${i}`,
+                    boxShadow: shadowMatch ? shadowMatch[1].trim() : 'none',
+                    borderRadius: borderRadiusMatch ? borderRadiusMatch[0] : '0px',
+                    backgroundColor: bgMatch ? bgMatch[2].trim() : 'transparent'
+                });
+            }
+        });
+
+        // 超过 30% 的 section 是卡片，则认为是卡片模式
+        const isCardMode = totalSections > 0 && (cardCount / totalSections) > 0.3;
+
+        return { isCardMode, cardSections: cardSections.slice(0, 5) }; // 最多保留5个卡片样式
+    }
+
+    /**
+     * [NEW] 单位标准化
+     * 将 pt、rem 等转换为 px
+     */
+    private normalizeUnit(value: string, isFontSize = false): string {
+        if (!value) return isFontSize ? `${this.baseFontSize}px` : '0';
+
+        // 处理 pt → px (1pt ≈ 1.33px)
+        if (value.includes('pt')) {
+            const numMatch = value.match(/[\d.]+/);
+            if (numMatch) {
+                const pt = parseFloat(numMatch[0]);
+                return `${(pt * 1.33).toFixed(1)}px`;
+            }
+        }
+
+        // 处理 rem → px
+        if (value.includes('rem')) {
+            const numMatch = value.match(/[\d.]+/);
+            if (numMatch) {
+                const rem = parseFloat(numMatch[0]);
+                return `${(rem * this.baseFontSize).toFixed(1)}px`;
+            }
+        }
+
+        // 处理 em → px (如果是字体大小用基准字号，其他用 1em = 16px)
+        if (value.includes('em') && !value.includes('rem')) {
+            const numMatch = value.match(/[\d.]+/);
+            if (numMatch) {
+                const em = parseFloat(numMatch[0]);
+                const base = isFontSize ? this.baseFontSize : 16;
+                return `${(em * base).toFixed(1)}px`;
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * [NEW] 智能降级：根据主色计算互补色
+     */
+    private calculateComplementaryColor(primaryColor: string): string {
+        // 解析十六进制颜色
+        let hex = primaryColor.replace('#', '');
+        if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+        }
+
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // 计算互补色 (反转 RGB)
+        const compR = 255 - r;
+        const compG = 255 - g;
+        const compB = 255 - b;
+
+        return `#${compR.toString(16).padStart(2, '0')}${compG.toString(16).padStart(2, '0')}${compB.toString(16).padStart(2, '0')}`;
     }
 
     private extractPrimaryColor($: cheerio.CheerioAPI): string {
@@ -110,7 +376,7 @@ export class ThemeExtractor {
         return THEME_VARIABLES.colors.background.paper;
     }
 
-    private extractElementStyle($: cheerio.CheerioAPI, selector: string): any {
+    private extractElementStyle($: cheerio.CheerioAPI, selector: string): Record<string, string> {
         // 找到第一个匹配的元素
         const el = $(selector).first();
         if (el.length === 0) return {};
@@ -153,7 +419,7 @@ export class ThemeExtractor {
                 const key = pair.substring(0, index).trim().toLowerCase();
                 const value = pair.substring(index + 1).trim();
                 if (key && value) {
-                    styles[key] = value;
+                    styles[key] = this.normalizeUnit(value);
                 }
             }
         });
@@ -257,7 +523,7 @@ export class ThemeExtractor {
 
         // Find max frequency
         let maxCount = 0;
-        let bestStyle = {};
+        let bestStyle: Record<string, string> = {};
         for (const [key, count] of Object.entries(styleCounts)) {
             if (count > maxCount) {
                 maxCount = count;
@@ -267,16 +533,203 @@ export class ThemeExtractor {
         return bestStyle;
     }
 
-    private generateCss(data: any): string {
-        const { primaryColor, h2Style, h1Style, hrStyle } = data;
+    /**
+     * [NEW] 提取图片样式
+     * 从文章中的图片元素提取通用样式
+     */
+    private extractImageStyles($: cheerio.CheerioAPI): ImageStyles {
+        const defaultStyles: ImageStyles = {
+            borderRadius: '4px',
+            boxShadow: 'none',
+            maxWidth: '100%',
+            margin: '0 auto'
+        };
+
+        const styleCounts: Record<string, number> = {};
+        const styleMap: Record<string, ImageStyles> = {};
+
+        // 扫描图片元素
+        $('#js_content img').each((i, el) => {
+            if (i > 20) return; // 限制扫描数量
+
+            const style = $(el).attr('style') || '';
+            const props: Partial<ImageStyles> = {};
+
+            // 提取 border-radius
+            const radiusMatch = style.match(/border-radius:\s*([^;]+)/i);
+            if (radiusMatch) {
+                props.borderRadius = this.normalizeUnit(radiusMatch[1].trim());
+            }
+
+            // 提取 box-shadow
+            const shadowMatch = style.match(/box-shadow:\s*([^;]+)/i);
+            if (shadowMatch && !style.includes('box-shadow: none')) {
+                props.boxShadow = shadowMatch[1].trim();
+            }
+
+            // 提取 max-width
+            const widthMatch = style.match(/max-width:\s*([^;]+)/i);
+            if (widthMatch) {
+                props.maxWidth = this.normalizeUnit(widthMatch[1].trim());
+            }
+
+            // 提取 margin
+            const marginMatch = style.match(/margin:\s*([^;]+)/i);
+            if (marginMatch) {
+                props.margin = marginMatch[1].trim();
+            }
+
+            // 生成 key 用于统计
+            const key = JSON.stringify(props);
+            if (Object.keys(props).length > 0) {
+                styleCounts[key] = (styleCounts[key] || 0) + 1;
+                styleMap[key] = { ...defaultStyles, ...props } as ImageStyles;
+            }
+        });
+
+        // 找到最常见的样式
+        let maxCount = 0;
+        let bestStyles = defaultStyles;
+        for (const [key, count] of Object.entries(styleCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                bestStyles = styleMap[key];
+            }
+        }
+
+        return bestStyles;
+    }
+
+    /**
+     * [NEW] 提取代码块样式
+     * 从文章中的代码块元素提取样式
+     */
+    private extractCodeBlockStyles($: cheerio.CheerioAPI): CodeBlockStyles {
+        const defaultStyles: CodeBlockStyles = {
+            backgroundColor: '#f6f8fa',
+            color: '#24292e',
+            borderRadius: '6px',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            padding: '16px'
+        };
+
+        // 尝试提取 pre/code 标签样式
+        const codeEl = $('#js_content pre, #js_content code').first();
+        if (codeEl.length === 0) {
+            return defaultStyles;
+        }
+
+        const style = codeEl.attr('style') || '';
+        const props: Partial<CodeBlockStyles> = {};
+
+        // 提取背景色
+        const bgMatch = style.match(/background(-color)?:\s*([^;]+)/i);
+        if (bgMatch && bgMatch[2]) {
+            props.backgroundColor = bgMatch[2].trim();
+        }
+
+        // 提取文字颜色
+        const colorMatch = style.match(/color:\s*([^;]+)/i);
+        if (colorMatch) {
+            props.color = colorMatch[1].trim();
+        }
+
+        // 提取 border-radius
+        const radiusMatch = style.match(/border-radius:\s*([^;]+)/i);
+        if (radiusMatch) {
+            props.borderRadius = this.normalizeUnit(radiusMatch[1].trim());
+        }
+
+        // 提取 font-family
+        const fontFamilyMatch = style.match(/font-family:\s*([^;]+)/i);
+        if (fontFamilyMatch) {
+            props.fontFamily = fontFamilyMatch[1].trim();
+        }
+
+        // 提取 font-size
+        const fontSizeMatch = style.match(/font-size:\s*([^;]+)/i);
+        if (fontSizeMatch) {
+            props.fontSize = this.normalizeUnit(fontSizeMatch[1].trim(), true);
+        }
+
+        // 提取 padding
+        const paddingMatch = style.match(/padding:\s*([^;]+)/i);
+        if (paddingMatch) {
+            props.padding = this.normalizeUnit(paddingMatch[1].trim());
+        }
+
+        return { ...defaultStyles, ...props } as CodeBlockStyles;
+    }
+
+    private generateCss(data: ExtractedThemeData): string {
+        const {
+            primaryColor,
+            globalTypography,
+            pagePadding,
+            isCardMode,
+            cardStyles,
+            h1Style,
+            h2Style,
+            hrStyle
+        } = data;
 
         // 构建 CSS 变量覆盖
         let css = ':root {\n';
         css += `    --colors-primary: ${primaryColor};\n`;
-        // 如果有探测到其他颜色变量可以继续添加
+        // [NEW] 添加提取的全局排版参数
+        css += `    --typography-line-height: ${globalTypography.lineHeight};\n`;
+        css += `    --typography-letter-spacing: ${globalTypography.letterSpacing};\n`;
+        css += `    --typography-font-size: ${globalTypography.fontSize};\n`;
+        css += `    --colors-text: ${globalTypography.color};\n`;
+        css += `    --page-padding: ${pagePadding};\n`;
         css += '}\n\n';
 
         css += '/* Extracted Theme Styles */\n\n';
+
+        // [NEW] 卡片模式样式
+        if (isCardMode && cardStyles.length > 0) {
+            css += '/* Card Mode Styles */\n';
+            css += '.smart-mp section {\n';
+            cardStyles.forEach((card, i) => {
+                if (card.boxShadow !== 'none') {
+                    css += `    box-shadow: ${card.boxShadow} !important;\n`;
+                }
+                if (card.borderRadius !== '0px') {
+                    css += `    border-radius: ${card.borderRadius} !important;\n`;
+                }
+                if (card.backgroundColor !== 'transparent') {
+                    css += `    background-color: ${card.backgroundColor} !important;\n`;
+                }
+            });
+            css += '}\n\n';
+        }
+
+        // [NEW] 全局段落样式
+        css += '.smart-mp p {\n';
+        if (globalTypography.lineHeight !== '1.6') {
+            css += `    line-height: ${globalTypography.lineHeight} !important;\n`;
+        }
+        if (globalTypography.letterSpacing !== '0px') {
+            css += `    letter-spacing: ${globalTypography.letterSpacing} !important;\n`;
+        }
+        if (globalTypography.fontSize !== '16px') {
+            css += `    font-size: ${globalTypography.fontSize} !important;\n`;
+        }
+        if (globalTypography.color !== 'rgba(0, 0, 0, 0.85)') {
+            css += `    color: ${globalTypography.color} !important;\n`;
+        }
+        if (globalTypography.textAlign !== 'justify') {
+            css += `    text-align: ${globalTypography.textAlign} !important;\n`;
+        }
+        css += '}\n\n';
+
+        // [NEW] 页面容器边距
+        if (pagePadding !== THEME_VARIABLES.wechat.padding) {
+            css += '.smart-mp-article {\n';
+            css += `    padding: ${pagePadding} !important;\n`;
+            css += '}\n\n';
+        }
 
         // H1
         css += '.smart-mp h1 {\n';
@@ -300,6 +753,9 @@ export class ThemeExtractor {
             if (!bg.includes('!important')) bg += ' !important';
             css += `    background: ${bg};\n`;
         }
+        // [NEW] 标题增强属性
+        if (h1Style['padding']) css += `    padding: ${h1Style['padding']};\n`;
+        if (h1Style['border-radius']) css += `    border-radius: ${h1Style['border-radius']};\n`;
         if (h1Style['font-size']) css += `    font-size: ${h1Style['font-size']};\n`;
         if (h1Style['color']) css += `    color: ${h1Style['color']};\n`;
         // 强制居中判断 (简单启发)
@@ -330,6 +786,9 @@ export class ThemeExtractor {
             if (!bg.includes('!important')) bg += ' !important';
             css += `    background: ${bg};\n`;
         }
+        // [NEW] H2 增强属性
+        if (h2Style['padding']) css += `    padding: ${h2Style['padding']};\n`;
+        if (h2Style['border-radius']) css += `    border-radius: ${h2Style['border-radius']};\n`;
         if (h2Style['color']) {
             css += `    color: ${h2Style['color']};\n`;
         } else {
@@ -354,7 +813,7 @@ export class ThemeExtractor {
                 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
                 'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
                 'color', 'font-size', 'font-style', 'font-weight',
-                'border-radius'
+                'border-radius', 'box-shadow', 'opacity'
             ];
 
             allowedProps.forEach(prop => {
@@ -425,6 +884,56 @@ export class ThemeExtractor {
         }
 
         css += '}\n\n';
+
+        // [NEW] Image Styles
+        if (data.imageStyles) {
+            const imgStyles = data.imageStyles;
+            css += '/* Image Styles */\n';
+            css += '.smart-mp img {\n';
+            if (imgStyles.borderRadius && imgStyles.borderRadius !== '4px') {
+                css += `    border-radius: ${imgStyles.borderRadius} !important;\n`;
+            }
+            if (imgStyles.boxShadow && imgStyles.boxShadow !== 'none') {
+                css += `    box-shadow: ${imgStyles.boxShadow} !important;\n`;
+            }
+            if (imgStyles.maxWidth && imgStyles.maxWidth !== '100%') {
+                css += `    max-width: ${imgStyles.maxWidth} !important;\n`;
+            }
+            if (imgStyles.margin && imgStyles.margin !== '0 auto') {
+                css += `    margin: ${imgStyles.margin} !important;\n`;
+            }
+            css += '}\n\n';
+        }
+
+        // [NEW] Code Block Styles
+        if (data.codeBlockStyles) {
+            const codeStyles = data.codeBlockStyles;
+            css += '/* Code Block Styles */\n';
+            css += '.smart-mp pre, .smart-mp code {\n';
+            if (codeStyles.backgroundColor && codeStyles.backgroundColor !== '#f6f8fa') {
+                css += `    background-color: ${codeStyles.backgroundColor} !important;\n`;
+            }
+            if (codeStyles.color && codeStyles.color !== '#24292e') {
+                css += `    color: ${codeStyles.color} !important;\n`;
+            }
+            if (codeStyles.borderRadius && codeStyles.borderRadius !== '6px') {
+                css += `    border-radius: ${codeStyles.borderRadius} !important;\n`;
+            }
+            if (codeStyles.fontFamily && codeStyles.fontFamily !== 'monospace') {
+                css += `    font-family: ${codeStyles.fontFamily} !important;\n`;
+            }
+            if (codeStyles.fontSize && codeStyles.fontSize !== '14px') {
+                css += `    font-size: ${codeStyles.fontSize} !important;\n`;
+            }
+            css += '}\n\n';
+
+            // Pre-specific padding
+            css += '.smart-mp pre {\n';
+            if (codeStyles.padding && codeStyles.padding !== '16px') {
+                css += `    padding: ${codeStyles.padding} !important;\n`;
+            }
+            css += '}\n\n';
+        }
 
         return css;
     }

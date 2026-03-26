@@ -17,6 +17,7 @@
     min-height: 2.5em;
     /* 增加最小高度 */
     line-height: 1.6;
+    background: transparent;
 }
 
 /* 优化MathJax SVG样式 */

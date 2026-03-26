@@ -25,6 +25,7 @@ import { PreviewPanel } from "../views/previewer";
 
 import { CryptoHelper } from "../utils/crypto-helper";
 import { ThemeCloneModal } from "../modals/theme-clone-modal";
+import Logger from "src/utils/logger";
 
 interface FileSystemFileHandle {
 	createWritable(): Promise<FileSystemWritableFileStream>;
@@ -85,9 +86,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	private isFirstDisplay = true;
 
 	private async checkProStatus(): Promise<boolean> {
-		const PRO_SECRET_HASH = "d33df98683fde354f929554ea349ed13505d9ad04aeb67ec2bed7b831e9d47df";
-		const userPasswordHash = await CryptoHelper.sha256(this.plugin.settings.proPassword || "");
-		return userPasswordHash === PRO_SECRET_HASH;
+		return await this.plugin.authService.isProActive();
 	}
 
 	display(): void {
@@ -98,6 +97,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			this.plugin.settings.customAssistantList?.forEach(a => {
 				this.initialAssistantPrompts[a.id] = a.prompt;
 			});
+			this.expandedSections.add("🔐 授权管理 (License)");
 			this.isFirstDisplay = false;
 		}
 
@@ -168,7 +168,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			new Notice($t("settings.settings-exporting-failed") + errorMessage);
-			console.error(error);
+			Logger.error("SettingTab", "Operation failed", error);
 			return false;
 		}
 	}
@@ -227,7 +227,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 								$t("settings.settings-imported-failed") +
 								errorMessage
 							);
-							console.error(error);
+							Logger.error("SettingTab", "Settings import failed", error);
 						}
 					})();
 				};
@@ -240,7 +240,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			new Notice($t("settings.settings-imported-error") + errorMessage);
-			console.error(error);
+			Logger.error("SettingTab", "Operation failed", error);
 		}
 	}
 
@@ -330,14 +330,14 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 
 						// Fast refresh: only update HR elements, no full re-render
-						console.log('[SmartMP] HR style changed to:', value);
+						Logger.debug("SettingTab", "HR style changed to: " + value);
 						setTimeout(() => {
 							const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
-							console.log('[SmartMP] Found preview leaves:', leaves.length);
+							Logger.debug("SettingTab", "Found preview leaves: " + leaves.length);
 							for (const leaf of leaves) {
-								console.log('[SmartMP] Leaf view type:', leaf.view.getViewType());
+								Logger.debug("SettingTab", "Leaf view type: " + leaf.view.getViewType());
 								if (leaf.view.getViewType() === "smart-mp-article-preview") {
-									console.log('[SmartMP] Calling refreshHRStyle() - fast update');
+									Logger.debug("SettingTab", "Calling refreshHRStyle() - fast update");
 									// Use fast refresh instead of full renderDraft
 									(leaf.view as any).refreshHRStyle();
 								}
@@ -359,13 +359,13 @@ export class SmartMPSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 
 							// Fast refresh: only update HR elements
-							console.log('[SmartMP] Custom HR text changed to:', value);
+							Logger.debug("SettingTab", "Custom HR text changed to: " + value);
 							setTimeout(() => {
 								const leaves = this.app.workspace.getLeavesOfType("smart-mp-article-preview");
-								console.log('[SmartMP] Found preview leaves:', leaves.length);
+								Logger.debug("SettingTab", "Found preview leaves: " + leaves.length);
 								for (const leaf of leaves) {
 									if (leaf.view.getViewType() === "smart-mp-article-preview") {
-										console.log('[SmartMP] Calling refreshHRStyle() for custom text');
+										Logger.debug("SettingTab", "Calling refreshHRStyle() for custom text");
 										(leaf.view as any).refreshHRStyle();
 									}
 								}
@@ -393,14 +393,24 @@ export class SmartMPSettingTab extends PluginSettingTab {
 
 		new Setting(frame)
 			.setName($t("settings.use-center-token-server"))
-			.setDesc(($t("settings.if-your-device-cannot-get-static-pubic-i") || "") + " (功能已暂时关闭，请待自建服务器后开启)")
+			.setDesc($t("settings.center-token-server-desc") || "使用反代服务器获取微信 access_token，无需配置 IP 白名单。")
 			.addToggle((toggle) => {
 				toggle
-					.setValue(false) // Force false in UI
-					.setDisabled(true) // Disable interaction
-					.onChange((value) => {
+					.setValue(this.plugin.settings.useCenterToken ?? false)
+					.onChange(async (value) => {
 						this.plugin.settings.useCenterToken = value;
-						void this.plugin.saveSettings();
+						await this.plugin.saveSettings();
+
+						// 清除缓存的中心令牌
+						if (!value) {
+							const { WechatClient } = await import("src/wechat-api/wechat-client");
+							WechatClient.getInstance(this.plugin).clearCenterTokenCache();
+						}
+
+						new Notice(value
+							? $t("wechat-api.center-token-enabled")
+							: $t("wechat-api.center-token-disabled")
+						);
 					});
 			});
 	}
@@ -847,7 +857,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 			.setTooltip("Test API connection")
 			.onClick(async () => {
 				if (!provider.baseUrl) {
-					new Notice("❌ Base URL is required");
+					new Notice($t("notice.settings.base-url-required") ?? "❌ Base URL is required");
 					return;
 				}
 				btn.setButtonText("⏳...");
@@ -863,7 +873,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					new Notice(`✅ 连接成功！发现 ${models.data.length} 个模型`);
 				} catch (error) {
 					const err = error as Error;
-					console.error("API Test failed:", err);
+					Logger.error("SettingTab", "API Test failed:", err);
 					new Notice(`❌ 连接失败: ${err.message || err}`);
 				} finally {
 					btn.setButtonText("🔗 Test");
@@ -921,7 +931,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		fetchModelsBtn.addEventListener('click', async (e) => {
 			e.stopPropagation();
 			if (!provider.baseUrl) {
-				new Notice("❌ Base URL is required");
+				new Notice($t("notice.settings.base-url-required") ?? "❌ Base URL is required");
 				return;
 			}
 			setIcon(fetchModelsBtn, "hourglass");
@@ -954,7 +964,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				this.display();
 			} catch (error) {
 				const err = error as Error;
-				console.error("Fetch models failed:", err);
+				Logger.error("SettingTab", "Fetch models failed:", err);
 				new Notice(`❌ 获取失败: ${err.message || err}`);
 			} finally {
 				setIcon(fetchModelsBtn, "refresh-cw");
@@ -1542,7 +1552,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						this.display();
 						new Notice(`成功添加 ${addedCount} 个公众号助手模板`);
 					} else {
-						new Notice("模板已存在，无需重复添加");
+						new Notice($t("notice.settings.template-exists") ?? "模板已存在，无需重复添加");
 					}
 				});
 		});
@@ -1665,7 +1675,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				// Per-Assistant Model Selection
 				const modelSectionHeader = new Setting(content)
 					.setName($t("settings.llm-provider.default-provider") + " / " + $t("settings.llm-provider.default-model"))
-					.setDesc("选择此助手使用的服务商和模型（留空则使用全局默认）");
+					.setDesc($t("settings.ai-chat-section.model-select-desc"));
 
 				const providers = this.plugin.settings.llmProviders || [];
 
@@ -1771,11 +1781,11 @@ export class SmartMPSettingTab extends PluginSettingTab {
 	}
 
 	createGeneralSettings(container: HTMLElement) {
-		const frame = this.createCollapsibleFrame(container, "⚙️ 通用与交互 (General & Interaction)", true);
+		const frame = this.createCollapsibleFrame(container, "⚙️ 通用与交互 (General & Interaction)");
 
 		new Setting(frame)
-			.setName("启用智能浮动工具栏")
-			.setDesc("选中文字自动显示 AI 助手栏")
+			.setName($t("settings.general-section.enable-floating-toolbar"))
+			.setDesc($t("settings.general-section.enable-floating-toolbar-desc"))
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.enableFloatingToolbar ?? true)
@@ -1818,64 +1828,241 @@ export class SmartMPSettingTab extends PluginSettingTab {
 						}
 					});
 			});
+
+		// ============== 滚动同步增强设置 ==============
+		new Setting(frame)
+			.setName($t("settings.scroll-sync-section.sync-mode"))
+			.setDesc($t("settings.scroll-sync-section.sync-mode-desc"))
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("precise", $t("settings.scroll-sync-section.sync-mode-options.precise"))
+					.addOption("proportional", $t("settings.scroll-sync-section.sync-mode-options.proportional"))
+					.setValue(this.plugin.settings.scrollSyncMode || "precise")
+					.onChange(async (value: "precise" | "proportional") => {
+						this.plugin.settings.scrollSyncMode = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.scroll-sync-section.precision"))
+			.setDesc($t("settings.scroll-sync-section.precision-desc"))
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("precise", "🎯 精确模式 (2px)")
+					.addOption("balanced", "⚖️ 平衡模式 (5px) [推荐]")
+					.addOption("performance", "🚀 性能模式 (15px)")
+					.setValue(this.plugin.settings.scrollSyncPrecision || "balanced")
+					.onChange(async (value: 'precise' | 'balanced' | 'performance') => {
+						this.plugin.settings.scrollSyncPrecision = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.scroll-sync-section.highlight-style"))
+			.setDesc($t("settings.scroll-sync-section.highlight-style-desc"))
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("gold", "🌟 金色 (螺旋金)")
+					.addOption("blue", "💙 蓝色")
+					.addOption("green", "💚 绿色")
+					.addOption("purple", "💜 紫色")
+					.addOption("minimal", "🌙 极简 (透明)")
+					.setValue(this.plugin.settings.scrollHighlightPreset || "gold")
+					.onChange(async (value: 'gold' | 'blue' | 'green' | 'purple' | 'minimal') => {
+						this.plugin.settings.scrollHighlightPreset = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(frame)
+			.setName($t("settings.scroll-sync-section.line-level-sync"))
+			.setDesc($t("settings.scroll-sync-section.line-level-sync-desc"))
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.enableCodeBlockLineMapping ?? false)
+					.onChange(async (value) => {
+						this.plugin.settings.enableCodeBlockLineMapping = value;
+						await this.plugin.saveSettings();
+					});
+			});
 	}
 
 	createLicenseSettings(container: HTMLElement) {
-		// Pro password verification using SHA-256 hash
-		// 注意：PRO_SECRET_HASH 是 'smartmp2026' 的 SHA-256 哈希值，明文不存储在代码中
-
-		// 初始状态为未知，异步检查后更新
-		let isPro = false;
-
-		const frame = this.createCollapsibleFrame(container, "🔐 授权管理 (License)", true);
+		const frame = this.createCollapsibleFrame(container, "🔐 授权管理 (License)");
 
 		// Status Banner
 		const statusBanner = frame.createDiv({ cls: 'smart-mp-license-status smart-mp-license-banner' });
 
-		if (isPro) {
-			statusBanner.addClass('is-pro');
+		const updateBanner = async () => {
+			const isPro = await this.checkProStatus();
+			statusBanner.empty();
+			statusBanner.removeClass('is-pro', 'is-free');
 
-			const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-pro' });
-			badge.textContent = '✓ Pro 已激活';
+			if (isPro) {
+				statusBanner.addClass('is-pro');
 
-			const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
-			info.textContent = '已解锁全部功能，发布文章不含水印';
-		} else {
-			statusBanner.addClass('is-free');
+				const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-pro' });
+				badge.textContent = '✓ Pro 已激活';
 
-			const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-free' });
-			badge.textContent = '免费版';
+				const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
+				info.textContent = '已解锁全部功能，发布文章不含水印';
+			} else {
+				statusBanner.addClass('is-free');
 
-			const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
-			info.textContent = '发布文章将包含 SmartMP 推广水印';
-		}
+				const badge = statusBanner.createSpan({ cls: 'smart-mp-license-badge is-free' });
+				badge.textContent = '免费版';
 
-		// Activation Input
+				const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
+				info.textContent = '发布文章将包含 SmartMP 推广水印';
+			}
+		};
+
+		// 异步获取并渲染状态
+		void updateBanner();
+
+		// Current Device Info
 		new Setting(frame)
-			.setName("激活码")
-			.setDesc("输入激活码以解锁 Pro 功能（去除水印、优先支持等）")
-			.addText((text) => {
-				text.inputEl.type = "password";
-				text.inputEl.addClass('smart-mp-input-w200');
-				text
-					.setPlaceholder("请输入激活码")
-					.setValue(this.plugin.settings.proPassword || "")
-					.onChange(async (value) => {
-						this.plugin.settings.proPassword = value;
-						await this.plugin.saveSettings();
-					});
+			.setName($t("settings.license.current-device"))
+			.setDesc($t("settings.license.current-device-desc"))
+			.addText(text => {
+				text.inputEl.style.width = "200px";
+				text.setDisabled(true).setValue(this.plugin.authService.getDeviceId());
 			})
 			.addButton((btn) => {
-				btn.setButtonText("验证")
+				btn.setButtonText("解除绑定")
+					.setWarning()
+					.onClick(async () => {
+						const isPro = await this.checkProStatus();
+						if (!isPro) {
+							new Notice($t("notice.auth.not-bound") ?? "当前设备并未绑定激活码");
+							return;
+						}
+						const unbinded = await this.plugin.authService.unbindDevice();
+						if (unbinded) {
+							this.display(); // 刷新 UI
+						}
+					});
+			});
+
+		// Activation Input
+		let isPasswordVisible = false;
+		// 为了实现边打边隐藏，我们需要一个真实的激活码缓冲区
+		let realPassword = this.plugin.settings.proPassword || "";
+
+		const passwordSetting = new Setting(frame)
+			.setName($t("settings.license.activation-code"))
+			.setDesc($t("settings.license.activation-code-desc"))
+			.addText((text) => {
+				text.inputEl.addClass('smart-mp-input-w200');
+				// 强制类型为 text，因为我们将手动控制掩码
+				text.inputEl.type = "text";
+
+				// 初始渲染
+				if (realPassword) {
+					text.setValue("•".repeat(realPassword.length));
+				} else {
+					text.setPlaceholder("请输入激活码");
+				}
+
+				// 使用原生 input 事件以便我们精准获取光标并拦截
+				let maskTimeout: number | null = null;
+				text.inputEl.addEventListener('input', (e) => {
+					const inputEl = e.target as HTMLInputElement;
+					const value = inputEl.value;
+					const cursorPosition = inputEl.selectionStart || 0;
+
+					if (isPasswordVisible) {
+						// 明文模式下直接保存
+						realPassword = value;
+						this.plugin.settings.proPassword = realPassword;
+						return;
+					}
+
+					// 重新推算真实的 password
+					// 假设用户只在末尾追加，或者在中间输入、删除。
+					// 简单起见，我们对 input 框中所有非 "•" 的字符当作新输入的明文字符。
+					let newRealPassword = "";
+					let newDisplayedValue = "";
+
+					let realIndex = 0;
+					// 双指针：遍历当前显示的 value，并与之前的 realPassword 做对照
+					for (let i = 0; i < value.length; i++) {
+						const char = value[i];
+						if (char === "•") {
+							// 这是一个未被修改的老字符
+							if (realIndex < realPassword.length) {
+								newRealPassword += realPassword[realIndex];
+								newDisplayedValue += "•";
+								realIndex++;
+							}
+						} else {
+							// 这是一个新输入的明文字符
+							newRealPassword += char;
+							newDisplayedValue += char; // 暂时保持明文
+						}
+					}
+
+					realPassword = newRealPassword;
+					this.plugin.settings.proPassword = realPassword;
+					inputEl.value = newDisplayedValue;
+
+					// 恢复光标位置
+					inputEl.setSelectionRange(cursorPosition, cursorPosition);
+
+					// 设置一个定时器，在一段时间后把刚刚的明文字符也变成圆点
+					if (maskTimeout) window.clearTimeout(maskTimeout);
+					maskTimeout = window.setTimeout(() => {
+						if (!isPasswordVisible) {
+							const currentCursor = inputEl.selectionStart;
+							inputEl.value = "•".repeat(realPassword.length);
+							if (currentCursor !== null) {
+								inputEl.setSelectionRange(currentCursor, currentCursor);
+							}
+						}
+					}, 800); // 800ms 后变为掩码
+				});
+
+				// 在输入框右侧附加“小眼睛”图标
+				const eyeIcon = document.createElement('span');
+				eyeIcon.addClass('smart-mp-eye-icon');
+				eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+				eyeIcon.style.cursor = 'pointer';
+				eyeIcon.style.marginLeft = '8px';
+				eyeIcon.style.opacity = '0.5';
+				eyeIcon.onclick = () => {
+					isPasswordVisible = !isPasswordVisible;
+					if (isPasswordVisible) {
+						text.inputEl.value = realPassword; // 恢复明文
+						eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.579 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
+						eyeIcon.style.opacity = '1';
+					} else {
+						text.inputEl.value = "•".repeat(realPassword.length); // 恢复掩码
+						eyeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+						eyeIcon.style.opacity = '0.5';
+					}
+				};
+				text.inputEl.insertAdjacentElement('afterend', eyeIcon);
+			})
+			.addButton((btn) => {
+				btn.setButtonText("联网验证")
 					.setCta()
 					.onClick(async () => {
-						const isValid = await this.checkProStatus();
-						if (isValid) {
-							new Notice("✅ 激活成功！Pro 功能已解锁");
-						} else {
-							new Notice("❌ 激活码无效，请检查后重试");
+						btn.setButtonText("验证中...");
+						btn.setDisabled(true);
+						const password = this.plugin.settings.proPassword;
+						if (!password) {
+							new Notice($t("notice.settings.license-key-required") ?? "⚠️ 激活码不能为空");
+							btn.setButtonText("联网验证").setDisabled(false);
+							return;
 						}
-						this.display(); // Refresh to show new status
+						const isVerified = await this.plugin.authService.verifyLicense(password);
+						if (isVerified) {
+							this.display(); // Refresh to show new status
+						} else {
+							btn.setButtonText("联网验证").setDisabled(false);
+						}
 					});
 			});
 
@@ -1888,7 +2075,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				🎨 <b>主题克隆</b>：一键复刻任意公众号排版<br>
 				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
 				📦 <b>永久更新</b>：包含所有未来本地新功能<br>
-				🎁 <b>云端特权</b>：未来云服务上线享折扣/赠送
+				🎁 <b>多端漫游</b>：支持最多3台个人设备自动漫游验证
 			</div>
 			<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--background-modifier-border); color: var(--text-accent);">
 			<a href="https://github.com/hwdemtv/smart-mp#pro-features" style="text-decoration: none;">
@@ -1919,7 +2106,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		void this.plugin
 			.updateIpAddress()
 			.then((ipAddress) => {
-				console.debug("ipAddress: " + ipAddress);
+				Logger.debug("SettingTab", "ipAddress: " + ipAddress);
 				ip.setName(
 					$t("settings.public-ip-address") + ": " + ipAddress
 				);

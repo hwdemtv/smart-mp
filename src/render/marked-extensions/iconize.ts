@@ -7,8 +7,8 @@ import { SmartMPMarkedExtension } from "./extension";
 import { serializeElement } from "src/utils/utils";
 import { $t } from "src/lang/i18n";
 
-const iconsRegex = /:(.*?):/;
-const iconsRegexTokenizer = /^:(.*?):/;
+const iconsRegex = /:([^:\s]+):/;
+const iconsRegexTokenizer = /^:([^:\s]+):/;
 export class IconizeRender extends SmartMPMarkedExtension {
     iconizeIndex: number = 0;
     icon?: {
@@ -51,7 +51,7 @@ export class IconizeRender extends SmartMPMarkedExtension {
             rootSpan.appendChild(sanitizeHTMLToDom(iconObject.svgElement))
             return rootSpan.outerHTML;
         }
-        return `<span>${iconName}${$t('render.render-failed')}</span>`
+        return `:${iconName}:`
     }
 
     markedExtension(): MarkedExtension {

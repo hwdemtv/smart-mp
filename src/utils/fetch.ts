@@ -1,4 +1,5 @@
 import { requestUrl, type RequestUrlParam } from 'obsidian';
+import Logger from './logger';
 
 type ObsidianFetch = (
   url: RequestInfo | URL | string,
@@ -32,7 +33,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
   const body = normalizeBody(init?.body);
   const urlString = resolveUrlString(url);
 
-  console.debug(`[${requestId}] Fetch started: ${urlString}`);
+  Logger.debug("Fetch", `[${requestId}] Fetch started: ${urlString}`);
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -49,7 +50,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
 
   return requestUrl(param).then(
     (res) => {
-      console.debug(`[${requestId}] Fetch completed in ${Date.now() - startTime}ms: ${urlString}`);
+      Logger.debug("Fetch", `[${requestId}] Fetch completed in ${Date.now() - startTime}ms: ${urlString}`);
       return {
         ok: res.status >= 200 && res.status < 300,
         status: res.status,
@@ -61,7 +62,7 @@ export const obsidianFetch: ObsidianFetch = async (url, init) => {
       } as Response;
     },
   ).catch((e) => {
-    console.error(`[${requestId}] Fetch failed after ${Date.now() - startTime}ms: ${urlString}`, e);
+    Logger.error("Fetch", `[${requestId}] Fetch failed after ${Date.now() - startTime}ms: ${urlString}`, e);
     return {
       ok: false,
       status: 500,

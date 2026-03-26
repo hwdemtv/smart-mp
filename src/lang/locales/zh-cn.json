@@ -11,10 +11,34 @@
     "video": "视频",
     "voice": "语音"
   },
+  "imageGenerateModal": {
+    "promptPlaceholder": "请输入图片描述，例如：一只可爱的猫咪在阳光下打盹",
+    "negativePromptPlaceholder": "请输入不想出现的元素，例如：模糊、低质量、水印"
+  },
+  "errors": {
+    "api-error": "API 调用错误",
+    "wechat-error": "微信 API 错误",
+    "render-error": "渲染错误"
+  },
+  "commands": {
+    "polish": "公众号：润色选中文本",
+    "translate-en": "公众号：翻译为英语",
+    "translate-zh": "公众号：翻译为中文",
+    "mermaid": "公众号：生成 Mermaid 图表",
+    "latex": "公众号：生成 LaTeX 公式",
+    "summary": "公众号：生成文章摘要",
+    "headline": "公众号：生成爆款标题",
+    "insert-mode": {
+      "replace": "🔄 替换选中文本",
+      "append": "➕ 追加到选中文本后",
+      "prepend": "⬆️ 插入到选中文本前",
+      "copy": "📋 复制到剪贴板"
+    }
+  },
+  "set-as-cover-of-current-draft": "设为当前草稿封面",
+  "set-cover-tu-pian-mediaitemname": "已将「{0}」设为封面图片",
   "main": {
     "chat-llm-has-not-been-configured": "聊天LLM尚未配置。",
-    "generate-latex": "生成LaTeX",
-    "generate-mermaid": "生成Mermaid",
     "get-synonyms": "获取同义词...",
     "no-wechat-mp-account-selected": "未选择微信公众号账号。",
     "please-check-you-appid-and-appsecret": "请检查您的App ID和App Secret。",
@@ -22,10 +46,8 @@
     "polishing": "润色中...",
     "proof": "校对",
     "proofing": "校对中...",
-    "synonyms": "同义词",
     "generating-latex": "生成LaTeX",
     "generating-mermaid": "生成Mermaid",
-    "summarizing": "正在总结...",
     "text-to-image": "文生图",
     "to-chinese": "翻译为中文",
     "to-english": "翻译为英文",
@@ -35,11 +57,9 @@
     "open-material-view": "素材管理",
     "open-previewer": "文章渲染预览",
     "image-generation-failed": "图片生成失败。",
-    "fetch-wechat-profile": "提取公众号信息",
     "toggle-scroll-sync": "切换滚动同步"
   },
   "modals": {
-    "be-careful": "注意！",
     "cancel": "取消",
     "caution": "注意！",
     "confirm": "确认",
@@ -49,8 +69,6 @@
       "title": "确认删除",
       "warning": "此操作不可撤销。"
     },
-    "enter": "回车",
-    "escape": "Esc键",
     "image-generation": {
       "generate": "生成",
       "negative-prompt": "反向提示词：",
@@ -71,15 +89,22 @@
       "title": "确认发布",
       "warning": "在微信公众号平台外发布可能效率较低，部分功能可能无法正常使用（如标签、推送到公众号等）。"
     },
-    "space": "空格"
+    "diff": {
+      "title": "AI 修改对比 (Diff View)",
+      "original": "原始内容",
+      "suggestion": "修改建议",
+      "confirm": "确认替换",
+      "copy": "复制修改后内容"
+    }
   },
   "render": {
     "admonition-failed": "<section>Admonition渲染失败</section>",
-    "callout-failed": "<span>Callout渲染失败</span>",
     "charts-failed": "<section>图表渲染失败</section>",
     "excalidraw-failed": "Excalidraw渲染失败",
+    "excalidraw-plugin-not-installed": "<section>Excalidraw 插件未安装，无法渲染</section>",
     "faild-canvas-context": "获取canvas上下文失败。",
     "failed-to-convert-canvas-to-blob": "将canvas转换为Blob失败。",
+    "failed-to-load-image": "图片加载失败",
     "file-not-found": "文件未找到：{0}",
     "mermaid-failed": "<section>Mermaid渲染失败</section>",
     "pdf-crop-failed": "<span>PDF裁剪失败</span>",
@@ -94,25 +119,30 @@
     "cancel": "取消",
     "confirm": "确认",
     "account-info": "账号信息",
+    "account": {
+      "info": "账号信息"
+    },
     "account-name": "账号名称",
     "account-name-for-your-wechat-official": "微信公众号账号名称",
-    "add-ip-address-ipv4-0-to-wechat-mp-ip-wh": "将IP地址[{0}]添加到微信公众号IP白名单。",
+    "invalid-wewerite-settings-file": "无效的设置文件格式",
     "app-id": "App ID",
     "app-secret": "App Secret",
     "app-secret-for-your-wechat-official": "微信公众号App Secret",
     "appid-for-your-wechat-official-account": "微信公众号App ID",
     "enable-strict-security-mode": "启用严格安全模式",
     "enable-strict-security-mode-desc": "开启后将对 HTML 进行严格白名单过滤，防止 XSS 攻击。如果遇到 **LaTeX 公式 (MathJax)**、**Excalidraw** 或其他复杂内容显示异常，请尝试关闭此选项。(Default: ON)",
+    "general-section": {
+      "enable-floating-toolbar": "启用智能浮动工具栏",
+      "enable-floating-toolbar-desc": "选中文字自动显示 AI 助手栏"
+    },
     "be-carefull-delete-account": "注意！这将删除该账号的所有设置和数据。",
     "check-if-your-account-setting-is-correct": "检查账号设置是否正确。",
     "click-to-connect-wechat-server": "点击连接微信服务器",
     "successfully-connected-to-wechat-server": "成功连接到微信服务器。",
     "fetching": "获取中...",
     "failed-to-connect-to-wechat-server": "连接微信服务器失败。",
-    "copy-ip-address-to-clipboard": "复制IP地址到剪贴板",
     "copy-ip-to-clipboard": "复制IP到剪贴板",
     "create-new-account": "创建新账号",
-    "create-new-chat-llm-account": "创建新的聊天LLM账号",
     "create-new-draw-llm-account": "创建新的Draw-LLM账号",
     "custom-themes": "自定义主题",
     "custom-themes-folder": "自定义主题文件夹",
@@ -123,41 +153,46 @@
     "clone-theme-name": "新主题名称",
     "clone-theme-name-desc": "为克隆的主题起个名字",
     "clone-theme-btn": "开始克隆",
-    "pro-feature-alert": "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。",
-    "clone-theme-invalid-url": "请输入有效的微信文章链接",
-    "clone-theme-empty-name": "请输入主题名称",
     "clone-theme-extracting": "提取中...",
-    "clone-theme-analyzing": "正在分析文章样式，这可能需要几秒钟...",
-    "clone-theme-success": "主题 \"{0}\" 克隆成功！已自动添加到主题列表。",
-    "clone-theme-failed": "克隆失败: {0}",
+    "clone-theme-name-placeholder": "例如：极客公园风格",
+    "pro-feature-alert": "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。",
     "extraction-failed-invalid-url": "无法从该链接提取主题，请检查链接是否有效。",
-    "clone-theme-start": "开始克隆",
     "delete-account": "删除账号",
     "draft-previewer-wechat-id": "草稿预览者微信ID",
     "draft-only-visible-for-the-wechat-user-o": "草稿仅对微信用户可见。仅对认证的公众号有效。",
     "enable-real-time-rendering": "启用Markdown内容的实时渲染",
     "real-time-render": "实时渲染",
-    "failed-to-get-wechat-access-token": "获取微信access token失败。",
-    "if-your-device-cannot-get-static-pubic-i": "如果您的设备无法获取静态公网IP，请使用我们的中心令牌服务器获取令牌。我们不会滥用您的App ID或密钥。",
     "import-account-info": "导入账号信息",
     "export-account-info": "导出账号信息",
+    "scroll-sync-section": {
+      "precision": "滚动同步精度",
+      "precision-desc": "调整编辑器与预览区同步的灵敏度",
+      "highlight-style": "同步高亮样式",
+      "highlight-style-desc": "选择滚动同步时编辑器高亮行的样式",
+      "line-level-sync": "代码块行级同步",
+      "line-level-sync-desc": "开启后将支持超长代码块内部的行级滚动对齐 (需重新渲染预览)",
+      "sync-mode": "同步对齐算法",
+      "sync-mode-desc": "选择如何计算同步位置。若实时预览模式下图片较多导致偏移，建议使用「平滑比例」",
+      "sync-mode-options": {
+        "precise": "🎯 精确锚点 (按行号)",
+        "proportional": "🌊 平滑比例 (按百分比)"
+      }
+    },
     "import-export-smart-mp-account": "导入/导出账号信息",
     "import-or-export-your-account-info-for-b": "导入或导出您的账号信息以进行备份和恢复。",
     "invalid-json-file": "无效的JSON文件。",
-    "invalid-smart-mp-settings-file": "无效的SmartMP设置文件。",
     "ip-copied-to-clipboard": "IP地址已复制到剪贴板。",
-    "llm-access-api-key": "LLM访问API密钥",
-    "llm-access-base-url": "LLM访问基础URL",
+    "llm-access-api-key": "API 密钥 (API Key)",
+    "llm-access-base-url": "接口地址 (Base URL)",
     "llm-system-prompt": "系统提示词 (System Prompt)",
     "llm-system-prompt-desc": "自定义大模型的初始化提示词，用于设定其角色和回复风格。",
-    "llm-model-to-be-used": "使用的LLM模型",
-    "llm-task-url": "任务 URL",
+    "llm-model-to-be-used": "模型名称 (Model)",
+    "llm-task-url": "绘图任务接口 (Task URL)",
     "assistant-prompts-customization": "助手提示词自定义 (Assistant Prompts)",
     "custom-instruction-templates": "自定义指令模板",
     "custom-prompt-desc": "在这里您可以自定义各项 AI 助手的指令模板。使用 {{content}} 作为待处理内容的占位符。若留空则使用系统默认提示词。",
     "restore-defaults": "恢复默认设置 (Restore Defaults)",
     "confirm-restore-defaults": "确定要恢复所有助手的默认提示词吗？这将清除您所有的自定义指令。",
-    "prompt-placeholder": "{0}助手的核心指令...",
     "assistant": {
       "polish": "润色 (Polish)",
       "proofread": "校对 (Proofread)",
@@ -177,7 +212,8 @@
       "move-down": "下移",
       "enable-assistant": "启用助手",
       "restore-last": "恢复上一次设置",
-      "restore-default": "恢复默认设置"
+      "restore-default": "恢复默认设置",
+      "text-to-image": "文生图 (Text to Image)"
     },
     "hr-title": "分割线样式",
     "hr-desc": "选择预览中分割线的显示方式。若使用克隆主题，建议选择「主题/原生」。",
@@ -190,10 +226,7 @@
       "none": "隐藏"
     },
     "custom-hr-text": "自定义分割线文本",
-    "material-view": "素材管理",
-    "materials": "素材",
     "new-account": "新建账号",
-    "new-chat-llm-account": "聊天LLM账号",
     "new-draw-llm-account": "Draw-LLM账号",
     "no-ip-address": "无IP地址",
     "public-ip-address": "公网IP地址",
@@ -204,7 +237,6 @@
     "show-image-captions-desc": "自动将图片的 Alt 文本转换为下方的说明文字。",
     "select-account": "选择账号",
     "select-wechat-mp-account": "选择微信公众号账号",
-    "send-article-to-draft-box-successfully": "文章成功发送到草稿箱。",
     "settings-exported": "设置导出成功。",
     "settings-exporting-failed": "设置导出失败。",
     "settings-imported-error": "设置导入出错。",
@@ -218,45 +250,42 @@
     "the-folder-where-your-custom-themes": "存储自定义主题的文件夹。",
     "themes-folder-path": "主题文件夹路径",
     "use-center-token-server": "使用中心令牌服务器",
+    "center-token-server-desc": "使用反代服务器获取微信 access_token，无需配置 IP 白名单。适用于无法获取静态公网 IP 的设备。",
     "wechat-account": "微信公众号账号",
-    "code-theme": "语法高亮主题",
-    "choose-syntax-highlighting-theme": "为您的代码块选择一种高亮主题。",
-    "show-mac-header": "显示 Mac 风格标题栏",
-    "show-mac-style-code-block-header": "为代码块增加 Mac 风格的装饰条（包含三个圆点和语言标识）。",
     "you-should-add-this-ip-to-ip-whitelist-o": "请将此IP添加到IP白名单中。点击下方账号信息中的图片访问“微信公众号平台”进行设置。",
-    "your-wechat-official-account": "您的微信公众号",
     "no-chat-account-selected": "未选择 AI 服务商",
+    "license": {
+      "current-device": "当前设备",
+      "current-device-desc": "您的设备硬件特征码已作为鉴权凭据",
+      "activation-code": "激活码",
+      "activation-code-desc": "输入激活码以解锁 Pro 功能，支持同时绑定多台设备"
+    },
     "llm-provider": {
       "default-provider": "默认服务商",
       "default-model": "默认模型",
       "manage-providers": "服务商管理",
       "add-provider": "添加服务商",
-      "add-deepseek": "+ DeepSeek",
-      "add-openai": "+ OpenAI",
-      "add-ollama": "+ Ollama",
       "add-custom": "+ 自定义",
       "provider-name": "名称",
-      "base-url": "Base URL",
-      "api-key": "API Key",
-      "system-prompt": "System Prompt",
+      "base-url": "接口地址 (Base URL)",
+      "api-key": "API 密钥 (API Key)",
+      "system-prompt": "系统提示词 (System Prompt)",
       "system-prompt-desc": "该服务商的默认系统提示词",
       "models": "模型列表",
       "model-id-placeholder": "模型 ID（如 gpt-4）",
       "model-name-placeholder": "显示名称（如 GPT-4）",
-      "confirm-delete": "确定要删除 {0} 吗？",
-      "models-count": "{0} 个模型",
       "duplicate": "复制",
       "delete-confirm": "确定要删除 {{name}} 吗？",
       "unnamed-provider": "未命名服务商",
       "fetch-models": "从 API 获取模型列表",
       "model-id-header": "模型 ID",
-      "model-name-header": "显示名称"
+      "model-name-header": "显示名称",
+      "model-select-desc": "选择此助手使用的服务商和模型（留空则使用全局默认）"
     }
   },
   "utils": {
     "missing-api-configuration": "缺少API配置。",
     "no-ai-server-key-given": "未提供AI服务器密钥。",
-    "no-ai-server-model-given": "未提供AI 服务器模型。",
     "no-ai-server-url-given": "未提供AI服务器URL。"
   },
   "views": {
@@ -277,12 +306,13 @@
       "only-fans-can-comment": "仅粉丝可评论",
       "only-fans-can-comment-description": "仅关注公众号的用户可以评论",
       "open-comments": "开启评论",
-      "testing-button": "测试按钮",
       "title": "文章标题",
       "ai-title-recommendation": "AI 推荐标题",
       "click-to-use": "点击下方标题可直接填入编辑框",
       "edit-title": "编辑最终标题:",
-      "save-candidates": "保存所有标题到笔记"
+      "save-candidates": "保存所有标题到笔记",
+      "edit-title-placeholder": "在此处编辑最终标题...",
+      "upload-cover-image-error": "上传封面图片失败，请重试"
     },
     "delete-draft": "删除草稿",
     "delete-image": "删除图片",
@@ -305,21 +335,15 @@
     "previewer": {
       "article-copied-to-clipboard": "文章已复制到剪贴板。",
       "article-render-failed": "文章渲染失败。",
-      "article-title": "文章标题",
       "copy-article-to-clipboard": "复制文章到剪贴板",
       "file-not-found-path": "文件未找到：{0}",
-      "not-a-markdown-view": "不是Markdown视图",
       "please-set-cover-image": "请设置封面图片。",
       "render-article": "渲染文章",
       "send-article-to-draft-box": "发送文章到草稿箱",
-      "testing-button": "测试按钮",
-      "to-verify-the-images-in-article": "验证文章中的图片",
       "smart-mp-previewer": "SmartMP预览器",
       "article-stats": "约 {0} 字 / 预计阅读 {1} 分钟",
-      "show-stats": "在预览中显示统计信息",
-      "embed-stats": "在文章开头嵌入统计信息",
-      "mobile-view": "手机预览",
-      "desktop-view": "桌面预览"
+      "scroll-sync-on": "滚动同步：已开启",
+      "scroll-sync-off": "滚动同步：已关闭"
     },
     "send-mass-message": "群发消息",
     "theme-manager": {
@@ -332,13 +356,123 @@
     }
   },
   "wechat-api": {
-    "add-ip-address-ipv4-0-to-wechat-mp-ip-wh": "将IP地址[{0}]添加到微信公众号IP白名单。",
-    "failed-to-get-wechat-access-token": "获取微信access token失败。",
+    "center-token-request-failed": "获取中心令牌失败，请检查网络连接或稍后重试",
+    "center-token-enabled": "已启用中心令牌服务器",
+    "center-token-disabled": "已关闭中心令牌服务器，请确保已配置 IP 白名单",
     "image-size-exceeds-10m": "图片大小超过10MB限制",
     "video-size-exceeds-10m": "视频大小超过10MB限制",
     "voice-size-exceeds-2m": "语音大小超过2MB限制",
-    "select-an-wechat-mp-account-first": "请先选择一个微信公众号账号。",
     "send-article-to-draft-box-successfully": "文章成功发送到草稿箱。",
-    "uploading-material-type": "上传素材类型：{0}"
+    "uploading-material-type": "上传素材类型：{0}",
+    "article-content-exceeds-limit": "文章内容超过限制，请手动分割（必须少于2万字符），或使用「一键复制」手动粘贴到公众号编辑器"
+  },
+  "streaming-diff-modal": {
+    "title": "AI 修改对比 (流式模式)",
+    "original-content": "📄 原始内容",
+    "ai-suggestion": "✨ AI 修改建议",
+    "edit-hint": "💡 AI 生成完成后可手动编辑修改内容",
+    "generating": "⏳ AI 正在生成中...",
+    "generating-progress": "📝 AI 正在生成... ({0} 字符)",
+    "complete": "✅ AI 生成完成 ({0} 字符) - 可手动编辑",
+    "error": "❌ {0}",
+    "stopped": "⏸️ 已停止生成 ({0} 字符)",
+    "undo": "撤销 (Ctrl+Z)",
+    "redo": "重做 (Ctrl+Y)",
+    "regenerate": "重新生成",
+    "stop": "⏹️ 停止生成",
+    "confirm": "✅ 确认替换",
+    "cancel": "❌ 取消",
+    "regenerating": "⏳ AI 正在重新生成中...",
+    "regenerate-failed": "AI 重新生成失败，请重试"
+  },
+  "floating-toolbar": {
+    "more": "更多",
+    "polish": "润色",
+    "polish-tooltip": "润色选中文本",
+    "proofread": "校对",
+    "proofread-tooltip": "校对选中文本",
+    "synonyms": "同义词",
+    "synonyms-tooltip": "查找同义词",
+    "translate": "翻译",
+    "translate-tooltip": "翻译",
+    "headline": "标题",
+    "headline-tooltip": "生成爆款标题",
+    "summary": "摘要",
+    "summary-tooltip": "生成摘要"
+  },
+  "spinner": {
+    "generating-title": "正在生成爆款标题...",
+    "summarizing": "正在生成摘要..."
+  },
+  "scroll-sync": {
+    "enabled": "滚动同步已开启",
+    "disabled": "滚动同步已关闭",
+    "switch-to-desktop": "切换为桌面视图",
+    "switch-to-mobile": "切换为手机视图"
+  },
+  "notice": {
+    "auth": {
+      "activation-success": "激活成功",
+      "activation-failed": "激活失败，请检查激活码是否正确",
+      "activation-network-error": "无法连接到验证服务器，请检查网络",
+      "not-bound": "当前设备并未绑定激活码",
+      "unbind-success": "解绑成功",
+      "unbind-failed": "解绑失败",
+      "unbind-network-error": "无法连接到服务器进行解绑"
+    },
+    "main": {
+      "generate-title-failed": "生成标题失败",
+      "select-text-first": "请先选中要处理的文本",
+      "copied-to-clipboard": "已复制到剪贴板",
+      "select-insert-mode": "请选择插入方式",
+      "assistant-failed": "执行助手失败: {0}",
+      "ai-modification-applied": "已应用 AI 修改",
+      "translation-applied": "已应用翻译",
+      "title-applied": "已应用标题",
+      "summary-applied": "已应用摘要",
+      "proofread-applied": "已应用校对",
+      "synonym-replaced": "已替换同义词",
+      "select-text-to-polish": "请先选中要润色的文本",
+      "select-text-to-translate": "请先选中要翻译的文本",
+      "select-text-to-convert": "请先选中要转换的文本",
+      "select-text-to-summarize": "请先选中要生成摘要的文本",
+      "article-content-too-short": "文章内容太少，无法生成标题"
+    },
+    "previewer": {
+      "preparing-clipboard": "正在准备剪贴板内容...",
+      "media-processing-failed": "图片/媒体处理失败，部分图片可能无法显示",
+      "image-processing-failed": "图片处理失败，部分图片可能无法显示",
+      "content-empty": "生成的内容为空，无法发送至草稿箱。请检查文章内容。",
+      "processing-article": "开始处理文章...",
+      "cannot-get-draft-info": "无法获取当前草稿信息",
+      "send-draft-failed": "发送草稿失败，请检查控制台错误日志",
+      "send-draft-success": "发送到草稿箱成功！"
+    },
+    "article": {
+      "digest-truncated": "描述最多 120 个字符，已自动截断",
+      "titles-saved": "已保存所有候选标题到笔记属性",
+      "save-title-failed": "保存标题失败",
+      "generate-title-failed": "未能生成有效标题，请重试"
+    },
+    "settings": {
+      "template-exists": "模板已存在，无需重复添加",
+      "base-url-required": "Base URL is required",
+      "license-key-required": "激活码不能为空",
+      "migrate-success": "SmartMP: LLM 设置已迁移至新格式。",
+      "restore-assistants-success": "SmartMP: 默认 AI 助手已恢复。"
+    },
+    "theme": {
+      "clone-invalid-url": "请输入有效的微信文章链接",
+      "clone-name-required": "请输入主题名称",
+      "clone-analyzing": "正在分析文章样式，这可能需要几秒钟...",
+      "clone-failed": "克隆失败: {0}",
+      "more-features-coming": "更多 AI 功能敬请期待"
+    },
+    "proofread": {
+      "cannot-get-editor": "无法获取编辑器实例"
+    },
+    "floating-toolbar": {
+      "action-failed": "执行失败"
+    }
   }
 }

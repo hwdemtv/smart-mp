@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import fs from "fs";
 
 const banner =
 	`/*
@@ -39,16 +40,27 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	// Performance optimizations
+	metafile: prod,  // Generate build analysis in production
+	ignoreAnnotations: prod,  // Ignore /* @__PURE__ */ annotations in prod
+	legalComments: prod ? 'none' : 'inline',  // Remove comments in prod
 	define: {
 		'SMARTMP_ENV': prod ? '"production"' : '"development"'
 	},
 	loader: {
 		".css": "text"
 	},
+	// Optimization: mark side-effect-free packages
+	mainFields: ['module', 'main'],
 });
 
 if (prod) {
-	await context.rebuild();
+	const result = await context.rebuild();
+	// Write metafile for bundle analysis
+	if (result.metafile) {
+		fs.writeFileSync('esbuild-meta.json', JSON.stringify(result.metafile, null, 2));
+		console.log('Build meta written to esbuild-meta.json');
+	}
 	process.exit(0);
 } else {
 	await context.watch();

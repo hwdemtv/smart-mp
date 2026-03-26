@@ -18,6 +18,7 @@ import { MaterialMeidaItem } from "src/wechat-api/wechat-types";
 import { ImageGenerateModal } from "../modals/image-generate-modal";
 import { ResourceManager } from "src/assets/resource-manager";
 import { TitleSuggestModal } from "src/modals/title-suggest-modal";
+import Logger from "src/utils/logger";
 
 import { $t } from "src/lang/i18n";
 
@@ -194,7 +195,7 @@ export class MPArticleHeader {
 			// Force truncate if somehow exceeds
 			if (target.value.length > 120) {
 				target.value = target.value.substring(0, 120);
-				new Notice("描述最多 120 个字符，已自动截断", 2000);
+				new Notice($t("notice.article.digest-truncated") ?? "描述最多 120 个字符，已自动截断", 2000);
 			}
 
 			this.updateDigestCounter();
@@ -287,7 +288,7 @@ export class MPArticleHeader {
 					}
 				});
 			} catch (e) {
-				console.error("Failed to update frontmatter title", e);
+				Logger.error("MPArticleHeader", "Failed to update frontmatter title", e);
 			}
 		}
 	}
@@ -308,7 +309,7 @@ export class MPArticleHeader {
 			const titles = await this.plugin.aiClient.generateTitle(md);
 
 			if (titles && titles.length > 0) {
-				new TitleSuggestModal(this.plugin.app, titles, this._title.getValue(), (selectedTitle) => {
+				new TitleSuggestModal(this.plugin.app, titles, this._title.getValue(), (selectedTitle: string) => {
 					this._title.setValue(selectedTitle);
 					if (this.activeLocalDraft !== undefined) {
 						this.activeLocalDraft.title = selectedTitle;
@@ -316,7 +317,7 @@ export class MPArticleHeader {
 						this.plugin.messageService.sendMessage("draft-title-updated", selectedTitle);
 						void this.updateFrontmatterTitle(selectedTitle);
 					}
-				}, async (titles) => {
+				}, async (titles: string[]) => {
 					// onSave callback - 保存到 frontmatter 而非正文
 					if (this.activeLocalDraft?.notePath) {
 						const file = this.plugin.app.vault.getAbstractFileByPath(this.activeLocalDraft.notePath);
@@ -325,20 +326,20 @@ export class MPArticleHeader {
 								await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
 									frontmatter['推荐标题'] = titles;
 								});
-								new Notice("已保存所有候选标题到笔记属性");
+								new Notice($t("notice.article.titles-saved") ?? "已保存所有候选标题到笔记属性");
 							} catch (e) {
-								console.error("Failed to save titles to frontmatter", e);
-								new Notice("保存标题失败");
+								Logger.error("MPArticleHeader", "Failed to save titles to frontmatter", e);
+								new Notice($t("notice.article.save-title-failed") ?? "保存标题失败");
 							}
 						}
 					}
 				}).open();
 			} else {
-				new Notice("未能生成有效标题，请重试");
+				new Notice($t("notice.article.generate-title-failed") ?? "未能生成有效标题，请重试");
 			}
 		} catch (e) {
-			console.error(e);
-			new Notice("生成标题失败");
+			Logger.error("MPArticleHeader", "Failed to generate title recommendation", e);
+			new Notice($t("notice.main.generate-title-failed") ?? "生成标题失败");
 		} finally {
 			this.plugin.hideSpinner();
 		}
@@ -359,7 +360,7 @@ export class MPArticleHeader {
 					}
 				});
 			} catch (e) {
-				console.error("Failed to update frontmatter digest", e);
+				Logger.error("MPArticleHeader", "Failed to update frontmatter digest", e);
 			}
 		}
 	}

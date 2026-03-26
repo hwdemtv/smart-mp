@@ -41,7 +41,6 @@ export class CodespanRenderer extends SmartMPMarkedExtension {
 		const theme = this.plugin.settings.codeTheme || 'github';
 		let style = 'padding: .2em .4em; border-radius: 4px; font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; font-size: .85em; margin: 0 .2em;';
 
-		// @ts-ignore
 		if (theme === 'github' || theme === 'github-light') {
 			style += 'background-color: rgba(27,31,35,0.05); color: #24292e;';
 		} else {

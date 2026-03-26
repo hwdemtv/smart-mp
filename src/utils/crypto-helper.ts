@@ -1,7 +1,4 @@
-/**
- * Crypto Helper - 使用 AES-GCM 加密保护敏感设置
- * 向后兼容：支持解密旧的 XOR 混淆数据
- */
+import Logger from "./logger";
 
 // AES 加密数据前缀，用于区分新旧格式
 const AES_PREFIX = 'aes:';
@@ -53,7 +50,7 @@ export class CryptoHelper {
 
             return `${AES_PREFIX}${ivBase64}:${ctBase64}`;
         } catch (e) {
-            console.error('[Crypto] Encrypt failed:', e);
+            Logger.error("Crypto", "Encrypt failed:", e);
             // 加密失败时回退到旧方法
             return this.obfuscate(plaintext, keyHex);
         }
@@ -88,7 +85,7 @@ export class CryptoHelper {
 
                 return new TextDecoder().decode(plainBuffer);
             } catch (e) {
-                console.error('[Crypto] AES decrypt failed:', e);
+                Logger.error("Crypto", "AES decrypt failed:", e);
                 return ciphertext; // 解密失败返回原文
             }
         }
@@ -128,7 +125,7 @@ export class CryptoHelper {
             const xor = this.xor(text, key || LEGACY_KEY);
             return btoa(xor);
         } catch (e) {
-            console.error('[Crypto] Obfuscate failed', e);
+            Logger.error("Crypto", "Obfuscate failed", e);
             return text;
         }
     }

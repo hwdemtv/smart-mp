@@ -18,11 +18,15 @@ export class ObsidianMarkdownRenderer {
         this.app = app;
     }
 
-    public static getInstance(app: App,) {
+    public static getInstance(app: App): ObsidianMarkdownRenderer {
         if (!ObsidianMarkdownRenderer.instance) {
             ObsidianMarkdownRenderer.instance = new ObsidianMarkdownRenderer(app);
         }
         return ObsidianMarkdownRenderer.instance;
+    }
+
+    public static onPluginUnload(): void {
+        this.instance = undefined as any;
     }
     public async render(path: string, container: HTMLElement, view: Component) {
         // 使用 Obsidian 自带渲染器生成 DOM（用于处理内部链接/嵌入等）

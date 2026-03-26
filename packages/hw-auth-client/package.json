@@ -1,0 +1,29 @@
+{
+  "name": "hw-auth-client",
+  "version": "0.1.0",
+  "description": "Shared authentication client for hwdem Obsidian plugins",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "obsidian",
+    "authentication",
+    "license"
+  ],
+  "author": "hwdemtv",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "node-machine-id": "^1.1.12"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
