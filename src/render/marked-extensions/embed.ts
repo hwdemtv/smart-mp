@@ -11,6 +11,7 @@
 
 import { MarkedExtension, Token, Tokens } from "marked";
 import { TAbstractFile, TFile } from "obsidian";
+import { Logger } from "src/utils/logger";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
 import { SmartMPMarkedExtension } from "./extension";
 import { $t } from "src/lang/i18n";
@@ -191,7 +192,7 @@ export class Embed extends SmartMPMarkedExtension {
 		const file = this.searchFile(path);
 
 		if (file == null) {
-			console.error("File not found" + path);
+			Logger.error('EmbedExtension', "File not found" + path);
 			return "";
 		}
 		if (file instanceof TFile) {
@@ -467,15 +468,15 @@ export class Embed extends SmartMPMarkedExtension {
 					},
 					renderer: (token: Tokens.Generic) => {
 						const embedType = getEmbedType(token.href);
-						console.debug("render embed type:", token, embedType);
+						Logger.debug('EmbedExtension', "render embed type:", { token, embedType });
 
 						if (embedType == "image" || embedType == "webp") {
 							// images
 							let item = this.parseImageLink(token.href);
-							console.debug('[Embed] Rendering image:', token.href, '→', item);
+							Logger.debug('EmbedExtension', '[Embed] Rendering image:', { href: token.href, item });
 							if (item) {
 								const src = this.getImagePath(item.path);
-								console.debug('[Embed] Resolved path:', item.path, '→', src);
+								Logger.debug('EmbedExtension', '[Embed] Resolved path:', { path: item.path, src });
 
 								const width = item.width
 									? `width="${item.width}"`
@@ -566,20 +567,20 @@ export class Embed extends SmartMPMarkedExtension {
 						// Direct embedding of SVG for better compatibility and styling
 						// This avoids base64 encoding issues and allows CSS to work on SVG
 						token.html = `<section class="excalidraw" style="width: 100%;">${svgString}</section>`;
-						console.debug(`[Excalidraw] Rendered via ExcalidrawAutomate API (Direct SVG): ${href}`);
+						Logger.debug('EmbedExtension', `[Excalidraw] Rendered via ExcalidrawAutomate API (Direct SVG): ${href}`);
 						return;
 					} else {
-						console.warn(`[Excalidraw] ExcalidrawAutomate.createSVG returned null for ${file.path}`);
+						Logger.warn('EmbedExtension', `[Excalidraw] ExcalidrawAutomate.createSVG returned null for ${file.path}`);
 					}
 				} else {
-					console.warn(`[Excalidraw] File not found for link: ${linkText}`);
+					Logger.warn('EmbedExtension', `[Excalidraw] File not found for link: ${linkText}`);
 				}
 			} else {
-				console.warn("[Excalidraw] ExcalidrawAutomate API not found. Is 'Excalidraw Scripts' enabled?");
+				Logger.warn('EmbedExtension', "[Excalidraw] ExcalidrawAutomate API not found. Is 'Excalidraw Scripts' enabled?");
 				// Start attempting to enable it if possible? Use specific command?
 			}
 		} catch (e) {
-			console.error(`[Excalidraw] ExcalidrawAutomate API failed:`, e);
+			Logger.error('EmbedExtension', `[Excalidraw] ExcalidrawAutomate API failed:`, e);
 		}
 
 		// Attempt 2: Fallback to DOM Scraping (Original Logic)
@@ -598,7 +599,7 @@ export class Embed extends SmartMPMarkedExtension {
 
 		// 2. If not found, retry for a few times (Obsidian rendering might be async)
 		if (!root) {
-			console.debug(`[Excalidraw] Element at index ${index} not found immediately, retrying...`);
+			Logger.debug('EmbedExtension', `[Excalidraw] Element at index ${index} not found immediately, retrying...`);
 			// Extended retry logic for slow environments
 			const maxRetries = 15;
 			const retryInterval = 300;
@@ -609,7 +610,7 @@ export class Embed extends SmartMPMarkedExtension {
 					renderer.queryElement(index, ".excalidraw-svg") ||
 					renderer.queryElement(index, ".excalidraw");
 				if (root) {
-					console.debug(`[Excalidraw] Element found after ${i + 1} retries.`);
+					Logger.debug('EmbedExtension', `[Excalidraw] Element found after ${i + 1} retries.`);
 					break;
 				}
 			}
@@ -620,7 +621,7 @@ export class Embed extends SmartMPMarkedExtension {
 			const allExcalidraws = document.body.querySelectorAll('.excalidraw-svg, .excalidraw');
 			if (allExcalidraws.length > index) {
 				root = allExcalidraws[index] as HTMLElement;
-				console.debug(`[Excalidraw] Found element via global search at index ${index}`);
+				Logger.debug('EmbedExtension', `[Excalidraw] Found element via global search at index ${index}`);
 			}
 		}
 
@@ -628,7 +629,7 @@ export class Embed extends SmartMPMarkedExtension {
 		if (!root) {
 			const unrenderedEmbed = renderer.previewEl?.querySelector(`span.internal-embed[src*="${href.split('|')[0]}"]`);
 
-			console.error(`[Excalidraw] All render attempts failed for index ${index}`, {
+			Logger.error('EmbedExtension', `[Excalidraw] All render attempts failed for index ${index}`, {
 				href,
 				unrenderedEmbedFound: !!unrenderedEmbed,
 			});
@@ -651,9 +652,9 @@ export class Embed extends SmartMPMarkedExtension {
 			const dataUrl = await renderer.domToImage(root);
 
 			token.html = `<section class="excalidraw"><img src="${dataUrl}" class="exclaidraw-image"></section>`;
-			console.debug(`[Excalidraw] Success via DOM:`, href);
+			Logger.debug('EmbedExtension', `[Excalidraw] Success via DOM:`, href);
 		} catch (e) {
-			console.error(`[Excalidraw] DOM render error:`, e);
+			Logger.error('EmbedExtension', `[Excalidraw] DOM render error:`, e);
 		}
 	}
 	async renderMarkdownEmbedAsync(token: Tokens.Generic) {

@@ -3127,3 +3127,166 @@ proofreed
 	margin: 8px 0;
 	border: 1px solid var(--background-modifier-border);
 }
+
+/* ================================= 
+   Math Formula Styling - Optimized (V5.2)
+   ================================= */
+
+/* Inline Math Styling */
+.smart-mp .inline-math {
+	display: inline-block;
+	padding: 0 0.2rem;
+	vertical-align: middle;
+	/* 用户建议：添加缩放调整 */
+	transform: scale(0.8);
+	transform-origin: center;
+	font-size: 0.9em;
+}
+
+/* Block Math Styling */
+.smart-mp .block-math {
+	display: flex;
+	width: 100%;
+	overflow: visible;
+	padding: 0.75rem;
+	justify-content: center;
+	align-items: center;
+	margin: 1em 0;
+	min-height: 2.5em;
+
+	/* Typography adjustments */
+	line-height: 1.6;
+	white-space: nowrap;
+	max-width: 100%;
+	box-sizing: border-box;
+
+	/* 用户建议：添加缩放调整 */
+	transform: scale(0.9);
+	transform-origin: center;
+}
+
+/* Container for scrolling if math is too wide */
+.smart-mp .block-math-container {
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	width: 100%;
+	display: block;
+	padding: 0.75rem;
+	scrollbar-width: thin;
+	scrollbar-color: #888 #f1f1f1;
+}
+
+/* SVG specific styling within math containers */
+.smart-mp .inline-math svg,
+.smart-mp .block-math svg {
+	width: auto !important;
+	max-width: 100%;
+	height: auto !important;
+	display: inline-block;
+	vertical-align: middle;
+
+	/* Ensure readability */
+	min-height: 1em;
+	min-width: 1em;
+
+	/* Sharp rendering */
+	overflow: visible !important;
+
+	/* Fix: Ensure SVG scales properly */
+	vector-effect: non-scaling-stroke !important;
+}
+
+/* ================================= 
+   License Management Styling
+   ================================= */
+.smart-mp-license-status {
+	padding: 12px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.smart-mp-license-status.is-pro {
+	background-color: rgba(0, 200, 83, 0.1);
+	border-color: rgba(0, 200, 83, 0.3);
+}
+
+.smart-mp-license-status.is-free {
+	background-color: var(--background-secondary);
+}
+
+.smart-mp-license-badge {
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.smart-mp-license-badge.is-pro {
+	background-color: #00c853;
+	color: white;
+}
+
+.smart-mp-license-badge.is-free {
+	background-color: var(--text-muted);
+	color: var(--background-primary);
+}
+
+.smart-mp-license-info {
+	font-size: 13px;
+	color: var(--text-normal);
+}
+
+.smart-mp-license-benefits {
+	margin-top: 16px;
+	padding: 16px;
+	background-color: var(--background-secondary-alt);
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.smart-mp-license-benefits-title {
+	font-weight: bold;
+	margin-bottom: 8px;
+	color: var(--interactive-accent);
+}
+
+.smart-mp-license-benefits-list {
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--text-normal);
+}
+
+.smart-mp-license-benefits-footer {
+	margin-top: 12px;
+	text-align: center;
+	font-size: 12px;
+}
+
+.smart-mp-license-benefits-footer a {
+	color: var(--text-accent);
+	text-decoration: none;
+}
+
+.smart-mp-license-benefits-footer a:hover {
+	text-decoration: underline;
+}
+
+.smart-mp-eye-icon svg {
+	vertical-align: middle;
+}
+
+.smart-mp-digest-counter {
+	transition: color 0.2s ease;
+}
+
+.smart-mp-text-error { color: var(--text-error) !important; }
+.smart-mp-text-warning { color: var(--text-warning) !important; }
+.smart-mp-text-muted { color: var(--text-muted) !important; }
+.smart-mp-border-error { border-color: var(--text-error) !important; }
+.smart-mp-border-warning { border-color: var(--text-warning) !important; }

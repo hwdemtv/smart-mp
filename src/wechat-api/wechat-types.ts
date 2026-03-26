@@ -48,10 +48,10 @@ export type NewsItem = {
 // 永久图文消息项
 // json.item[x]
 export type MaterialNewsItem = {
-    _id?:string;
-    _rev?:string
+    _id?: string;
+    _rev?: string
     accountName?: string;
-    type?:MediaType;
+    type?: MediaType;
     media_id: string;
     content: {
         news_item: Array<NewsItem>
@@ -62,10 +62,10 @@ export type MaterialNewsItem = {
 // 图文素材之外,其他类型（图片、语音、视频）： （other media items other than news items）
 // json.item[x]
 export type MaterialMeidaItem = {
-    _id?:string;
-    _rev?:string;
+    _id?: string;
+    _rev?: string;
     accountName?: string;
-    type?:MediaType;
+    type?: MediaType;
     media_id: string;
     name: string;
     update_time: number;
@@ -117,10 +117,10 @@ export type DraftNewsItem = {
 
 // for get draft list in batch
 export type DraftItem = {
-    _id?:string;
-    _rev?:string;
+    _id?: string;
+    _rev?: string;
     accountName?: string;
-    type?:MediaType;
+    type?: MediaType;
     media_id: string;
     content: {
         news_item: Array<DraftNewsItem>;

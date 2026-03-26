@@ -6,6 +6,7 @@
 
 import { MarkedExtension, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 
 type CalloutInfo = { icon: string };
 
@@ -128,7 +129,7 @@ function getCalloutColors(calloutType: string): { bg: string; text: string } {
 export class BlockquoteRenderer extends SmartMPMarkedExtension {
 	prepare(): Promise<void> {
 		if (!this.marked) {
-			console.error("marked is not ready");
+			Logger.error('BlockquoteRenderer', "marked is not ready");
 		}
 		return Promise.resolve();
 	}

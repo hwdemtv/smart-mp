@@ -3,6 +3,7 @@
  */
 import { App, arrayBufferToBase64, sanitizeHTMLToDom, TAbstractFile, TFile } from 'obsidian';
 import { serializeChildren } from 'src/utils/utils';
+import Logger from './logger';
 
 export function isMarkdownFile(file: TFile | TAbstractFile) {
 	let ext = ''
@@ -45,7 +46,7 @@ export class UrlUtils {
                 const mimeType = file.extension === 'png' ? 'image/png' : 'application/octet-stream'; // 根据文件扩展名确定 MIME 类型
                 return `data:${mimeType};base64,${base64String}`;
             } catch (error) {
-                console.error('Error reading file:', error);
+                Logger.error("UrlUtils", "Error reading file:", error);
             }
         }
         return null;

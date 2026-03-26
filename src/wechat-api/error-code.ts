@@ -195,8 +195,9 @@ export const WECHAT_API_ERROR_CODE = new Map(
         [88000, 'without comment privilege'],
     ])
 
-export function getErrorMessage(code: number) {
-    return WECHAT_API_ERROR_CODE.get(code) || 'unknow error.'
+export function getErrorMessage(code: number | undefined) {
+    if (code === undefined) return 'unknown error.';
+    return WECHAT_API_ERROR_CODE.get(code) || `error code: ${code}`
 }
 
 

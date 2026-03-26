@@ -35,6 +35,7 @@ import { Links } from "./marked-extensions/links";
 import { Summary } from "./marked-extensions/summary";
 import { Image } from "./marked-extensions/image";
 import { Highlight } from "./marked-extensions/highlight";
+import { getCodeBlockMapper, processCodeBlockLineNumbers, resetCodeBlockMapper } from "../utils/code-block-mapper";
 // import { ListItem } from './marked-extensions/list-item'
 
 const markedOptiones = {
@@ -81,56 +82,54 @@ export class WechatRender {
 	}
 
 
-	private constructor(plugin: SmartMPPlugin, previewRender: PreviewRender) {
-		this.plugin = plugin;
-		this.previewRender = previewRender;
-		this.client = WechatClient.getInstance(plugin);
-		this.marked = new Marked();
-		this.marked.use(markedOptiones);
-		const renderer: RendererObject = {
-			list(this: RendererThis, token: Tokens.List) {
-				let body = '';
-				if (token.items) {
-					for (const item of token.items) {
-						body += renderListItem(this.parser, item);
-					}
-				}
-				const type = token.ordered ? 'ol' : 'ul';
-				const startatt =
-					token.ordered && token.start !== 1
-						? ` start="${token.start}"`
-						: '';
-				return `<${type}${startatt} class="smart-mp-list list-paddingleft-1">${body}</${type}>`;
-			},
-			listitem(this: RendererThis, token: Tokens.ListItem) {
-				return renderListItem(this.parser, token);
-			},
-		};
-		this.marked.use({ renderer });
-		this.useExtensions();
-	}
-	static getInstance(plugin: SmartMPPlugin, previewRender: PreviewRender) {
-		if (!WechatRender.instance) {
-			WechatRender.instance = new WechatRender(plugin, previewRender);
-		} else {
-			// [Fix] Refresh context to ensure renderer uses the latest view/service
-			WechatRender.instance.plugin = plugin;
-			WechatRender.instance.previewRender = previewRender;
+    private constructor(plugin: SmartMPPlugin) {
+        this.plugin = plugin;
+        this.client = WechatClient.getInstance(plugin);
+        this.marked = new Marked();
+        this.marked.use(markedOptiones);
+        const renderer: RendererObject = {
+            list(this: RendererThis, token: Tokens.List) {
+                let body = '';
+                if (token.items) {
+                    for (const item of token.items) {
+                        body += renderListItem(this.parser, item);
+                    }
+                }
+                const type = token.ordered ? 'ol' : 'ul';
+                const startatt =
+                    token.ordered && token.start !== 1
+                        ? ` start="${token.start}"`
+                        : '';
+                return `<${type}${startatt} class="smart-mp-list list-paddingleft-1">${body}</${type}>`;
+            },
+            listitem(this: RendererThis, token: Tokens.ListItem) {
+                return renderListItem(this.parser, token);
+            },
+        };
+        this.marked.use({ renderer });
+        // Extensions will be initialized when previewRender is set
+    }
 
-			// Re-sync basic extensions which might hold old references
-			// Ideally extensions should access plugin/previewRender via 'this.wechatRender.plugin' if they were designed that way, 
-			// but they hold their own references.
-			// So we need to potentialy re-create extensions or update them.
-			// For now, let's update the references in the extensions if possible, 
-			// OR fully re-instantiate WechatRender to be safe.
+    public static getInstance(plugin: SmartMPPlugin): WechatRender {
+        if (!WechatRender.instance) {
+            WechatRender.instance = new WechatRender(plugin);
+        }
+        return WechatRender.instance;
+    }
 
-			// Stronger Fix: Force re-instantiation if context changed, or just update extensions.
-			// Since extensions hold references to 'plugin' and 'previewRender' in their constructors,
-			// we MUST re-create attributes or the extensions will point to old/dead objects.
-			WechatRender.instance = new WechatRender(plugin, previewRender);
-		}
-		return this.instance;
-	}
+    public static onPluginUnload(): void {
+        this.instance = undefined as any;
+    }
+
+    /**
+     * Set or update the preview render context (usually from the active view)
+     */
+    public setPreviewRender(previewRender: PreviewRender) {
+        this.previewRender = previewRender;
+        // Re-initialize extensions with new context
+        this.extensions = [];
+        this.useExtensions();
+    }
 	addExtension(extension: SmartMPMarkedExtension) {
 		this.extensions.push(extension);
 		this.marked.use(extension.markedExtension());
@@ -193,34 +192,37 @@ export class WechatRender {
 		this.currentLineMap.clear();
 		this.lineCounter = 0;
 
+		// Reset code block mapper for each parse
+		resetCodeBlockMapper();
+
 		// Calculate line offsets for content (after frontmatter)
-		const frontmatterLines = md.substring(0, md.indexOf(content)).split('\n').length - 1;
+		// Precise detection of frontmatter lines
+		const fmEndIndex = md.indexOf(content);
+		const frontmatterLines = (md.substring(0, fmEndIndex).match(/\n/g) || []).length;
 
-		// Track token positions using walkTokens
-		const lineTracker = {
-			walkTokens: (token: any) => {
-				// Only track block-level tokens
-				if (token.type === 'heading' || token.type === 'paragraph' ||
-					token.type === 'code' || token.type === 'blockquote' ||
-					token.type === 'list' || token.type === 'table' ||
-					token.type === 'hr' || token.type === 'html') {
-					// Use raw token text to create unique key
-					const key = `${token.type}-${this.lineCounter++}`;
-					// Calculate approximate line from token raw position
-					if (token.raw) {
-						const beforeToken = content.substring(0, content.indexOf(token.raw));
-						const line = (beforeToken.match(/\n/g) || []).length + frontmatterLines + 1;
-						this.currentLineMap.set(key, line);
-					}
-				}
+		// Use marked lexer to get tokens with positions
+		const tokens = this.marked.lexer(content);
+
+		// Record top-level block token lines
+		let currentPos = 0;
+		tokens.forEach((token, index) => {
+			if (token.type === 'space') return;
+
+			// Find token start position in content
+			// token.raw contains the exact source text for this block
+			const startPos = content.indexOf(token.raw, currentPos);
+			if (startPos !== -1) {
+				const beforeToken = content.substring(0, startPos);
+				const line = (beforeToken.match(/\n/g) || []).length + frontmatterLines + 1;
+				// Store line info in the token itself (for renderer if needed)
+				(token as any).line = line;
+				// Also store in map for postprocess phase
+				this.currentLineMap.set(`block-${this.lineCounter++}`, line);
+				currentPos = startPos + token.raw.length;
 			}
-		};
+		});
 
-		// Temporarily apply line tracker
-		const tempMarked = new Marked(markedOptiones);
-		tempMarked.use(lineTracker);
-
-		// Use original marked for actual parsing (extensions already applied)
+		// Use original marked for actual parsing
 		return this.marked.parse(content);
 	}
 
@@ -230,8 +232,14 @@ export class WechatRender {
 		const wrapper = document.createElement('div');
 		wrapper.appendChild(dom);
 
-		// Inject line numbers to block elements
+		// [CRITICAL] Inject line numbers BEFORE other extensions modify the DOM structure
 		this.injectLineNumbers(wrapper);
+
+		// [Enhancement] Process code block internal line numbers if enabled
+		if (this.plugin.settings.enableCodeBlockLineMapping) {
+			const codeBlockMapper = getCodeBlockMapper();
+			processCodeBlockLineNumbers(wrapper, codeBlockMapper);
+		}
 
 		for (let ext of this.extensions) {
 			await ext.postprocess(wrapper);
@@ -241,90 +249,103 @@ export class WechatRender {
 	}
 
 	private injectLineNumbers(wrapper: HTMLElement) {
-		// [P1] Multi-level anchors: inject line numbers to all block-level elements
-		// Selector includes headings, paragraphs, code blocks, lists, tables, images, etc.
-		const blockSelectors = [
-			'h1', 'h2', 'h3', 'h4', 'h5', 'h6',  // Headings
-			'p',                                   // Paragraphs
-			'pre',                                 // Code blocks
-			'blockquote',                          // Quotes
-			'ul', 'ol',                            // Lists
-			'table',                               // Tables
-			'hr',                                  // Horizontal rules
-			'figure',                              // Figures (images)
-			'img',                                 // Inline images
-			'.block-math',                         // Math blocks
-			'.mermaid',                            // Mermaid diagrams
-			'.callout'                             // Callouts
-		].join(', ');
+		// Top-level children of the wrapper correspond to the block-level tokens
+		const children = Array.from(wrapper.children);
+		let tokenIndex = 0;
 
-		const blockElements = wrapper.querySelectorAll(blockSelectors);
-		let lineNumber = 1;
-
-		blockElements.forEach((el) => {
-			const htmlEl = el as HTMLElement;
-
-			// Skip if already has a line number (e.g., nested elements)
-			if (htmlEl.hasAttribute('data-source-line')) return;
-
-			// Skip if parent already has line number (avoid duplicate anchors)
-			const parent = htmlEl.parentElement;
-			if (parent && parent.hasAttribute('data-source-line')) return;
-
-			htmlEl.setAttribute('data-source-line', String(lineNumber));
-
-			// Estimate lines based on element type and content
+		children.forEach((child) => {
+			const htmlEl = child as HTMLElement;
 			const tagName = htmlEl.tagName.toLowerCase();
-			const text = htmlEl.textContent || '';
 
-			let estimatedLines = 1;
+			// Skip metadata/stats sections added by logic (they don't have source lines)
+			if (htmlEl.classList.contains('smart-mp-embedded-stats') ||
+				htmlEl.classList.contains('smart-mp-footnotes')) return;
 
-			if (tagName.match(/^h[1-6]$/)) {
-				// Headings are usually 1-2 lines
-				estimatedLines = 1;
-			} else if (tagName === 'pre') {
-				// Code blocks: count actual newlines
-				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
-			} else if (tagName === 'p') {
-				// Paragraphs: estimate based on character count (~80 chars per line)
-				estimatedLines = Math.max(1, Math.ceil(text.length / 80));
-			} else if (tagName === 'ul' || tagName === 'ol') {
-				// Lists: count list items
-				const items = htmlEl.querySelectorAll('li');
-				estimatedLines = Math.max(1, items.length);
-			} else if (tagName === 'table') {
-				// Tables: count rows
-				const rows = htmlEl.querySelectorAll('tr');
-				estimatedLines = Math.max(2, rows.length + 1); // +1 for header row
-			} else if (tagName === 'blockquote') {
-				// Blockquotes: count based on content
-				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
-			} else if (tagName === 'img' || tagName === 'figure') {
-				// Images/figures: typically 1 line in source
-				estimatedLines = 1;
-			} else if (tagName === 'hr') {
-				// Horizontal rules: 1 line
-				estimatedLines = 1;
-			} else {
-				// Default: estimate based on newlines
-				estimatedLines = Math.max(1, (text.match(/\n/g) || []).length + 1);
-			}
+			const line = this.currentLineMap.get(`block-${tokenIndex++}`);
+			if (line !== undefined) {
+				htmlEl.setAttribute('data-source-line', String(line));
 
-			lineNumber += estimatedLines;
-		});
+				// 段落内换行锚点注入：将 <br> 分割的文本包裹在带行号的 <span> 中
+				if (tagName === 'p') {
+					this.injectIntraLineAnchors(htmlEl, line);
+				}
 
-		// Also inject line numbers for list items (finer granularity)
-		const listItems = wrapper.querySelectorAll('li');
-		listItems.forEach((li, index) => {
-			const htmlLi = li as HTMLElement;
-			// Find parent list's line number
-			const parentList = htmlLi.closest('ul, ol');
-			if (parentList) {
-				const parentLine = parseInt(parentList.getAttribute('data-source-line') || '1');
-				htmlLi.setAttribute('data-source-line', String(parentLine + index));
+				// 引用块内递归处理段落
+				if (tagName === 'blockquote') {
+					const innerParagraphs = htmlEl.querySelectorAll('p');
+					innerParagraphs.forEach((p) => {
+						const pLine = p.getAttribute('data-source-line');
+						if (pLine) {
+							this.injectIntraLineAnchors(p as HTMLElement, parseInt(pLine));
+						}
+					});
+				}
+
+				// For lists, try to track individual item lines via raw content analysis
+				if (tagName === 'ul' || tagName === 'ol') {
+					const listItems = htmlEl.querySelectorAll(':scope > li');
+					let itemLineOffset = 0;
+
+					listItems.forEach((li, idx) => {
+						const itemLine = line + itemLineOffset;
+						(li as HTMLElement).setAttribute('data-source-line', String(itemLine));
+
+						// Count newlines in the item's content to estimate height
+						const itemText = li.textContent || '';
+						const newlinesInItem = (itemText.match(/\n/g) || []).length;
+						itemLineOffset += Math.max(1, newlinesInItem + 1);
+					});
+				}
 			}
 		});
 	}
+
+	/**
+	 * 为段落内的 <br> 换行点注入行号锚点
+	 * 将 <br> 前后的内容包裹在 <span data-source-line="N"> 中
+	 * 使滚动同步的锚点密度从"每段落一个"提升到"每行一个"
+	 */
+	private injectIntraLineAnchors(el: HTMLElement, startLine: number) {
+		const brElements = el.querySelectorAll('br');
+		if (brElements.length === 0) return;
+
+		// 收集所有 <br> 节点
+		const brs = Array.from(brElements);
+
+		// 使用 DocumentFragment 重建段落内容
+		const fragment = document.createDocumentFragment();
+		let currentLine = startLine;
+		let currentSpan = document.createElement('span');
+		currentSpan.setAttribute('data-source-line', String(currentLine));
+
+		// 遍历所有子节点
+		const childNodes = Array.from(el.childNodes);
+		for (const node of childNodes) {
+			if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
+				// 遇到 <br>：结束当前 span，添加 <br>，开始新 span
+				if (currentSpan.childNodes.length > 0) {
+					fragment.appendChild(currentSpan);
+				}
+				fragment.appendChild(node.cloneNode(true));
+				currentLine++;
+				currentSpan = document.createElement('span');
+				currentSpan.setAttribute('data-source-line', String(currentLine));
+			} else {
+				// 普通节点：追加到当前 span
+				currentSpan.appendChild(node.cloneNode(true));
+			}
+		}
+
+		// 添加最后一个 span
+		if (currentSpan.childNodes.length > 0) {
+			fragment.appendChild(currentSpan);
+		}
+
+		// 替换段落内容
+		el.innerHTML = '';
+		el.appendChild(fragment);
+	}
+
 
 	private removeEmptyListItems(wrapper: HTMLElement): HTMLElement {
 		// WeChat 编辑器会保留空的 <li>，导致空序号，这里统一清理掉仅含换行/空白的条目。
@@ -354,7 +375,14 @@ export class WechatRender {
 		view: Component,
 		contentOverride?: string
 	): Promise<HTMLElement> {
+		Logger.debug('WechatRender', `Starting parseNote for ${path}`);
 		const content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
+		
+		if (!content) {
+			Logger.warn('WechatRender', `Content is empty for ${path}. Returning empty div.`);
+			return createDiv({ text: '内容为空', cls: 'smart-mp-empty-notice' });
+		}
+
 		const hash = this.simpleHash(content);
 
 		// 1. Check Cache
@@ -362,60 +390,58 @@ export class WechatRender {
 			const cached = this.contentCache.get(path);
 			if (cached && cached.hash === hash) {
 				Logger.debug('WechatRender', `Cache HIT for ${path}`);
-				// Skip Obsidian Render & Marked Parse
-				return this.postprocess(cached.html);
+				return await this.postprocess(cached.html);
 			}
 		}
 
-		console.debug(`[WechatRender] Cache MISS for ${path} (or first run)`);
+		Logger.debug('WechatRender', `Cache MISS for ${path}. Starting fresh parse...`);
 
-		// [Fixed] Initialize ObsidianMarkdownRenderer to create previewEl
-		// This is required for extensions (Excalidraw, Table, RemixIcon) that need to query the DOM
 		const renderer = ObsidianMarkdownRenderer.getInstance(this.plugin.app as any);
 
-		// [Fixed] Reuse persistent temp container to avoid DOM thrashing
 		if (!this.tempContainer) {
 			this.tempContainer = createDiv();
 			this.tempContainer.style.position = 'absolute';
 			this.tempContainer.style.left = '-9999px';
 			this.tempContainer.style.top = '-9999px';
-			this.tempContainer.style.width = '1200px';
-			this.tempContainer.style.height = '2000px';
-			this.tempContainer.addClasses(['markdown-preview-view', 'markdown-rendered', 'node-insert-event']);
+			// Removed width/height as they are not strictly necessary for a hidden container
+			this.tempContainer.addClasses(['markdown-preview-view', 'markdown-rendered']);
 			document.body.appendChild(this.tempContainer);
+			Logger.debug('WechatRender', `Created new tempContainer.`);
 		}
 		const tempContainer = this.tempContainer;
-		tempContainer.empty(); // Clear previous run
-
+		tempContainer.empty();
+		Logger.debug('WechatRender', `tempContainer cleared for new render.`);
 
 		// Optimize: Conditional Rendering
 		// Only run Obsidian render if strictly necessary for known plugins
 		const needsExcalidraw = /!\[\[.*?\.excalidraw.*?\]\]/i.test(content);
 		const needsMermaid = /```\s*mermaid/i.test(content);
-		const needsCharts = /```\s*chart/i.test(content);
-		const needsAdmonition = /```\s*ad-\w+/i.test(content);
-		const needsDataview = /```\s*dataview/i.test(content);
-		const needsPDF = /!\[\[.*?\.pdf.*?\]\]/i.test(content); // PDF++ support
-		// Tables also depend on ObsidianMarkdownRenderer (see table.ts)
-		// Support tables inside blockquotes/callouts (prefixed with >)
-		const needsTable = /^(\s*>)*\s*\|.*\|/m.test(content);
+		const needsCharts = /```\s*chart/i.test(content); // Keep charts for completeness
+		const needsAdmonition = /```\s*ad-\w+/i.test(content); // Keep admonition
+		const needsDataview = /```\s*dataview/i.test(content); // Keep dataview
+		const needsPDF = /!\[\[.*?\.pdf.*?\]\]/i.test(content); // Keep PDF++
+		const needsTable = /^(\s*>)*\s*\|.*\|/m.test(content); // Tables also depend on ObsidianMarkdownRenderer
 
 		const needsObsidianRender = needsExcalidraw || needsMermaid || needsCharts || needsAdmonition || needsDataview || needsPDF || needsTable;
 
+		let htmlString = "";
+
 		if (needsObsidianRender) {
-			console.debug(`[WechatRender] Complex content detected (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid}, Charts: ${needsCharts}), triggering Obsidian render.`);
+			Logger.debug('WechatRender', `Complex content detected (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid}, Table: ${needsTable}, etc.), triggering Obsidian render.`);
 			try {
 				// Render to temp container to initialize previewEl and markdownBody
-				// We must render every time to ensure 'previewEl' contains the LATEST content
 				await renderer.render(path, tempContainer, view);
+				Logger.debug('WechatRender', `Obsidian renderer finished for ${path}.`);
 
-
+				// Give a small buffer for plugins to react to DOM insertion
+				await new Promise(resolve => setTimeout(resolve, 50));
+				
 				// [Patch] Manually inject Excalidraw embeds if they are missing
 				// This forces the Excalidraw plugin to recognize and render them
 				const excalidrawMatches = content.match(/!\[\[(.*?\.excalidraw.*?)\]\]/g);
 
 				if (excalidrawMatches && renderer.previewEl) {
-					console.debug(`[WechatRender] Found ${excalidrawMatches.length} Excalidraw links, checking for missing renders...`);
+					Logger.debug('WechatRender', `Found ${excalidrawMatches.length} Excalidraw links, checking for missing renders...`);
 					const embedsContainer = renderer.previewEl.createDiv({ cls: 'manual-excalidraw-container' });
 					// Make sure it doesn't affect layout
 					embedsContainer.style.display = 'block';
@@ -428,7 +454,7 @@ export class WechatRender {
 						// Check if already rendered (by src or alt)
 						const existing = renderer.previewEl.querySelector(`span.internal-embed[src*="${linkPath}"]`);
 						if (!existing) {
-							console.debug(`[WechatRender] Injecting missing embed for: ${linkPath}`);
+							Logger.debug('WechatRender', `Injecting missing embed for: ${linkPath}`);
 							const file = this.plugin.app.metadataCache.getFirstLinkpathDest(linkPath, path);
 							if (file instanceof TFile) {
 								// Manually create the embed structure that Obsidian uses
@@ -464,7 +490,7 @@ export class WechatRender {
 						// If we found what we need, we can proceed
 						if ((needsExcalidraw && excalidrawFound) || (needsMermaid && mermaidFound)) {
 							elementsFound = true;
-							console.debug(`[WechatRender] Dynamic elements found after ${attempts} attempts`);
+							Logger.debug('WechatRender', `Dynamic elements found`, { attempts });
 							break;
 						}
 
@@ -479,31 +505,37 @@ export class WechatRender {
 						await new Promise(resolve => setTimeout(resolve, 100));
 					}
 					if (!elementsFound) {
-						console.warn(`[WechatRender] Timeout waiting for dynamic elements after ${attempts} attempts`);
+						Logger.warn('WechatRender', `Timeout waiting for dynamic elements`, { attempts });
 					}
 				} else {
 					// Check for callouts or just wait a tiny bit
 					await new Promise(resolve => setTimeout(resolve, 50));
 				}
 
-				console.debug(`[WechatRender] ObsidianMarkdownRenderer updated, previewEl exists:`, !!renderer.previewEl);
+				htmlString = tempContainer.innerHTML;
+				Logger.debug('WechatRender', `Captured HTML from tempContainer for ${path}.`);
 
 			} catch (error) {
-				console.error(`[WechatRender] Failed to update ObsidianMarkdownRenderer:`, error);
+				Logger.error('WechatRender', `Obsidian render failed for ${path}, falling back to marked:`, error);
+				// Fallback to marked if Obsidian render fails
+				htmlString = await this.parse(content);
+				Logger.debug('WechatRender', `Fallback to marked parse for ${path}.`);
 			}
 		} else {
-			console.debug(`[WechatRender] Simple content detected, skipping Obsidian render for speed.`);
+			Logger.debug('WechatRender', `Simple content detected for ${path}, using standard marked parse.`);
+			htmlString = await this.parse(content);
 		}
 
-		// Directly read file content and parse with marked for performance
-		// Reset extension states before parsing
-		let htmlString = await this.parse(content);
+		if (!htmlString || htmlString.trim() === "") {
+			Logger.warn('WechatRender', `Parsed HTML is empty for ${path}.`);
+			htmlString = "<p>(解析后内容为空)</p>";
+		}
 
 		// 2. Update Cache
 		this.contentCache.set(path, { hash, html: htmlString });
+		Logger.debug('WechatRender', `Cache updated for ${path}.`);
 
 		const domElement = await this.postprocess(htmlString);
-
 		// Do not remove tempContainer, keep it for reuse
 		// if (tempContainer.parentNode) {
 		// 	tempContainer.parentNode.removeChild(tempContainer);

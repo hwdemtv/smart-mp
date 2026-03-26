@@ -38,9 +38,9 @@ export type MSG_TYPE =
   'custom-theme-folder-changed' |
   'image-generated' |
   'show-spinner' |
-  'show-spinner' |
   'hide-spinner' |
-  'theme-reloaded'
+  'theme-reloaded' |
+  'auth-initialized'
 
 
 

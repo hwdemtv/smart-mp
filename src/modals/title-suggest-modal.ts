@@ -52,7 +52,7 @@ export class TitleSuggestModal extends Modal {
         // Edit Area
         this.editArea = new TextAreaComponent(contentEl)
             .setValue(this.currentTitle)
-            .setPlaceholder("在此处编辑最终标题...")
+            .setPlaceholder($t("views.article-header.edit-title-placeholder"))
             .onChange((value) => {
                 this.currentTitle = value;
             });

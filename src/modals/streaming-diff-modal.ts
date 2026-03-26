@@ -1,5 +1,7 @@
 import { App, Modal, ButtonComponent, Editor, TextAreaComponent } from "obsidian";
 import * as Diff from "diff";
+import { $t } from "src/lang/i18n";
+import { Logger } from "src/utils/logger";
 
 // 防抖函数
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
@@ -73,24 +75,24 @@ export class StreamingDiffModal extends Modal {
         contentEl.empty();
 
         // 标题
-        contentEl.createEl('h2', { text: 'AI 修改对比 (流式模式)' });
+        contentEl.createEl('h2', { text: $t('streaming-diff-modal.title') });
 
         // 分栏容器
         const diffContainer = contentEl.createDiv({ cls: 'diff-container' });
 
         // 左侧：原始内容（只读）
         const leftPane = diffContainer.createDiv({ cls: 'diff-pane original-pane' });
-        leftPane.createEl('h4', { text: '📄 原始内容' });
+        leftPane.createEl('h4', { text: $t('streaming-diff-modal.original-content') });
         this.leftContentEl = leftPane.createDiv({ cls: 'diff-content' });
         this.renderOriginal();
 
         // 右侧：AI 修改（可编辑）
         const rightPane = diffContainer.createDiv({ cls: 'diff-pane modified-pane' });
-        rightPane.createEl('h4', { text: '✨ AI 修改建议' });
+        rightPane.createEl('h4', { text: $t('streaming-diff-modal.ai-suggestion') });
 
         // 编辑提示
         rightPane.createEl('small', {
-            text: '💡 AI 生成完成后可手动编辑修改内容',
+            text: $t('streaming-diff-modal.edit-hint'),
             cls: 'streaming-edit-hint'
         });
 
@@ -119,7 +121,7 @@ export class StreamingDiffModal extends Modal {
 
         // 状态栏
         this.statusEl = contentEl.createDiv({ cls: 'streaming-status' });
-        this.statusEl.setText('⏳ AI 正在生成中...');
+        this.statusEl.setText($t('streaming-diff-modal.generating'));
         this.isStreaming = true;
 
         // 操作按钮区
@@ -128,34 +130,34 @@ export class StreamingDiffModal extends Modal {
         // 撤销按钮
         this.undoButton = new ButtonComponent(actions)
             .setIcon('undo')
-            .setTooltip('撤销 (Ctrl+Z)')
+            .setTooltip($t('streaming-diff-modal.undo'))
             .onClick(() => this.undo());
         this.undoButton.setDisabled(true);
 
         // 重做按钮
         this.redoButton = new ButtonComponent(actions)
             .setIcon('redo')
-            .setTooltip('重做 (Ctrl+Y)')
+            .setTooltip($t('streaming-diff-modal.redo'))
             .onClick(() => this.redo());
         this.redoButton.setDisabled(true);
 
         // 重新生成按钮
         this.regenerateButton = new ButtonComponent(actions)
             .setIcon('rotate-ccw')
-            .setTooltip('重新生成')
+            .setTooltip($t('streaming-diff-modal.regenerate'))
             .onClick(() => this.regenerate());
         this.regenerateButton.setDisabled(true); // 初始禁用
 
         // 停止生成按钮
         this.stopButton = new ButtonComponent(actions)
-            .setButtonText('⏹️ 停止生成')
+            .setButtonText($t('streaming-diff-modal.stop'))
             .onClick(() => {
                 this.stopGeneration();
             });
 
         // 确认替换按钮
         this.acceptButton = new ButtonComponent(actions)
-            .setButtonText('✅ 确认替换')
+            .setButtonText($t('streaming-diff-modal.confirm'))
             .setCta()
             .onClick(() => {
                 this.onAccept(this.currentModified);
@@ -165,7 +167,7 @@ export class StreamingDiffModal extends Modal {
 
         // 取消按钮
         new ButtonComponent(actions)
-            .setButtonText('❌ 取消')
+            .setButtonText($t('streaming-diff-modal.cancel'))
             .onClick(() => {
                 this.abortController?.abort();
                 this.close();
@@ -223,7 +225,7 @@ export class StreamingDiffModal extends Modal {
 
         // 更新状态
         const charCount = this.currentModified.length;
-        this.statusEl.setText(`📝 AI 正在生成... (${charCount} 字符)`);
+        this.statusEl.setText($t('streaming-diff-modal.generating-progress').replace('{0}', String(charCount)));
 
         // 自动滚动到底部
         const textareaEl = this.rightTextArea.inputEl;
@@ -243,7 +245,7 @@ export class StreamingDiffModal extends Modal {
     public finishStreaming() {
         this.isStreaming = false;
         this.updateProgress(100);
-        this.statusEl.setText(`✅ AI 生成完成 (${this.currentModified.length} 字符) - 可手动编辑`);
+        this.statusEl.setText($t('streaming-diff-modal.complete').replace('{0}', String(this.currentModified.length)));
         this.statusEl.addClass('streaming-complete');
         this.acceptButton.setDisabled(false);
         this.stopButton.setDisabled(true);
@@ -262,7 +264,7 @@ export class StreamingDiffModal extends Modal {
      */
     public showError(message: string) {
         this.isStreaming = false;
-        this.statusEl.setText(`❌ ${message}`);
+        this.statusEl.setText($t('streaming-diff-modal.error').replace('{0}', message));
         this.statusEl.addClass('streaming-error');
         this.stopButton.setDisabled(true);
         this.regenerateButton.setDisabled(!this.regenerateCallback); // 启用重新生成
@@ -281,7 +283,7 @@ export class StreamingDiffModal extends Modal {
     private stopGeneration() {
         this.isStreaming = false;
         this.abortController?.abort();
-        this.statusEl.setText(`⏸️ 已停止生成 (${this.currentModified.length} 字符)`);
+        this.statusEl.setText($t('streaming-diff-modal.stopped').replace('{0}', String(this.currentModified.length)));
         this.stopButton.setDisabled(true);
         this.regenerateButton.setDisabled(!this.regenerateCallback); // 启用重新生成
 
@@ -313,7 +315,7 @@ export class StreamingDiffModal extends Modal {
         this.progressBarFill.removeClass('streaming-progress-error');
 
         // 重置状态文本
-        this.statusEl.setText('⏳ AI 正在重新生成中...');
+        this.statusEl.setText($t('streaming-diff-modal.regenerating'));
         this.statusEl.removeClass('streaming-complete', 'streaming-error');
 
         // 重置按钮状态
@@ -340,8 +342,8 @@ export class StreamingDiffModal extends Modal {
             this.finishStreaming();
         } catch (error) {
             if ((error as any).name !== 'AbortError') {
-                console.error("重新生成失败:", error);
-                this.showError("AI 重新生成失败，请重试");
+                Logger.error("StreamingDiffModal", "重新生成失败", error);
+                this.showError($t('streaming-diff-modal.regenerate-failed'));
             }
         }
     }

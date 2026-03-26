@@ -1,6 +1,7 @@
 import { SmartMPSetting } from "./smart-mp-setting";
 import { LLMProvider, LLMProviderType, LLMModel } from "./llm-types";
 import { Notice } from "obsidian";
+import { $t } from "../lang/i18n";
 
 /**
  * Migrates old flat chatAccounts to new hierarchical llmProviders
@@ -68,7 +69,7 @@ export function migrateSettings(settings: SmartMPSetting): boolean {
     }
 
     // Notify user
-    new Notice("SmartMP: LLM Settings migrated to new format.");
+    new Notice($t("settings.migrate-success"));
 
     // Establish default assistants
     if (!settings.customAssistantList) {
@@ -76,14 +77,14 @@ export function migrateSettings(settings: SmartMPSetting): boolean {
     }
 
     const defaults = [
-        { id: "polish", name: "润色 (Polish)" },
-        { id: "proofread", name: "校对 (Proofread)" },
-        { id: "synonyms", name: "同义词 (Synonyms)" },
-        { id: "translate", name: "翻译 (Translate)" },
-        { id: "mermaid", name: "Mermaid 图表" },
-        { id: "latex", name: "LaTeX 公式" },
-        { id: "summary", name: "摘要生成 (Summary)" },
-        { id: "text-to-image", name: "文生图 (Text to Image)" },
+        { id: "polish", name: $t("settings.assistant.polish") },
+        { id: "proofread", name: $t("settings.assistant.proofread") },
+        { id: "synonyms", name: $t("settings.assistant.synonyms") },
+        { id: "translate", name: $t("settings.assistant.translate") },
+        { id: "mermaid", name: $t("settings.assistant.mermaid") },
+        { id: "latex", name: $t("settings.assistant.latex") },
+        { id: "summary", name: $t("settings.assistant.summary") },
+        { id: "text-to-image", name: $t("settings.assistant.text-to-image") },
     ];
 
     let assistantsUpdated = false;
@@ -102,7 +103,7 @@ export function migrateSettings(settings: SmartMPSetting): boolean {
     });
 
     if (assistantsUpdated) {
-        new Notice("SmartMP: Default AI Assistants restored.");
+        new Notice($t("settings.restore-assistants-success"));
         return true;
     }
 

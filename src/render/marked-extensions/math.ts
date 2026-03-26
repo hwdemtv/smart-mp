@@ -9,6 +9,7 @@
 import { parseMath } from "../mathjax";
 import { MarkedExtension, Token, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 
 const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/;
 const blockRule = /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
@@ -51,7 +52,8 @@ export class MathRenderer extends SmartMPMarkedExtension {
 
         let result = '';
         try {
-            const svg = parseMath(text);
+            // [Fix] Pass display mode to parseMath (false for inline, true for block)
+            const svg = parseMath(text, !inline);
             if (!svg) {
                 result = inline
                     ? `<span class="math-error">Math Parse Error</span>`
@@ -64,7 +66,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
                 }
             }
         } catch (e) {
-            console.error('Math render error:', e);
+            Logger.error('MathRenderer', 'Math render error:', e);
             result = inline
                 ? `<span class="math-error">Math Render Error</span>`
                 : `<div class="math-error">Math Render Error</div>`;

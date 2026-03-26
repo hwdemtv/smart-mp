@@ -38,7 +38,14 @@ import { WechatClient } from "../wechat-api/wechat-client";
 import { MPArticleHeader } from "./mp-article-header";
 import { ThemeManager } from "../theme/theme-manager";
 import { ThemeSelector } from "../theme/theme-selector";
+import { setSyncLineEffect } from "../render/scroll-sync-extension";
 import { SmartMPWebViewModal } from "./webview";
+import {
+	SyncPrecisionController,
+	SYNC_PRECISION_PRESETS,
+	SyncPrecisionPreset
+} from "../utils/scroll-sync-config";
+import Logger from "src/utils/logger";
 
 export const VIEW_TYPE_SMART_MP_PREVIEW = "smart-mp-article-preview";
 export interface ElectronWindow extends Window {
@@ -110,13 +117,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	isMobileView: boolean = false;
 	renderPreviewer!: HTMLElement;
 	private editorScrollListener: ((event: Event) => void) | null = null;
-	private scrollSyncButton: ExtraButtonComponent | null = null;
+	public scrollSyncButton: ExtraButtonComponent | null = null;
 	private articleStats: HTMLElement;
 	private currentArticleStats = { totalWords: 0, readingTime: 0 };
 
 	// Scroll sync properties
 	private scrollRAF: number | null = null;
-	private scrollSyncEnabled: boolean = true;
+	private precisionController: SyncPrecisionController;
+	private lastHighlightedEl: HTMLElement | null = null;
 
 	getViewType(): string {
 		return VIEW_TYPE_SMART_MP_PREVIEW;
@@ -133,17 +141,21 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.wechatClient = WechatClient.getInstance(this.plugin);
 		this.themeSelector = new ThemeSelector(plugin);
 		this.rebuildDebounce();
+		// 初始化同步精度控制器
+		this.precisionController = SyncPrecisionController.fromPreset(
+			(this.plugin.settings.scrollSyncPrecision as SyncPrecisionPreset) || 'balanced'
+		);
 	}
 
 	toggleMobileView(button: ExtraButtonComponent) {
 		this.isMobileView = !this.isMobileView;
 		if (this.isMobileView) {
 			this.renderDiv.addClass("is-mobile-view");
-			button.setTooltip("切换为桌面视图");
+			button.setTooltip($t("scroll-sync.switch-to-desktop"));
 			button.setIcon("monitor");
 		} else {
 			this.renderDiv.removeClass("is-mobile-view");
-			button.setTooltip("切换为手机视图");
+			button.setTooltip($t("scroll-sync.switch-to-mobile"));
 			button.setIcon("tablet-smartphone");
 		}
 	}
@@ -151,7 +163,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	toggleScrollSync(button: ExtraButtonComponent) {
 		this.plugin.settings.scrollSync = !this.plugin.settings.scrollSync;
 		this.refreshScrollSyncButton();
-		new Notice(this.plugin.settings.scrollSync ? "滚动同步已开启" : "滚动同步已关闭");
+		new Notice(this.plugin.settings.scrollSync ? $t("scroll-sync.enabled") : $t("scroll-sync.disabled"));
 		void this.plugin.saveSettings();
 	}
 
@@ -186,7 +198,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.plugin.messageService.registerListener(
 			"theme-reloaded",
 			() => {
-				console.debug("[Previewer] Hot reload triggered");
+				Logger.debug("Previewer", "Hot reload triggered");
 				void this.renderDraft();
 			}
 		);
@@ -300,7 +312,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					.setTooltip($t("views.previewer.copy-article-to-clipboard"))
 					.onClick(() => {
 						void (async () => {
-							const notice = new Notice("正在准备剪贴板内容...", 0);
+							const notice = new Notice($t("notice.previewer.preparing-clipboard") ?? "正在准备剪贴板内容...", 0);
 							try {
 								// User requested to skip image upload for clipboard copy
 								const result = await this.processArticleForExport(notice, false);
@@ -323,7 +335,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 								);
 							} catch (error) {
 								notice.hide();
-								console.error('复制到剪贴板失败:', error);
+								Logger.error("Previewer", "复制到剪贴板失败:", error);
 								new Notice(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
 							}
 						})();
@@ -392,8 +404,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				await uploadURLImage(finalArticleEl, this.plugin.wechatClient);
 				await uploadURLVideo(finalArticleEl, this.plugin.wechatClient);
 			} catch (e) {
-				console.error("Error processing media:", e);
-				new Notice("图片/媒体处理失败，部分图片可能无法显示");
+				Logger.error("Previewer", "Error processing media:", e);
+				new Notice($t("notice.previewer.media-processing-failed") ?? "图片/媒体处理失败，部分图片可能无法显示");
 			}
 		} else {
 			if (progressNotice) progressNotice.setMessage("正在转换图片为 Base64 (这可能需要一点时间)...");
@@ -404,8 +416,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					}
 				});
 			} catch (e) {
-				console.error("Error converting images to Base64:", e);
-				new Notice("图片处理失败，部分图片可能无法显示");
+				Logger.error("Previewer", "Error converting images to Base64:", e);
+				new Notice($t("notice.previewer.image-processing-failed") ?? "图片处理失败，部分图片可能无法显示");
 			}
 		}
 
@@ -417,7 +429,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const text = cleanedArticleEl.textContent || '';
 
 		if (!html || html.trim().length === 0) {
-			new Notice('生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
+			new Notice($t("notice.previewer.content-empty") ?? '生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
 			return null;
 		}
 		return { html, text };
@@ -427,7 +439,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		return this.draftHeader.checkCoverImage();
 	}
 	async sendArticleToDraftBox() {
-		const notice = new Notice("开始处理文章...", 0);
+		const notice = new Notice($t("notice.previewer.processing-article") ?? "开始处理文章...", 0);
 		try {
 			const result = await this.processArticleForExport(notice);
 			if (!result) {
@@ -438,7 +450,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 			const activeDraft = this.draftHeader.getActiveLocalDraft();
 			if (!activeDraft) {
-				new Notice('无法获取当前草稿信息', 5000);
+				new Notice($t("notice.previewer.cannot-get-draft-info") ?? '无法获取当前草稿信息', 5000);
 				return;
 			}
 
@@ -448,7 +460,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			);
 
 			if (!media_id) {
-				new Notice('发送草稿失败，请检查控制台错误日志', 5000);
+				new Notice($t("notice.previewer.send-draft-failed") ?? '发送草稿失败，请检查控制台错误日志', 5000);
 				return;
 			}
 
@@ -472,10 +484,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 						item
 					);
 				}
-				new Notice("发送到草稿箱成功！", 3000);
+				new Notice($t("notice.previewer.send-draft-success") ?? "发送到草稿箱成功！", 3000);
 			}
 		} catch (error) {
-			console.error("发送失败:", error);
+			Logger.error("Previewer", "发送失败:", error);
 			new Notice(`发送发生异常: ${error}`, 5000);
 		} finally {
 			notice.hide();
@@ -497,7 +509,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	// REPAIRED: parseActiveMarkdown returning Promise<HTMLElement | null>
 	async parseActiveMarkdown(taskId: number): Promise<HTMLElement | null> {
 		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile || activeFile.extension !== "md") {
+		if (!activeFile) {
+			Logger.warn("Previewer", `[Task #${taskId}] parseActiveMarkdown failed: No active file.`);
+			return null;
+		}
+		if (activeFile.extension !== "md") {
+			Logger.warn("Previewer", `[Task #${taskId}] parseActiveMarkdown failed: Not a markdown file (${activeFile.extension})`);
 			return null;
 		}
 
@@ -506,12 +523,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (mdView && mdView.file?.path === activeFile.path) {
 			content = mdView.editor.getValue();
+			Logger.info("Previewer", `[Task #${taskId}] Content read from Editor (${content.length} chars)`);
 		} else {
 			content = await this.plugin.app.vault.adapter.read(activeFile.path);
+			Logger.info("Previewer", `[Task #${taskId}] Content read from Adapter (${content.length} chars)`);
 		}
 
-		if (content === this.lastRenderedContent) {
-			console.debug("Render skipped: Content not changed");
+		if (content === this.lastRenderedContent && content !== "") {
+			Logger.info("Previewer", `[Task #${taskId}] Render skipped: Content identical to last render.`);
 			return null;
 		}
 
@@ -521,11 +540,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.elementMap = new Map<string, HTMLElement | string>();
 
 		if (taskId !== this.lastRenderTaskId) {
-			console.debug("Render cancelled: Newer task started");
+			Logger.info("Previewer", `[Task #${taskId}] Render cancelled before wechatRender: Newer task detected.`);
 			return null;
 		}
 
-		const renderedDom = await WechatRender.getInstance(this.plugin, this).parseNote(
+		const wechatRender = WechatRender.getInstance(this.plugin);
+		wechatRender.setPreviewRender(this);
+		const renderedDom = await wechatRender.parseNote(
 			activeFile.path,
 			this.articleDiv,
 			this,
@@ -548,53 +569,81 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return;
 		}
 
+		const startTime = performance.now();
 		// 1. Generation a new Task ID to track this specific render request
 		const taskId = ++this.lastRenderTaskId;
+		
+		// 增加诊断信息：显示正在进行的任务 ID
+		Logger.info("Previewer", `[Task #${taskId}] Starting render...`);
 
-		const articleSection = await this.parseActiveMarkdown(taskId);
-
-		// 2. Final Validation: If a newer task has already started/finished, abort this one
-		if (taskId !== this.lastRenderTaskId) {
-			return;
-		}
-
-		if (!articleSection) return;
-
-		// Calculate stats from fresh rendered content (before layout enhancements)
-		const textContent = articleSection.textContent || "";
-		this.currentArticleStats = this.calculateStats(textContent);
-
-		// Apply layout enhancements (Off-screen)
-		// Note: applyLayoutEnhancements expects 'element' which is usually the content container.
-		// In old logic: element = articleDiv.firstChild (which is articleSection).
-		// So we pass articleSection.
-		this.applyLayoutEnhancements(articleSection);
-
-		// Apply Theme (Off-screen) - Sync/Await to prevent flicker
 		try {
-			// We await here to ensure unstyled content never flashes
-			await ThemeManager.getInstance(this.plugin).applyTheme(articleSection);
+			const articleSection = await this.parseActiveMarkdown(taskId);
+
+			// 2. Final Validation: If a newer task has already started/finished, abort this one
+			if (taskId !== this.lastRenderTaskId) {
+				Logger.info("Previewer", `[Task #${taskId}] Cancelled: Newer task #${this.lastRenderTaskId} in progress.`);
+				return;
+			}
+
+			if (!articleSection) {
+				Logger.warn("Previewer", `[Task #${taskId}] Aborted: parseActiveMarkdown returned null.`);
+				return;
+			}
+
+			// Apply layout enhancements (Off-screen)
+			this.applyLayoutEnhancements(articleSection);
+
+			// Apply Theme (Off-screen) - Sync/Await to prevent flicker
+			try {
+				await ThemeManager.getInstance(this.plugin).applyTheme(articleSection);
+			} catch (themeError) {
+				Logger.error("Previewer", `[Task #${taskId}] Theme apply failed (falling back):`, themeError);
+			}
+
+			// Update preview stats logic 
+			this.updateArticleStats();
+
+			// Finally: Swap DOM
+			if (taskId !== this.lastRenderTaskId) return;
+
+			this.articleDiv.empty();
+			this.articleDiv.appendChild(articleSection);
+			
+			// 重置滚动位置到顶部
+			this.renderDiv.scrollTop = 0;
+
+			// 竞态修复：只有成功挂载后才更新 lastRenderedContent
+			if ((articleSection as any)._renderedContent) {
+				this.lastRenderedContent = (articleSection as any)._renderedContent;
+			}
+
+			// 渲染完成后设置滚动同步
+			this.setupScrollSync();
+			
+			const endTime = performance.now();
+			Logger.info("Previewer", `[Task #${taskId}] Render finished in ${(endTime - startTime).toFixed(2)}ms`);
+
 		} catch (error) {
-			console.error("应用主题失败:", error);
+			if (taskId !== this.lastRenderTaskId) return;
+			
+			Logger.error("Previewer", `[Task #${taskId}] Critical error:`, error);
+			
+			this.articleDiv.empty();
+			const errorDiv = this.articleDiv.createDiv({ cls: 'smart-mp-render-error-container' });
+			errorDiv.createEl('h3', { text: `⚠ 任务 #${taskId} 渲染失败`, cls: 'smart-mp-error-title' });
+			errorDiv.createEl('pre', { 
+				text: error instanceof Error ? `${error.message}\n${error.stack}` : String(error),
+				cls: 'smart-mp-error-stack'
+			});
+			errorDiv.createEl('details', { text: '点击查看详细路径诊断' }).createEl('pre', {
+				text: JSON.stringify({
+					activeFile: this.app.workspace.getActiveFile()?.path,
+					view: this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path,
+					task: taskId,
+					build: "2026-03-26 18:58"
+				}, null, 2)
+			});
 		}
-
-		// Update preview stats logic 
-		// (updateArticleStats updates the stats UI, not the content)
-		this.updateArticleStats();
-
-		// Finally: Swap DOM
-		if (taskId !== this.lastRenderTaskId) return; // check again
-
-		this.articleDiv.empty();
-		this.articleDiv.appendChild(articleSection);
-
-		// 竞态修复：只有成功挂载后才更新 lastRenderedContent
-		if ((articleSection as any)._renderedContent) {
-			this.lastRenderedContent = (articleSection as any)._renderedContent;
-		}
-
-		// 渲染完成后设置滚动同步
-		this.setupScrollSync();
 	}
 
 	// Apply layout enhancements based on settings
@@ -694,7 +743,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const replacements = articleEl.querySelectorAll('.smart-mp-hr-replacement');
 
 		if (replacements.length === 0) {
-			console.log('[SmartMP] No HR replacements found');
+			Logger.debug("Previewer", "No HR replacements found");
 			return;
 		}
 
@@ -742,7 +791,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			}
 		});
 
-		console.log(`[SmartMP] Updated ${replacements.length} HR elements to style: ${hrStyle}`);
+		Logger.debug("Previewer", `Updated ${replacements.length} HR elements to style: ${hrStyle}`);
 	}
 	// Wrap tables in a scrollable container
 	wrapTables(element: HTMLElement) {
@@ -979,7 +1028,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					this.lastRenderedContent = "";
 					void this.debouncedUpdate();
 					// Re-bind scroll listener when active file changes
-					this.registerEditorScroll();
+					this.setupScrollSync();
 				} else {
 
 					this.isActive = leaf.view.getViewType() === VIEW_TYPE_SMART_MP_PREVIEW
@@ -989,136 +1038,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		});
 		this.listeners.push(el);
 
-		this.registerEditorScroll();
+		this.setupScrollSync();
 
 		this.plugin.messageService.registerListener("render-active-note", () => {
 			void this.renderDraft();
 		});
 	}
 
-	registerEditorScroll() {
-		const markdownView = this.getMarkdownView();
-		if (!markdownView) return;
-		const editor = markdownView.editor;
-		// @ts-ignore
-		const scrollDom = editor?.cm?.scrollDOM;
-
-		if (scrollDom) {
-			if (this.editorScrollListener) {
-				scrollDom.removeEventListener("scroll", this.editorScrollListener);
-			}
-
-			this.editorScrollListener = () => {
-				if (!this.plugin.settings.scrollSync) return;
-
-				const previewEl = this.renderDiv;
-				if (!previewEl) return;
-
-				const file = this.app.workspace.getActiveFile();
-				const headings = file ? this.app.metadataCache.getFileCache(file)?.headings : null;
-
-				// Fallback to percentage if no headings
-				if (!headings || headings.length === 0) {
-					this.syncScrollPercentage(scrollDom, previewEl);
-					return;
-				}
-
-				// CM6 Editor View
-				// @ts-ignore
-				const cmView = editor.cm;
-				const currentScrollTop = scrollDom.scrollTop;
-
-				// Find current section
-				let currentIndex = -1;
-				let currentHeadingTop = 0;
-				let nextHeadingTop = scrollDom.scrollHeight;
-
-				// Get Heading positions in Editor
-				const headingPositions = headings.map(h => {
-					try {
-						const lineNo = h.position.start.line + 1;
-						const doc = cmView.state.doc;
-						if (lineNo > doc.lines) return -1;
-
-						const pos = doc.line(lineNo).from;
-						return cmView.lineBlockAt(pos).top;
-					} catch (e) {
-						return -1;
-					}
-				});
-
-				// Find which section we are in
-				for (let i = 0; i < headingPositions.length; i++) {
-					const hTop = headingPositions[i];
-					if (hTop === -1) continue;
-
-					if (hTop <= currentScrollTop) {
-						currentIndex = i;
-						currentHeadingTop = hTop;
-					} else {
-						nextHeadingTop = hTop;
-						break;
-					}
-				}
-
-				// Calculate ratio
-				if (currentIndex === -1) {
-					nextHeadingTop = headingPositions[0] !== -1 ? headingPositions[0] : scrollDom.scrollHeight;
-					currentHeadingTop = 0;
-				}
-				else if (currentIndex === headingPositions.length - 1) {
-					nextHeadingTop = scrollDom.scrollHeight;
-				}
-
-				const range = nextHeadingTop - currentHeadingTop;
-				const ratio = range > 0 ? (currentScrollTop - currentHeadingTop) / range : 0;
-
-				// Map to Preview DOM
-				const previewHeadings = previewEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-				if (previewHeadings.length === 0) {
-					this.syncScrollPercentage(scrollDom, previewEl);
-					return;
-				}
-
-				let startElTop = 0;
-				let endElTop = previewEl.scrollHeight - previewEl.clientHeight;
-
-				if (currentIndex === -1) {
-					if (previewHeadings.length > 0) {
-						endElTop = (previewHeadings[0] as HTMLElement).offsetTop;
-					}
-				} else if (currentIndex >= previewHeadings.length) {
-					startElTop = (previewHeadings[previewHeadings.length - 1] as HTMLElement).offsetTop;
-				} else {
-					startElTop = (previewHeadings[currentIndex] as HTMLElement).offsetTop;
-					if (currentIndex + 1 < previewHeadings.length) {
-						endElTop = (previewHeadings[currentIndex + 1] as HTMLElement).offsetTop;
-					} else {
-						endElTop = previewEl.scrollHeight - previewEl.clientHeight;
-					}
-				}
-
-				requestAnimationFrame(() => {
-					previewEl.scrollTop = startElTop + ratio * (endElTop - startElTop);
-				});
-			};
-
-			scrollDom.addEventListener("scroll", this.editorScrollListener);
-		}
-	}
-
-	syncScrollPercentage(scrollDom: HTMLElement, previewEl: HTMLElement) {
-		const scrollInfo = {
-			top: scrollDom.scrollTop,
-			height: scrollDom.scrollHeight,
-			clientHeight: scrollDom.clientHeight
-		};
-		const percentage = scrollInfo.top / (scrollInfo.height - scrollInfo.clientHeight);
-		requestAnimationFrame(() => {
-			previewEl.scrollTop = percentage * (previewEl.scrollHeight - previewEl.clientHeight);
-		});
-	}
 
 	onEditorChange(editor: Editor, info: MarkdownView) {
 		void this.debouncedRender();
@@ -1175,7 +1101,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					await Promise.resolve(component.onload());
 				}
 			} catch (error) {
-				console.error(`Error calling onload()`, error);
+				Logger.error("Previewer", `Error calling onload()`, error);
 			}
 		};
 		await loadChildren(this as unknown as InternalComponent);
@@ -1184,174 +1110,233 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	// ============== Scroll Sync Methods ==============
 
 	/**
-	 * 设置滚动同步监听器
+	 * 设置双向滚动同步监听器
 	 */
+	private isSyncing: boolean = false;
 	setupScrollSync() {
-		const editor = this.getMarkdownView()?.editor;
+		const mdView = this.getMarkdownView();
+		const editor = mdView?.editor;
 		if (!editor) return;
 
-		// @ts-ignore - 访问 CodeMirror 内部
-		const scrollDom = editor.cm?.scrollDOM;
-		if (!scrollDom) return;
-
-		// 移除旧的监听器
-		if (this.editorScrollListener) {
-			scrollDom.removeEventListener("scroll", this.editorScrollListener);
+		// 访问 CodeMirror 6 内部 DOM 的类型定义
+		interface CM6Editor extends Editor {
+			cm?: {
+				scrollDOM: HTMLElement;
+			};
 		}
+		const editorScrollDom = (editor as CM6Editor).cm?.scrollDOM;
+		const previewScrollDom = this.renderDiv;
 
-		// 创建新的监听器（使用 RAF 节流）
+		if (!editorScrollDom || !previewScrollDom) return;
+
+		// 更新精度控制器配置
+		const preset = (this.plugin.settings.scrollSyncPrecision as SyncPrecisionPreset) || 'balanced';
+		this.precisionController = SyncPrecisionController.fromPreset(preset);
+
+		// 1. 移除旧监听器
+		this.stopScrollListeners(editorScrollDom, previewScrollDom);
+
+		const lockTimeout = this.precisionController.getLockTimeout();
+
+		// 2. 编辑器 -> 预览 (带插值和阈值判断)
 		this.editorScrollListener = () => {
-			if (!this.scrollSyncEnabled) return;
+			if (!this.plugin.settings.scrollSync || this.isSyncing) return;
 
-			if (this.scrollRAF) {
-				cancelAnimationFrame(this.scrollRAF);
-			}
+			// 使用阈值判断是否触发同步
+			const currentScrollTop = editorScrollDom.scrollTop;
+			if (!this.precisionController.shouldTriggerSync(currentScrollTop)) return;
+
+			if (this.scrollRAF) cancelAnimationFrame(this.scrollRAF);
 
 			this.scrollRAF = requestAnimationFrame(() => {
-				this.performScrollSync(scrollDom, editor);
+				this.isSyncing = true;
+				this.precisionController.updateLastScrollTop(currentScrollTop);
+				this.syncEditorToPreview(editorScrollDom, editor);
+				setTimeout(() => { this.isSyncing = false; }, lockTimeout);
 			});
 		};
 
-		scrollDom.addEventListener("scroll", this.editorScrollListener);
+		editorScrollDom.addEventListener("scroll", this.editorScrollListener);
+	}
+
+	private stopScrollListeners(editorScrollDom: HTMLElement, previewScrollDom: HTMLElement) {
+		if (this.editorScrollListener) {
+			editorScrollDom.removeEventListener("scroll", this.editorScrollListener);
+		}
+		// 清理预览侧高亮
+		if (this.lastHighlightedEl) {
+			this.lastHighlightedEl.classList.remove('smart-mp-sync-line-highlight');
+			this.lastHighlightedEl = null;
+		}
 	}
 
 	/**
-	 * 执行滚动同步 - 标题锚点辅助 + 百分比插值
+	 * 同步：编辑器 -> 预览 (单向同步)
+	 *
+	 * 双模式支持：
+	 *
+	 * 🎯 精确锚点模式 (默认)：
+	 * - 通过 data-source-line 锚点建立行号 <-> 物理位置映射
+	 * - 在相邻锚点之间线性插值，适应非均匀高度分布
+	 * - 精度 ~5px，适合文字为主的文档
+	 *
+	 * 🌊 平滑比例模式：
+	 * - 按滚动条百分比直接映射 (借鉴 doocs/md)
+	 * - 匀速连贯，无跳动感
+	 * - 适合图片密集、高度分布极不均匀的文档
+	 *
+	 * 共同特性：
+	 * - Properties 区锁定：首个内容前保持顶部
+	 * - 预览侧高亮：视觉对齐反馈
 	 */
-	private performScrollSync(scrollDom: HTMLElement, editor: any) {
+	private syncEditorToPreview(scrollDom: HTMLElement, editor: any) {
 		const previewEl = this.renderDiv;
-		if (!previewEl) return;
 
-		const file = this.app.workspace.getActiveFile();
-		if (!file) return;
+		// 模式切换：平滑比例 (Proportional) vs 精确锚点 (Precise)
+		const syncMode = this.plugin.settings.scrollSyncMode || 'precise';
 
-		// @ts-ignore
+		if (syncMode === 'proportional') {
+			// 平滑比例模式 (借鉴 doocs/md)
+			const sourceMax = scrollDom.scrollHeight - scrollDom.clientHeight;
+			if (sourceMax <= 0) return;
+
+			const percentage = scrollDom.scrollTop / sourceMax;
+			const targetMax = previewEl.scrollHeight - previewEl.clientHeight;
+			const targetScrollTop = percentage * targetMax;
+
+			// 视觉反馈：依然高亮当前行，提供连续感
+			const cmView = editor.cm;
+			const lineBlock = cmView.lineBlockAtHeight(scrollDom.scrollTop);
+			const topLine = cmView.state.doc.lineAt(lineBlock.from).number;
+			this.updatePreviewHighlight(topLine);
+			cmView.dispatch({ effects: setSyncLineEffect.of(topLine) });
+
+			Logger.debug("ScrollSync", `Proportional Mode: ${(percentage * 100).toFixed(2)}%, Target: ${targetScrollTop.toFixed(0)}px`);
+			this.smoothScroll(previewEl, targetScrollTop);
+			return;
+		}
+
+		const anchors = this.getScrollAnchors();
+		if (anchors.length === 0) return;
+
 		const cmView = editor.cm;
-		const currentScrollTop = scrollDom.scrollTop;
-		const editorScrollHeight = scrollDom.scrollHeight;
-		const editorClientHeight = scrollDom.clientHeight;
-		const editorScrollableHeight = editorScrollHeight - editorClientHeight;
+		const editorScrollTop = scrollDom.scrollTop;
+		const doc = cmView.state.doc;
+		const lineBlock = cmView.lineBlockAtHeight(editorScrollTop);
+		const topLine = doc.lineAt(lineBlock.from).number;
 
-		const previewScrollableHeight = previewEl.scrollHeight - previewEl.clientHeight;
-
-		// 计算编辑器滚动百分比 (0 到 1)
-		const scrollPercent = editorScrollableHeight > 0
-			? currentScrollTop / editorScrollableHeight
+		// 行内偏移：当前滚动位置在当前行块内的进度 (0~1)
+		const intraLineProgress = lineBlock.height > 0
+			? (editorScrollTop - lineBlock.top) / lineBlock.height
 			: 0;
 
-		// 获取标题元数据（包含真实行号）
-		const headings = this.app.metadataCache.getFileCache(file)?.headings;
+		// 查找相邻锚点
+		let prev: { line: number; top: number } = { line: 1, top: 0 };
+		let next: { line: number; top: number } = { line: doc.lines, top: previewEl.scrollHeight };
 
-		// [方案A] 标题锚点辅助同步
-		if (headings && headings.length > 0) {
-			try {
-				// 获取编辑器当前可见的第一行行号
-				const doc = cmView.state.doc;
-				const topLine = doc.lineAt(cmView.lineBlockAtHeight(currentScrollTop).from).number;
-				const totalLines = doc.lines;
-
-				// 在预览区查找标题元素
-				const previewHeadings = previewEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-				// 构建标题锚点列表
-				const headingAnchors: Array<{
-					line: number;
-					editorPercent: number;
-					previewTop: number;
-				}> = [];
-
-				headings.forEach((h, index) => {
-					const line = h.position.start.line + 1;
-					const editorPercent = totalLines > 1 ? (line - 1) / (totalLines - 1) : 0;
-					const previewHeading = index < previewHeadings.length
-						? previewHeadings[index] as HTMLElement
-						: null;
-
-					if (previewHeading) {
-						headingAnchors.push({
-							line,
-							editorPercent,
-							previewTop: previewHeading.offsetTop
-						});
-					}
-				});
-
-				if (headingAnchors.length > 0) {
-					// 找到当前行号附近的前后标题
-					let prevHeading: typeof headingAnchors[0] | null = null;
-					let nextHeading: typeof headingAnchors[0] | null = null;
-
-					for (const h of headingAnchors) {
-						if (h.line <= topLine) {
-							prevHeading = h;
-						} else {
-							nextHeading = h;
-							break;
-						}
-					}
-
-					// 计算目标滚动位置
-					let targetScrollTop: number;
-
-					if (prevHeading && nextHeading) {
-						// 在两个标题之间 - 精确插值
-						const lineRange = nextHeading.line - prevHeading.line;
-						const localProgress = lineRange > 0
-							? (topLine - prevHeading.line) / lineRange
-							: 0;
-						const previewRange = nextHeading.previewTop - prevHeading.previewTop;
-						targetScrollTop = prevHeading.previewTop + localProgress * previewRange;
-					} else if (prevHeading) {
-						// 在最后一个标题之后
-						const remainingEditorPercent = scrollPercent - prevHeading.editorPercent;
-						const remainingPreviewSpace = previewScrollableHeight - prevHeading.previewTop;
-						const remainingEditorSpace = 1 - prevHeading.editorPercent;
-						if (remainingEditorSpace > 0) {
-							targetScrollTop = prevHeading.previewTop +
-								(remainingEditorPercent / remainingEditorSpace) * remainingPreviewSpace;
-						} else {
-							targetScrollTop = prevHeading.previewTop;
-						}
-					} else if (nextHeading) {
-						// 在第一个标题之前
-						const beforePercent = nextHeading.editorPercent > 0
-							? scrollPercent / nextHeading.editorPercent
-							: scrollPercent;
-						targetScrollTop = beforePercent * nextHeading.previewTop;
-					} else {
-						targetScrollTop = scrollPercent * previewScrollableHeight;
-					}
-
-					// 应用滚动（带平滑处理）
-					targetScrollTop = Math.max(0, Math.min(targetScrollTop, previewScrollableHeight));
-					const delta = Math.abs(targetScrollTop - previewEl.scrollTop);
-
-					if (delta > 2) {
-						if (delta > 300) {
-							previewEl.scrollTop = targetScrollTop;
-						} else {
-							previewEl.scrollTop += (targetScrollTop - previewEl.scrollTop) * 0.4;
-						}
-					}
-					return;
-				}
-			} catch (e) {
-				// 标题同步失败，使用百分比回退
-				console.debug('Heading sync failed, falling back to percentage');
-			}
-		}
-
-		// Fallback: 纯百分比同步
-		const targetScrollTop = scrollPercent * previewScrollableHeight;
-		const delta = Math.abs(targetScrollTop - previewEl.scrollTop);
-
-		if (delta > 2) {
-			if (delta > 300) {
-				previewEl.scrollTop = targetScrollTop;
+		for (let i = 0; i < anchors.length; i++) {
+			if (anchors[i].line <= topLine) {
+				prev = anchors[i];
 			} else {
-				previewEl.scrollTop += (targetScrollTop - previewEl.scrollTop) * 0.4;
+				next = anchors[i];
+				break;
 			}
 		}
+
+		// Properties 区锁定：首个实质内容前，预览侧保持顶部
+		if (anchors.length > 1 && topLine < anchors[0].line) {
+			this.smoothScroll(previewEl, 0);
+			cmView.dispatch({ effects: setSyncLineEffect.of(topLine) });
+			this.updatePreviewHighlight(topLine);
+			return;
+		}
+
+		// 线性插值 + 行内微调
+		const lineRange = next.line - prev.line;
+		const baseProgress = lineRange > 0 ? (topLine - prev.line) / lineRange : 0;
+		// 将行内偏移量按比例叠加（亚像素级平滑）
+		const microProgress = lineRange > 0 ? intraLineProgress / lineRange : 0;
+		const totalProgress = Math.min(1, baseProgress + microProgress);
+		const targetScrollTop = prev.top + totalProgress * (next.top - prev.top);
+
+		// 设置编辑器侧的同步视觉反馈
+		cmView.dispatch({
+			effects: setSyncLineEffect.of(topLine)
+		});
+
+		// 更新预览侧高亮
+		this.updatePreviewHighlight(topLine);
+
+		// 平滑滚动
+		Logger.debug("ScrollSync", `Editor -> Preview: line ${topLine} (intra: ${(intraLineProgress * 100).toFixed(0)}%), prev: ${prev.line}@${prev.top}, next: ${next.line}@${next.top}, target: ${targetScrollTop.toFixed(0)}px`);
+		this.smoothScroll(previewEl, targetScrollTop);
+	}
+
+
+	private smoothScroll(el: HTMLElement, target: number) {
+		const newScrollTop = this.precisionController.calculateSmoothScroll(el.scrollTop, target);
+		if (newScrollTop !== el.scrollTop) {
+			el.scrollTop = newScrollTop;
+		}
+	}
+
+	/**
+	 * 更新预览区当前行高亮
+	 * 与编辑器侧同步，提升"所见即所得"的对齐感知
+	 */
+	private updatePreviewHighlight(line: number) {
+		// 移除旧的高亮
+		if (this.lastHighlightedEl) {
+			this.lastHighlightedEl.classList.remove('smart-mp-sync-line-highlight');
+		}
+
+		// 查找当前行对应的预览元素
+		const targetEl = this.articleDiv.querySelector(`[data-source-line="${line}"]`) as HTMLElement | null;
+		if (targetEl) {
+			targetEl.classList.add('smart-mp-sync-line-highlight');
+			this.lastHighlightedEl = targetEl;
+		} else {
+			this.lastHighlightedEl = null;
+		}
+	}
+
+	/**
+	 * 获取预览区所有物理锚点
+	 * 使用 getBoundingClientRect 获取相对于滚动容器的精确位置，
+	 * 并补偿顶部装饰区域（字数统计）的偏移量
+	 */
+	private getScrollAnchors(): Array<{ line: number; top: number }> {
+		const anchors: Array<{ line: number; top: number }> = [];
+		const container = this.renderDiv;
+
+		if (!container) return anchors;
+
+		// 使用 getBoundingClientRect 获取精确位置
+		const containerRect = container.getBoundingClientRect();
+
+		const elements = this.articleDiv.querySelectorAll('[data-source-line]');
+
+		elements.forEach((el) => {
+			const line = parseInt(el.getAttribute('data-source-line') || '0');
+			if (line > 0) {
+				const elRect = (el as HTMLElement).getBoundingClientRect();
+				// 相对于容器顶部的精确位置 = 元素距视口顶部距离 - 容器距视口顶部距离 + 容器滚动距离
+				const relativeTop = elRect.top - containerRect.top + container.scrollTop;
+				anchors.push({ line, top: relativeTop });
+			}
+		});
+
+		// 添加虚拟起始锚点，确保 line=1 时 top=0
+		if (anchors.length > 0 && anchors[0].line > 1) {
+			anchors.unshift({ line: 1, top: 0 });
+		}
+
+		const sortedAnchors = anchors.sort((a, b) => a.line - b.line);
+
+		// 汇总日志（仅开发环境）
+		Logger.debug("ScrollSync", `Found ${sortedAnchors.length} anchors, first: line ${sortedAnchors[0]?.line}@${sortedAnchors[0]?.top}, last: line ${sortedAnchors[sortedAnchors.length - 1]?.line}@${sortedAnchors[sortedAnchors.length - 1]?.top}`);
+
+		return sortedAnchors;
 	}
 
 	/**
@@ -1371,7 +1356,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	refreshScrollSyncButton() {
 		if (!this.scrollSyncButton) return;
 
-		if (this.scrollSyncEnabled) {
+		if (this.plugin.settings.scrollSync) {
 			this.scrollSyncButton.setIcon("link");
 			this.scrollSyncButton.setTooltip($t("views.previewer.scroll-sync-on") || "Scroll sync enabled");
 		} else {
@@ -1390,16 +1375,22 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.scrollRAF = null;
 		}
 
-		// 移除编辑器滚动监听器
-		if (this.editorScrollListener) {
-			const editor = this.getMarkdownView()?.editor;
-			// @ts-ignore
-			const scrollDom = editor?.cm?.scrollDOM;
-			if (scrollDom) {
-				scrollDom.removeEventListener("scroll", this.editorScrollListener);
-			}
-			this.editorScrollListener = null;
+		// 移除监听器
+		const editor = this.getMarkdownView()?.editor;
+		// 访问 CodeMirror 6 内部 DOM 的类型定义
+		interface CM6Editor extends Editor {
+			cm?: {
+				scrollDOM: HTMLElement;
+			};
 		}
+		const editorScrollDom = (editor as CM6Editor)?.cm?.scrollDOM;
+		const previewScrollDom = this.renderDiv;
+
+		if (editorScrollDom && previewScrollDom) {
+			this.stopScrollListeners(editorScrollDom, previewScrollDom);
+		}
+
+		this.editorScrollListener = null;
 
 		// 清理事件引用
 		this.listeners.forEach((e) => this.app.workspace.offref(e));

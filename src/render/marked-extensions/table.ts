@@ -7,6 +7,7 @@
 
 import { Tokens, MarkedExtension } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
+import { Logger } from "src/utils/logger";
 import { ObsidianMarkdownRenderer } from "../markdown-render";
 import { serializeElement } from "src/utils/utils";
 
@@ -34,7 +35,7 @@ export class Table extends SmartMPMarkedExtension {
                         const tokenCells = token.rows.map(row => row.map(c => c.text).join('')).join('').replace(/\s+/g, '');
                         const searchSig = (tokenHeaders + tokenCells).slice(0, 100); // Take first 100 chars as signature
 
-                        console.debug('[TableRenderer] Looking for table with sig:', searchSig);
+                        Logger.debug('TableRenderer', '[TableRenderer] Looking for table with sig:', searchSig);
 
                         // 2. Query all tables in the Obsidian preview DOM
                         const rendererInstance = ObsidianMarkdownRenderer.getInstance(this.plugin.app);
@@ -54,7 +55,7 @@ export class Table extends SmartMPMarkedExtension {
 
                         // Fallback to index if no content match (sanity check)
                         if (!bestMatch && this.tableIndex < domTables.length) {
-                            console.warn('[TableRenderer] Content match failed, falling back to index', this.tableIndex);
+                            Logger.warn('TableRenderer', '[TableRenderer] Content match failed, falling back to index', this.tableIndex);
                             bestMatch = domTables[this.tableIndex];
                         }
 

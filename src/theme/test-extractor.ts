@@ -1,6 +1,7 @@
 
 import { ThemeExtractor } from './theme-extractor';
 import * as cheerio from 'cheerio';
+import Logger from '../utils/logger';
 
 // Mock ThemeExtractor to avoid networking
 class MockThemeExtractor extends ThemeExtractor {
@@ -41,20 +42,20 @@ async function test() {
 
     const extractor = new MockThemeExtractor();
     const css = await extractor.extractFromHtml(html);
-    console.log('--- Generated CSS ---');
-    console.log(css);
-    console.log('---------------------');
+    Logger.debug('Test', '--- Generated CSS ---');
+    Logger.debug('Test', css);
+    Logger.debug('Test', '---------------------');
 
     if (css.includes('border-left: 8px solid rgb(0, 187, 236)')) {
-        console.log('✅ PASS: border-left shorthand captured');
+        Logger.debug('Test', '✅ PASS: border-left shorthand captured');
     } else {
-        console.log('❌ FAIL: border-left shorthand NOT captured');
+        Logger.debug('Test', '❌ FAIL: border-left shorthand NOT captured');
     }
 
     if (css.includes('padding: 10px')) {
-        console.log('✅ PASS: padding captured');
+        Logger.debug('Test', '✅ PASS: padding captured');
     } else {
-        console.log('❌ FAIL: padding NOT captured');
+        Logger.debug('Test', '❌ FAIL: padding NOT captured');
     }
 }
 

@@ -13,8 +13,8 @@ export class GeneralSection extends SettingSection {
         const frame = this.createCollapsibleFrame("⚙️ 通用与交互 (General & Interaction)", true);
 
         new Setting(frame)
-            .setName("启用智能浮动工具栏")
-            .setDesc("选中文字自动显示 AI 助手栏")
+            .setName($t("settings.general-section.enable-floating-toolbar"))
+            .setDesc($t("settings.general-section.enable-floating-toolbar-desc"))
             .addToggle((toggle) => {
                 toggle
                     .setValue(this.plugin.settings.enableFloatingToolbar ?? true)

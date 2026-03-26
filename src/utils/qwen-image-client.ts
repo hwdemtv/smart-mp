@@ -4,6 +4,7 @@ import SmartMPPlugin from "src/main";
 import {
 	SmartMPSetting,
 } from "src/settings/smart-mp-setting";
+import Logger from "./logger";
 
 export class QwenImageClient {
 	private static instance: QwenImageClient;
@@ -100,7 +101,7 @@ export class QwenImageClient {
 						}
 					})
 					.catch((error) => {
-						console.error("检查图片生成状态失败:", error);
+						Logger.error("QwenImageClient", "检查图片生成状态失败:", error);
 						clearInterval(intervalId);
 						if (timeoutId) clearTimeout(timeoutId);
 						this.plugin.hideSpinner();

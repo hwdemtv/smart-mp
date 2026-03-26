@@ -3,6 +3,7 @@ import { Notice, Setting, DropdownComponent } from "obsidian";
 import { SettingSection } from "./setting-section";
 import { $t } from "src/lang/i18n";
 import { WECHAT_MP_WEB_PAGE } from "../mp-web-images";
+import Logger from "src/utils/logger";
 import { WeChatAccountInfo } from "../smart-mp-setting";
 
 declare global {
@@ -357,8 +358,7 @@ export class WeChatSection extends SettingSection {
             await writable.close();
             new Notice($t("settings.settings-exported"));
         } catch (error) {
-            // Handle error
-            console.error(error);
+            Logger.error("WeChatSection", "Settings export failed", error);
         }
     }
 
@@ -389,7 +389,7 @@ export class WeChatSection extends SettingSection {
                         // Hacky way to refresh UI:
                         // window.location.reload(); // Too heavy
                     } catch (error) {
-                        console.error(error);
+                        Logger.error("WeChatSection", "Settings import failed", error);
                         new Notice($t("settings.settings-imported-failed"));
                     }
                 };
@@ -397,7 +397,7 @@ export class WeChatSection extends SettingSection {
             };
             input.click();
         } catch (error) {
-            console.error(error);
+            Logger.error("WeChatSection", "Settings import interaction error", error);
         }
     }
 }

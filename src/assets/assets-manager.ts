@@ -61,34 +61,34 @@ export class AssetsManager {
 
     private static instance: AssetsManager;
     private plugin: SmartMPPlugin;
-    constructor(app: App, plugin: SmartMPPlugin) {
+    private constructor(app: App, plugin: SmartMPPlugin) {
         this.app = app;
-        this.plugin = plugin
-        this.assets = new Map()
-        this.used = new Map()
-        this.db = initAssetsDB()
+        this.plugin = plugin;
+        this.assets = new Map();
+        this.used = new Map();
+        this.db = initAssetsDB();
 
         this.plugin.messageService.registerListener('wechat-account-changed', (data: string) => {
-            void this.loadMaterial(data)
-        })
+            void this.loadMaterial(data);
+        });
         this.plugin.messageService.registerListener('delete-media-item', (item: MaterialItem) => {
-            this.confirmDelete(item)
-        })
+            this.confirmDelete(item);
+        });
         this.plugin.messageService.registerListener('delete-draft-item', (item: MaterialItem) => {
-            this.confirmDelete(item)
-        })
+            this.confirmDelete(item);
+        });
         this.plugin.messageService.registerListener('image-item-updated', (item: MaterialItem) => {
-            this.addImageItem(item)
-        })
+            this.addImageItem(item);
+        });
         this.plugin.messageService.registerListener('draft-item-updated', (item: MaterialItem) => {
-            this.addImageItem(item)
-        })
+            this.addImageItem(item);
+        });
         this.plugin.messageService.registerListener('publish-draft-item', (item: DraftItem) => {
-            this.confirmPublish(item)
-        })
+            this.confirmPublish(item);
+        });
         this.plugin.messageService.registerListener('delete-media-item', (item: MaterialItem) => {
-            this.confirmDelete(item)
-        })
+            this.confirmDelete(item);
+        });
 
     }
     addImageItem(item: MaterialItem) {
@@ -149,11 +149,9 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchMaterial(accountName, 'news', offset, MAX_COUNT);
-            if (errcode !== undefined && errcode !== 0) {
-                new Notice(getErrorMessage(errcode), 0)
-                break;
-            }
+            const res = await this.plugin.wechatClient.getBatchMaterial(accountName, 'news', offset, MAX_COUNT);
+            if (!res) break;
+            const { item, total_count, item_count } = res;
             list.push(...item);
             total = total_count
             offset += item_count;
@@ -175,16 +173,12 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchDraftList(accountName, offset, MAX_COUNT);
-            if (errcode !== undefined && errcode !== 0) {
-                new Notice(getErrorMessage(errcode), 0)
-                break;
-            }
+            const res = await this.plugin.wechatClient.getBatchDraftList(accountName, offset, MAX_COUNT);
+            if (!res) break;
+            const { item, total_count, item_count } = res;
             draftList.push(...item);
             total = total_count
             offset += item_count;
-
-
         }
         draftList.sort((a, b) => {
             return b.update_time - a.update_time
@@ -212,15 +206,12 @@ export class AssetsManager {
         let offset = 0;
         let total = MAX_COUNT;
         while (offset < total) {
-            const { errcode, item, total_count, item_count } = await this.plugin.wechatClient.getBatchMaterial(accountName, type, offset, MAX_COUNT);
-            if (errcode !== undefined && errcode !== 0) {
-                new Notice(getErrorMessage(errcode), 0)
-                break;
-            }
+            const res = await this.plugin.wechatClient.getBatchMaterial(accountName, type, offset, MAX_COUNT);
+            if (!res) break;
+            const { item, total_count, item_count } = res;
             list.push(...item);
             total = total_count
             offset += item_count;
-
         }
         list.sort((a, b) => {
             return b.update_time - a.update_time

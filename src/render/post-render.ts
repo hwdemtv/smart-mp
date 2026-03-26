@@ -6,6 +6,7 @@ import { $t } from 'src/lang/i18n';
 import { fetchImageBlob, serializeElement } from 'src/utils/utils';
 import { WechatClient } from './../wechat-api/wechat-client';
 import SmartMPPlugin from 'src/main';
+import { Logger } from 'src/utils/logger';
 function imageFileName(mime: string) {
     const type = mime.split('/')[1]
     return `image-${new Date().getTime()}.${type}`
@@ -38,7 +39,7 @@ export function svgToPng(svgData: string): Promise<Blob> {
         };
 
         img.onerror = (e) => {
-            console.warn('[svgToPng] Image load error:', e);
+            Logger.warn('PostRender', '[svgToPng] Image load error:', e);
             URL.revokeObjectURL(objectUrl);
             reject(new Error($t('render.failed-to-load-image')));
         };
@@ -97,11 +98,119 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
     for (let i = 0; i < svgs.length; i += MAX_CONCURRENT) {
         const batch = svgs.slice(i, i + MAX_CONCURRENT);
         const batchPromises = batch.map(async (svg) => {
+            // [Fix] 辅助函数：解析 CSS 长度值 (支持 px, ex, em)
+            const parseLength = (val: string | null): number => {
+                if (!val) return 0;
+                const num = parseFloat(val);
+                if (isNaN(num)) return 0;
+                if (val.includes('ex')) return num * 8; // 1ex ≈ 8px
+                if (val.includes('em')) return num * 16; // 1em ≈ 16px
+                return num; // 默认为 px
+            };
+
+            // [Fix] 辅助函数：修复/补全 SVG viewBox (防止 MathJax 生成不规范的 SVG)
+            const checkViewBox = (svgEl: SVGSVGElement) => {
+                if (!svgEl.hasAttribute('viewBox')) {
+                    const w = parseLength(svgEl.getAttribute('width'));
+                    const h = parseLength(svgEl.getAttribute('height'));
+                    if (w > 0 && h > 0) {
+                        // 将 em/ex 转换为像素近似值用于 viewBox (仅作比例参考)
+                        // 注意：这里的 w/h 是像素值（parseLength 已转换）
+                        svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                    } else {
+                        // 实在没有，给个默认值防止报错，后续逻辑会兜底
+                        svgEl.setAttribute('viewBox', '0 0 100 100');
+                    }
+                }
+            };
+
+            // 立即修复 viewBox
+            checkViewBox(svg);
+
             // [Fix] Capture actual rendered dimensions before conversion
-            // SVGs often use 100% width, which fails in isolated img conversion
+            // 优先使用 SVG 属性 (MathJax 提供的固有尺寸)，避免受 CSS (如 width: 100%) 影响导致行内公式被拉伸
             const rect = svg.getBoundingClientRect();
-            const width = rect.width || parseInt(svg.getAttribute('width') || '0') || 300;
-            const height = rect.height || parseInt(svg.getAttribute('height') || '0') || 150;
+
+            const attrWidth = parseLength(svg.getAttribute('width'));
+            const attrHeight = parseLength(svg.getAttribute('height'));
+
+            // [Fix] 获取 viewBox 以便计算宽高比
+            let viewBoxAR = 0;
+            const viewBox = svg.getAttribute('viewBox');
+            if (viewBox) {
+                const parts = viewBox.split(/\s+|,/).map(parseFloat).filter(n => !isNaN(n));
+                if (parts.length === 4 && parts[3] > 0) {
+                    viewBoxAR = parts[2] / parts[3];
+                }
+            }
+
+            // [Fix] 增强判断公式类型 (V5.4 上下文查找版)
+            let isInlineMath = true;
+
+            // 使用 closest 查找最近的父级容器，比 parentElement 更稳健
+            const blockParent = svg.closest('.block-math') || svg.closest('mjx-container[display="true"]');
+            const inlineParent = svg.closest('.inline-math') || svg.closest('mjx-container[display="false"]');
+
+            if (blockParent) {
+                isInlineMath = false;
+            } else if (inlineParent) {
+                isInlineMath = true;
+            } else {
+                // 如果都有没找到，尝试检查直接父级的 display 属性 (MathJax 默认行为)
+                const parent = svg.parentElement;
+                if (parent) {
+                    const displayAttr = parent.getAttribute('display');
+                    if (displayAttr === 'true') {
+                        isInlineMath = false;
+                    }
+                }
+            }
+
+            // [Fix] 尺寸计算策略 (V5.1 精调版)
+            let width = 0;
+            let height = 0;
+
+            if (isInlineMath) {
+                // 行内公式：绝对不信任 getBoundingClientRect
+                // 设定基准高度：13px (约 0.8em，配合 scale=0.8 的视觉调整)
+                const baseHeight = 13;
+
+                height = baseHeight;
+                if (viewBoxAR > 0) {
+                    width = height * viewBoxAR;
+                } else {
+                    // 回退策略：仅信任属性或默认估算
+                    // 绝对不要使用 rect.width，因为那就是导致"巨大化"的元凶(屏幕渲染尺寸)
+                    width = attrWidth || (height * 1.5); // 默认 1.5倍宽
+
+                    // 再次兜底
+                    if (width > 200) width = 50;
+                }
+            } else {
+                // 块级公式：可以用 rect 兜底，但优先属性
+                width = attrWidth || rect.width || 300;
+                height = attrHeight || rect.height || 150;
+
+                // 如果用 rect，依然进行最后的块级确认
+                if (width > 200) isInlineMath = false;
+            }
+
+            // [Fix] 保存原始显示尺寸 (1x)，用于设置 img 属性 (HiDPI 适配)
+            // 必须取整，避免小数导致渲染问题
+            const displayWidth = Math.round(width);
+            const displayHeight = Math.round(height);
+
+            // 行内公式：较小的放大比例，避免比文字大太多
+            // 块内公式：更大的放大比例，确保清晰可见
+            // [Fix V5.3] 降低放大倍数，防止物理尺寸过大 (原: 4/12 -> 现: 2/3)
+            const scale = isInlineMath ? 2 : 3;
+
+            // [Fix V5.3] 降低最小尺寸限制，防止小公式被强行撑大
+            const minWidth = isInlineMath ? 20 : 100;
+            const minHeight = isInlineMath ? 10 : 50;
+
+            width = Math.max(width * scale, minWidth);
+            height = Math.max(height * scale, minHeight);
 
             let svgString = serializeElement(svg);
 
@@ -138,8 +247,23 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                 img.src = url!;
                 img.setAttribute('data-upload-processed', 'true');
 
-                const parent = svg.parentElement;
-                if (parent && parent.tagName.toLowerCase() === 'mjx-container') {
+                const verticalAlign = svg.style.verticalAlign || '-0.25em';
+
+                if (isInlineMath) {
+                    // 行内公式：限制高度，保持与文本和谐
+                    img.setAttribute('class', 'inline-math');
+                    // [Fix V5.5] 微调高度：1.25em -> 1.0em (响应用户"小一点"的需求)
+                    img.setAttribute('style', `height: 1.0em; vertical-align: ${verticalAlign}; width: auto;`);
+                    // [Fix] 显式设置显示尺寸 (HiDPI 适配)
+                    img.setAttribute('width', displayWidth.toString());
+                    img.setAttribute('height', displayHeight.toString());
+                } else {
+                    // 块内公式：限制最大宽度，居中
+                    img.setAttribute('class', 'block-math');
+                    img.setAttribute('style', `max-width: 90%; height: auto; display: block; margin: 1em auto;`);
+                }
+
+                if (parent && parent instanceof Element && parent.tagName.toLowerCase() === 'mjx-container') {
                     parent.replaceWith(img);
                 } else {
                     svg.replaceWith(img);
@@ -149,7 +273,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
 
             // Lower threshold to 50 to allow very simple math symbols
             if (svgString.length < 50) {
-                console.warn('[uploadSVGs] SVG too small, likely empty or artifact:', svgString.length);
+                Logger.warn('PostRender', '[uploadSVGs] SVG too small, likely empty or artifact:', svgString.length);
                 return;
             }
 
@@ -164,21 +288,29 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                     img.src = res.url;
                     img.setAttribute('data-upload-processed', 'true');
 
-                    // [Fix] Copy original dimensions and styles to ensure correct display size
-                    if (svg.getAttribute('width')) img.setAttribute('width', svg.getAttribute('width')!);
-                    if (svg.getAttribute('height')) img.setAttribute('height', svg.getAttribute('height')!);
-                    if (svg.getAttribute('style')) img.setAttribute('style', svg.getAttribute('style')!);
-                    if (svg.getAttribute('class')) img.setAttribute('class', svg.getAttribute('class')!);
+                    // [Fix] 统一新上传时的样式设置
+                    const verticalAlign = svg.style.verticalAlign || '-0.25em';
+
+                    if (isInlineMath) {
+                        img.setAttribute('class', 'inline-math');
+                        // [Fix V5.5] 微调高度：1.25em -> 1.0em (响应用户"小一点"的需求)
+                        img.setAttribute('style', `height: 1.0em; vertical-align: ${verticalAlign}; width: auto;`);
+                        // [Fix] 显式设置显示尺寸 (HiDPI 适配)
+                        img.setAttribute('width', displayWidth.toString());
+                        img.setAttribute('height', displayHeight.toString());
+                    } else {
+                        img.setAttribute('class', 'block-math');
+                        img.setAttribute('style', `max-width: 90%; height: auto; display: block; margin: 1em auto;`);
+                    }
 
                     // [Fix] Unwrap mjx-container (MathJax wrapper) as WeChat doesn't support it
-                    const parent = svg.parentElement;
-                    if (parent && parent.tagName.toLowerCase() === 'mjx-container') {
+                    if (parent && parent instanceof Element && parent.tagName.toLowerCase() === 'mjx-container') {
                         parent.replaceWith(img);
                     } else {
                         svg.replaceWith(img);
                     }
                 } else {
-                    console.error(`[uploadSVGs] uploadMaterial failed for SVG.`);
+                    Logger.error('PostRender', `[uploadSVGs] uploadMaterial failed for SVG.`);
                     // Show error placeholder only if it's likely a math formula we care about
                     if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
                         const errorSpan = document.createElement('span');
@@ -188,7 +320,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                     }
                 }
             } catch (error) {
-                console.error('[uploadSVGs] Error converting/uploading SVG:', error);
+                Logger.error('PostRender', '[uploadSVGs] Error converting/uploading SVG:', error);
                 // Fallback: Try converting SVG to data URL directly (might work in some web views, but not strictly WeChat article)
                 // But usually WeChat strips base64 images in articles. Better to show error.
                 if (svg.classList.contains('mjx-svg') || svg.closest('.inline-math, .block-math')) {
@@ -221,11 +353,11 @@ export async function uploadCanvas(root: HTMLElement, wechatClient: WechatClient
                 img.setAttribute('data-upload-processed', 'true'); // Mark as processed
                 canvas.replaceWith(img);
             } else {
-                console.error(`[uploadCanvas] uploadMaterial failed.`);
+                Logger.error('PostRender', `[uploadCanvas] uploadMaterial failed.`);
             }
 
         } catch (error) {
-            console.error('[uploadCanvas] Error helper:', error)
+            Logger.error('PostRender', '[uploadCanvas] Error helper:', error)
         }
     })
     await Promise.all(uploadPromises)
@@ -242,7 +374,7 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         // Skip invalid URLs that are clearly not images
         const src = img.src || '';
         if (src.includes('index.html') || src === '' || src === 'about:blank') {
-            console.warn('[uploadURLImage] Skipping invalid URL:', src);
+            Logger.warn('PostRender', '[uploadURLImage] Skipping invalid URL:', src);
             img.setAttribute('data-upload-skipped', 'invalid-url');
             return;
         }
@@ -256,7 +388,7 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         // 处理缺失图片标记
         if (img.src.includes('__MISSING_IMAGE__')) {
             const originalPath = img.src.replace(/.*__MISSING_IMAGE__/, '');
-            console.warn('[uploadURLImage] 图片缺失:', originalPath);
+            Logger.warn('PostRender', '[uploadURLImage] 图片缺失:', originalPath);
 
             // 替换为文字提示
             const placeholder = document.createElement('span');
@@ -276,13 +408,13 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
             try {
                 blob = await fetchImageBlob(img.src)
             } catch (error) {
-                console.error(`[uploadURLImage] Failed to fetch image: ${img.src}`, error);
+                Logger.error('PostRender', `[uploadURLImage] Failed to fetch image: ${img.src}`, error);
                 return;
             }
         }
 
         if (blob === undefined) {
-            console.error('[uploadURLImage] Failed to get blob for:', img.src);
+            Logger.error('PostRender', '[uploadURLImage] Failed to get blob for:', img.src);
             return
 
         } else {
@@ -294,10 +426,10 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
                     img.setAttribute('data-uploaded', 'true');
                     img.setAttribute('data-uploaded', 'true');
                 } else {
-                    console.error(`[uploadURLImage] Upload failed for:`, img.src);
+                    Logger.error('PostRender', `[uploadURLImage] Upload failed for:`, img.src);
                 }
             }).catch(err => {
-                console.error(`[uploadURLImage] Upload exception for: ${img.src}`, err);
+                Logger.error('PostRender', `[uploadURLImage] Upload exception for: ${img.src}`, err);
             })
         }
     })
@@ -377,10 +509,11 @@ export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClie
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type), 'video').then(async res => {
                 if (res) {
                     const video_info = await wechatClient.getMaterialById(res.media_id)
-                    video.src = video_info.url
+                    if (video_info && video_info.url) {
+                        video.src = video_info.url
+                    }
                 } else {
-                    console.error(`upload video failed.`);
-
+                    Logger.error('PostRender', `upload video failed.`);
                 }
             })
         }
@@ -452,7 +585,7 @@ export async function convertAssetsToDataURLs(
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('[convertAssetsToDataURLs] SVG conversion failed. Replacing with error placeholder.', error);
+            Logger.error('PostRender', '[convertAssetsToDataURLs] SVG conversion failed. Replacing with error placeholder.', error);
             // Fallback: simple text to avoid "Image paste failed" error blocking the whole article
             const placeholder = document.createElement('div');
             placeholder.addClass('smart-mp-error-placeholder');
@@ -474,7 +607,7 @@ export async function convertAssetsToDataURLs(
             img.src = dataURL;
             canvas.replaceWith(img);
         } catch (e) {
-            console.error('[convertAssetsToDataURLs] Canvas conversion failed:', e);
+            Logger.error('PostRender', '[convertAssetsToDataURLs] Canvas conversion failed:', e);
         } finally {
             updateProgress();
         }
@@ -500,7 +633,7 @@ export async function convertAssetsToDataURLs(
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error(`[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
+            Logger.error('PostRender', `[convertAssetsToDataURLs] Image conversion failed for ${img.src}:`, error);
             // Replace broken image with a text placeholder to avoid WeChat "paste failed" error
             const placeholder = document.createElement('span');
             placeholder.addClass('smart-mp-error-text');
@@ -521,7 +654,7 @@ export async function convertAssetsToDataURLs(
     remainingImages.forEach(img => {
         const src = img.getAttribute('src');
         if (!src || (!src.startsWith('http') && !src.startsWith('data:'))) {
-            console.warn(`[convertAssetsToDataURLs] Removing invalid image src after processing: ${src}`);
+            Logger.warn('PostRender', `[convertAssetsToDataURLs] Removing invalid image src after processing: ${src}`);
             const placeholder = document.createElement('span');
             placeholder.style.border = '1px solid #eee';
             placeholder.style.backgroundColor = '#f5f5f5';

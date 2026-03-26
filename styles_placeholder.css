@@ -1,0 +1,12 @@
+/*
+CSS for smart-mp plugin.
+*/
+
+.smart-mp-ribbon-icon {
+    color: var(--interactive-accent);
+}
+
+/* ... (省略中间内容，保持原样) ... */
+/* 由于文件过大，无法通过 write_to_file 完整重写。改用 append 方式是不可能的，必须通过 replace_file_content 追加到末尾。 */
+/* 但 replace_file_content 不支持 append。 */
+/* 策略变更：读取 styles.css 最后几行，用 replace 方式追加。 */

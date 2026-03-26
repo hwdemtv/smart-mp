@@ -1,6 +1,7 @@
 import { TFile, Notice } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { ThemeManager } from "./theme-manager";
+import Logger from "src/utils/logger";
 
 export class ThemeHotReloader {
     private plugin: SmartMPPlugin;
@@ -55,7 +56,7 @@ export class ThemeHotReloader {
         // Or simplified: if current theme is this file.
         const currentTheme = this.plugin.settings.custom_theme;
         if (currentTheme && currentTheme === filePath) {
-            console.debug(`[HotReloader] Theme changed: ${filePath}, reloading...`);
+            Logger.debug('HotReloader', `Theme changed: ${filePath}, reloading...`);
 
             // Invalidate Manager State
             await ThemeManager.getInstance(this.plugin).reloadTheme();

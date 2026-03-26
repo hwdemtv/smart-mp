@@ -14,19 +14,22 @@ RegisterHTMLHandler(adaptor)
 
 const mathjax_document = mathjax.document('', {
   InputJax: new TeX({ packages: AllPackages }),
-  OutputJax: new SVG({ fontCache: 'none' })
+  OutputJax: new SVG({
+    fontCache: 'none',
+    scale: 0.8
+  })
 })
 
 const mathjax_options = {
-  em: 16,
-  ex: 8,
+  em: 13,
+  ex: 6.5,
   containerWidth: 1280,
   //   display: true
 }
 
-export function parseMath(math: string): string {
+export function parseMath(math: string, display: boolean = false): string {
 
-  const node = mathjax_document.convert(math, mathjax_options)
+  const node = mathjax_document.convert(math, { ...mathjax_options, display })
 
   return adaptor.outerHTML(node)
 }
@@ -39,7 +42,8 @@ export function parseHTML(html: string): string {
   if (matches) {
     matches.forEach(match => {
       const math = match.replace(/\$/g, '')
-      const svg = parseMath(math)
+      // [Fix] 显式传入 display: true，生成块级标记
+      const svg = parseMath(math, true)
       html = html.replace(match, svg)
     })
   }
@@ -48,7 +52,8 @@ export function parseHTML(html: string): string {
   if (matches) {
     matches.forEach(match => {
       const math = match.replace(/\$/g, '')
-      const svg = parseMath(math)
+      // [Fix] 显式传入 display: false，生成行内标记
+      const svg = parseMath(math, false)
       html = html.replace(match, svg)
     })
   }

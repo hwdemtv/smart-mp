@@ -41,7 +41,7 @@ export class ThemeCloneModal extends Modal {
             .setDesc($t("settings.clone-theme-name-desc") || "为克隆的主题起个名字")
             .addText((text) =>
                 text
-                    .setPlaceholder("例如：极客公园风格")
+                    .setPlaceholder($t("settings.clone-theme-name-placeholder"))
                     .onChange((value) => {
                         this.themeName = value;
                     })
@@ -55,20 +55,20 @@ export class ThemeCloneModal extends Modal {
                     .onClick(async () => {
                         if (this.isCloning) return;
                         if (!this.url) {
-                            new Notice("请输入有效的微信文章链接");
+                            new Notice($t("notice.theme.clone-invalid-url") ?? "请输入有效的微信文章链接");
                             return;
                         }
                         if (!this.themeName) {
-                            new Notice("请输入主题名称");
+                            new Notice($t("notice.theme.clone-name-required") ?? "请输入主题名称");
                             return;
                         }
 
                         this.isCloning = true;
-                        btn.setButtonText("提取中...");
+                        btn.setButtonText($t("settings.clone-theme-extracting"));
                         btn.setDisabled(true);
 
                         try {
-                            new Notice("正在分析文章样式，这可能需要几秒钟...");
+                            new Notice($t("notice.theme.clone-analyzing") ?? "正在分析文章样式，这可能需要几秒钟...");
                             const extractor = new ThemeExtractor();
                             const css = await extractor.extractFromUrl(this.url);
 
@@ -83,10 +83,10 @@ export class ThemeCloneModal extends Modal {
 
                         } catch (error) {
                             console.error("Clone failed:", error);
-                            new Notice("克隆失败: " + (error instanceof Error ? error.message : String(error)));
+                            new Notice(($t("notice.theme.clone-failed") ?? "克隆失败: {0}").replace("{0}", error instanceof Error ? error.message : String(error)));
                         } finally {
                             this.isCloning = false;
-                            btn.setButtonText("开始克隆");
+                            btn.setButtonText($t("settings.clone-theme-btn"));
                             btn.setDisabled(false);
                         }
                     })

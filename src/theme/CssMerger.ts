@@ -116,6 +116,15 @@ const parseImportantProperties = (styleStr: string | null): Set<string> => {
 type Rule = Map<string, postcss.Declaration>;
 type Rules = Map<string, Rule>;
 
+// 类型别名，替代 any
+type CachedState = {
+	rules: Map<string, Map<string, { value: string; important: boolean }>>;
+	vars: Map<string, string>;
+	keyedRules: Map<string, string[]>;
+	universalRules: string[];
+};
+type PostCSErrorLike = Error & { line?: number };
+
 export class CSSMerger {
 	baseAST: postcss.Root | undefined;
 	overrideAST: postcss.Root | undefined;
@@ -206,14 +215,14 @@ export class CSSMerger {
 				this.pickRules(ast, this.rules);
 				this.buildRuleIndex();
 			} catch (e) {
-				const error = e as Error;
+				const error = e as PostCSErrorLike;
 				const errorMsg = `[CssMerger] CSS Parser Error: ${error.message}`;
-				console.error(errorMsg);
-				if ((error as any).line) {
+				Logger.error('CssMerger', errorMsg);
+				if (error.line) {
 					const lines = sanitized.split('\n');
-					console.error(`[CssMerger] Failed at Line ${(error as any).line}: "${lines[(error as any).line - 1]?.trim()}"`);
+					Logger.error('CssMerger', `Failed at Line ${error.line}: "${lines[error.line - 1]?.trim()}"`);
 				}
-				console.error('[CssMerger] Full Sanitized Input Sample (Lines 180-200):', sanitized.split('\n').slice(179, 201).join('\n'));
+				Logger.error('CssMerger', 'Full Sanitized Input Sample (Lines 180-200):', sanitized.split('\n').slice(179, 201).join('\n'));
 				new Notice($t('render.failed-to-parse-custom-css', [e]));
 			}
 		} else {
@@ -232,20 +241,43 @@ export class CSSMerger {
 	}
 
 	// Method to extract current state for caching
-	getState() {
+	getState(): CachedState {
+		// 将 Declaration 转换为简化对象以便序列化
+		const serializableRules = new Map<string, Map<string, { value: string; important: boolean }>>();
+		this.rules.forEach((rule, selector) => {
+			const newRule = new Map<string, { value: string; important: boolean }>();
+			rule.forEach((decl, prop) => {
+				newRule.set(prop, { value: decl.value, important: decl.important });
+			});
+			serializableRules.set(selector, newRule);
+		});
+
 		return {
-			rules: this.rules,
+			rules: serializableRules,
 			vars: this.vars,
 			keyedRules: this.keyedRules,
 			universalRules: this.universalRules
-		}
+		};
 	}
 
-	restoreState(state: any) {
+	restoreState(state: CachedState) {
 		// Deep copy rules: new Map for the outer collection AND each inner rule Map
 		this.rules = new Map();
-		state.rules.forEach((rule: Map<string, any>, selector: string) => {
-			this.rules.set(selector, new Map(rule));
+		state.rules.forEach((rule, selector) => {
+			const newRule = new Map<string, postcss.Declaration>();
+			rule.forEach((decl, prop) => {
+				// 重建 Declaration 对象
+				const fakeDecl = {
+					prop,
+					value: decl.value,
+					important: decl.important,
+					clone() {
+						return { ...this } as postcss.Declaration;
+					}
+				} as postcss.Declaration;
+				newRule.set(prop, fakeDecl);
+			});
+			this.rules.set(selector, newRule);
 		});
 
 		this.vars = new Map(state.vars);
@@ -297,11 +329,7 @@ export class CSSMerger {
 			universalRules: [...this.universalRules]
 		};
 
-		console.debug('[CssMerger] Base State Cache Saved - variables:',
-			Array.from(CSSMerger.BASE_STATE_CACHE.vars.entries()).filter(([key]) =>
-				key.includes('b08d55') || key.includes('D4AF37') || key.includes('1e1e1e')
-			)
-		);
+		Logger.debug('CssMerger', 'Base State Cache Saved');
 
 		Logger.perf('CssMerger', `Cache Stats - Hits: ${CSSMerger.cacheHits}, Misses: ${CSSMerger.cacheMisses}, Ratio: ${((CSSMerger.cacheHits / (CSSMerger.cacheHits + CSSMerger.cacheMisses)) * 100).toFixed(2)}%`);
 	}
@@ -354,7 +382,7 @@ export class CSSMerger {
 				} else {
 					// 仅在调试模式下输出警告
 					if (process.env.NODE_ENV === 'development') {
-						console.debug(`Variable ${fullKey} not found, using empty string`);
+					Logger.debug('CssMerger', `Variable ${fullKey} not found, using empty string`);
 					}
 					return '';
 				}
@@ -394,7 +422,7 @@ export class CSSMerger {
 				rule.walkDecls(decl => {
 					if (decl.prop.startsWith('--')) {
 						if (!/^[a-zA-Z0-9-]+$/.test(decl.prop.substring(2))) {
-							console.warn(`[CssMerger] Potentially invalid variable name format: ${decl.prop}`);
+							Logger.warn('CssMerger', `Potentially invalid variable name format: ${decl.prop}`);
 						}
 						vars.set(decl.prop, decl.value);
 					}
@@ -433,6 +461,13 @@ export class CSSMerger {
 
 		while (stack.length > 0) {
 			const currentNode = stack.pop()!;
+
+			// [FIX FOR PSEUDO ELEMENTS]: 
+			// 伪元素通常在其父节点被处理时已经应用了由 pseudo 选择器指定的特殊样式。
+			// 这里需要跳过针对这些生成节点的后代节点匹配逻辑，防止类似 `.cls span { display: none }` 的通用规则意外隐藏由 `::after` 生成的 span。
+			if (currentNode.hasAttribute('data-smart-mp-pseudo-before') || currentNode.hasAttribute('data-smart-mp-pseudo-after')) {
+				continue;
+			}
 
 			// Highlight element diagnostic
 			if (currentNode.tagName === 'MARK' || currentNode.classList.contains('highlight')) {

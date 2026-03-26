@@ -5,6 +5,7 @@ import { Menu, Notice, setIcon } from "obsidian";
 import { AssetsManager } from "src/assets/assets-manager";
 import { $t } from "src/lang/i18n";
 import SmartMPPlugin from "src/main";
+import Logger from "src/utils/logger";
 import {
 	DraftItem,
 	MaterialItem,
@@ -259,9 +260,11 @@ export class MaterialPanel {
 			}
 			const wechatClient = this.plugin.wechatClient
 			void wechatClient.getMaterialById(item.media_id).then(video_info => {
-				const source = video.createEl('source', { type: 'video/mp4' })
-				source.setAttribute('src', video_info.down_url)
-				video.appendChild(source)
+				if (video_info && video_info.down_url) {
+					const source = video.createEl('source', { type: 'video/mp4' })
+					source.setAttribute('src', video_info.down_url)
+					video.appendChild(source)
+				}
 			})
 		} else if (this.type === 'voice') {
 			const voiceItem = item as MaterialMeidaItem;
@@ -269,8 +272,7 @@ export class MaterialPanel {
 			audio.src = voiceItem.url
 			audio.setAttribute('controls', 'controls')
 		} else {
-			console.error($t('views.other-type-has-not-been-implemented'), this.type);
-
+			Logger.error("MaterialPanel", $t('views.other-type-has-not-been-implemented'), this.type);
 		}
 		this.setTotal(this.items.length)
 

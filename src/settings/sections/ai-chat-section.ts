@@ -364,7 +364,7 @@ export class AiChatSection extends SettingSection {
                         this.refresh();
                         new Notice(`成功添加 ${addedCount} 个公众号助手模板`);
                     } else {
-                        new Notice("模板已存在，无需重复添加");
+                        new Notice($t("notice.settings.template-exists") ?? "模板已存在，无需重复添加");
                     }
                 });
         });
@@ -500,7 +500,7 @@ export class AiChatSection extends SettingSection {
                 // Per-Assistant Model Selection
                 const modelSectionHeader = new Setting(content)
                     .setName($t("settings.llm-provider.default-provider") + " / " + $t("settings.llm-provider.default-model"))
-                    .setDesc("选择此助手使用的服务商和模型（留空则使用全局默认）");
+                    .setDesc($t("settings.ai-chat-section.model-select-desc"));
 
                 const providers = this.plugin.settings.llmProviders || [];
 

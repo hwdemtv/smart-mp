@@ -1,4 +1,5 @@
 import { requestUrl } from "obsidian";
+import Logger from "./logger";
 
 export function getPublicIpAddress(): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -8,7 +9,7 @@ export function getPublicIpAddress(): Promise<string> {
 			
 			resolve(response.json.origin)
 		}).catch((error) => {
-			console.error("Error fetching public IP address:", error);
+			Logger.error("IPAddress", "Error fetching public IP address:", error);
 			const message = error instanceof Error ? error.message : String(error);
 			reject(new Error("Failed to fetch public IP address: " + message));
 		})

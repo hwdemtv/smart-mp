@@ -1,8 +1,8 @@
 import { Component, Notice, TFile } from "obsidian";
-import SmartMPPlugin from "../main";
-import { WechatRender } from "../render/wechat-render";
-import { ThemeManager } from "../theme/theme-manager";
-import { PreviewRender } from "../render/marked-extensions/extension";
+import SmartMPPlugin from "src/main";
+import { WechatRender } from "src/render/wechat-render";
+import { ThemeManager } from "src/theme/theme-manager";
+import { PreviewRender } from "src/render/marked-extensions/extension";
 
 export interface RenderResult {
     html: string;
@@ -50,7 +50,8 @@ export class ArticleRenderService extends Component implements PreviewRender {
     constructor(plugin: SmartMPPlugin) {
         super();
         this.plugin = plugin;
-        this.render = WechatRender.getInstance(plugin, this);
+        this.render = WechatRender.getInstance(plugin);
+        this.render.setPreviewRender(this);
     }
 
     /**
