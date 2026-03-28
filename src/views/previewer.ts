@@ -135,6 +135,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}, 2000);
 
 	private draftHeader: MPArticleHeader;
+	private isHeaderHidden: boolean = false;
 	private lastRenderedContent: string = "";
 	private lastRenderTaskId: number = 0;
 	articleProperties: Map<string, string> = new Map();
@@ -407,6 +408,24 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					updateIcon();
 					void this.plugin.saveSettings();
 					void this.renderDraft();
+				});
+			})
+			.addExtraButton((button) => {
+				// 文章标题区域显示/隐藏开关
+				const updateHeaderToggle = () => {
+					button.setIcon(this.isHeaderHidden ? "eye-off" : "eye");
+					button.setTooltip(this.isHeaderHidden ? "显示文章标题" : "隐藏文章标题");
+				};
+				updateHeaderToggle();
+				button.onClick(() => {
+					this.isHeaderHidden = !this.isHeaderHidden;
+					if (this.draftHeader) {
+						const headerEl = this.draftHeader.getContainerEl?.();
+						if (headerEl) {
+							headerEl.toggleClass("smart-mp-header-hidden", this.isHeaderHidden);
+						}
+					}
+					updateHeaderToggle();
 				});
 			})
 

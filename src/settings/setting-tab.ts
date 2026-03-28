@@ -281,11 +281,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 					.setButtonText($t("settings.clone-theme-btn") || "开始克隆")
 					.setIcon("copy")
 					.onClick(async () => {
-						if (await this.checkProStatus()) {
-							new ThemeCloneModal(this.app, this.plugin).open();
-						} else {
-							new Notice($t("settings.pro-feature-alert") || "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。");
-						}
+						new ThemeCloneModal(this.app, this.plugin).open();
 					});
 			});
 
@@ -1907,7 +1903,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				badge.textContent = '✓ Pro 已激活';
 
 				const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
-				info.textContent = '已解锁全部功能，发布文章不含水印';
+				info.textContent = '已解锁全部功能，支持中心令牌中转服务';
 			} else {
 				statusBanner.addClass('is-free');
 
@@ -1915,7 +1911,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 				badge.textContent = '免费版';
 
 				const info = statusBanner.createSpan({ cls: 'smart-mp-license-info' });
-				info.textContent = '发布文章将包含 SmartMP 推广水印';
+				info.textContent = '微信 API 功能受限（需配置 IP 白名单）';
 			}
 		};
 
@@ -2071,8 +2067,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		benefitsEl.innerHTML = `
 			<div style="font-weight: 600; margin-bottom: 8px;">SmartMP Pro 权益 (¥69 永久买断)：</div>
 			<div style="color: var(--text-muted); line-height: 1.8;">
-				✨ <b>去除水印</b>：发布文章纯净无广告<br>
-				🎨 <b>主题克隆</b>：一键复刻任意公众号排版<br>
+				✨ <b>中心令牌服务器</b>：无需公网 IP 即可同步<br>
 				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
 				📦 <b>永久更新</b>：包含所有未来本地新功能<br>
 				🎁 <b>多端漫游</b>：支持最多3台个人设备自动漫游验证

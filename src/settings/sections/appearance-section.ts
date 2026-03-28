@@ -52,11 +52,7 @@ export class AppearanceSection extends SettingSection {
                     .setButtonText($t("settings.clone-theme-btn") || "开始克隆")
                     .setIcon("copy")
                     .onClick(async () => {
-                        if (await this.checkProStatus()) {
-                            new ThemeCloneModal(this.app, this.plugin).open();
-                        } else {
-                            new Notice($t("settings.pro-feature-alert") || "这是 Pro 专属功能。请激活 Pro 版以使用主题克隆。");
-                        }
+                        new ThemeCloneModal(this.app, this.plugin).open();
                     });
             });
 

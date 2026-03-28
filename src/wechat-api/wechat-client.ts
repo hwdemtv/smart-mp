@@ -236,16 +236,9 @@ export class WechatClient {
 			digest = digest.substring(0, 120) + "...";
 		}
 
-		// Pro 状态检查：活动状态下不添加水印
-		const isPro = await this.plugin.authService.isProActive();
-		const watermark = (isPro || !isLast) ? "" : `<section style="margin-top: 2em; text-align: center; color: #888888; font-size: 12px; line-height: 1.6;">
-    Powered by SmartMP<br>
-    使用过程中如有疑问或需要中转服务请➕V (hwdemtv)
-</section>`;
-
 		return {
 			title: article.title,
-			content: article.content + watermark,
+			content: article.content,
 			digest: digest,
 			thumb_media_id: localDraft.thumb_media_id,
 			...(localDraft.content_source_url && {

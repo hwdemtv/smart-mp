@@ -30,6 +30,13 @@ export class SecuritySection extends SettingSection {
                 toggle
                     .setValue(this.plugin.settings.useCenterToken ?? false)
                     .onChange(async (value) => {
+                        const isPro = await this.plugin.authService.isProActive();
+                        if (value && !isPro) {
+                            new Notice($t("settings.pro-feature-alert") || "这是 Pro 专属功能。请激活 Pro 版以使用中心令牌服务器。");
+                            toggle.setValue(false);
+                            return;
+                        }
+
                         this.plugin.settings.useCenterToken = value;
                         await this.plugin.saveSettings();
 

@@ -32,6 +32,7 @@ export class MPArticleHeader {
 	private plugin: SmartMPPlugin;
 	private cover_image: string | null;
 	private coverFrame: HTMLElement;
+	private container: HTMLElement;
 	private activeLocalDraft: LocalDraftItem | undefined;
 	private localDraftmanager: LocalDraftManager;
 	private _title: TextComponent;
@@ -114,14 +115,18 @@ export class MPArticleHeader {
 	public getActiveLocalDraft() {
 		return this.activeLocalDraft;
 	}
+
+	public getContainerEl(): HTMLElement {
+		return this.container;
+	}
+
 	private BuildUI(containerEl: HTMLElement) {
-		const container = containerEl.createEl("div", {
+		this.container = containerEl.createEl("div", {
 			cls: "smart-mp-article-header",
 		});
-		const details = container.createEl("details");
-		details.createEl("summary", { text: $t("views.article-header.title"), cls: "smart-mp-draft-header" });
 
-		new Setting(details)
+		// 直接添加内容，不使用折叠结构
+		new Setting(this.container)
 			.setName($t("views.article-header.article-title"))
 			.addExtraButton((button) => {
 				button
@@ -147,7 +152,7 @@ export class MPArticleHeader {
 					}
 				});
 			});
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.author"))
 			.addText((text) => {
 				this._author = text;
@@ -161,7 +166,7 @@ export class MPArticleHeader {
 				});
 			});
 
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.digest"))
 			.addExtraButton((button) => {
 				button
@@ -175,12 +180,12 @@ export class MPArticleHeader {
 			});
 
 		// [UI] Add digest length counter
-		this._digestCounter = details.createEl("div", {
+		this._digestCounter = this.container.createEl("div", {
 			cls: "smart-mp-digest-counter",
 			attr: { style: "text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;" }
 		});
 
-		this._digest = details.createEl("textarea", {
+		this._digest = this.container.createEl("textarea", {
 			cls: "digest",
 			attr: {
 				rows: 3,
@@ -215,9 +220,9 @@ export class MPArticleHeader {
 		// We need to wait until value is set (updateHeaderProperties will set it) or set initial
 		this.updateDigestCounter();
 
-		this.coverFrame = this.createCoverFrame(details);
+		this.coverFrame = this.createCoverFrame(this.container);
 
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.open-comments"))
 			.setDesc($t("views.article-header.comments-description"))
 			.addToggle((toggle) => {
@@ -230,7 +235,7 @@ export class MPArticleHeader {
 					}
 				});
 			});
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.only-fans-can-comment"))
 			.setDesc($t("views.article-header.only-fans-can-comment-description"))
 			.addToggle((toggle) => {
@@ -364,8 +369,8 @@ export class MPArticleHeader {
 			}
 		}
 	}
-	private createCoverFrame(details: HTMLElement) {
-		new Setting(details)
+	private createCoverFrame(container: HTMLElement) {
+		new Setting(container)
 			.setName($t("views.article-header.cover-image"))
 			.setDesc($t("views.article-header.cover-image-description"))
 			.addExtraButton((button) =>
@@ -387,8 +392,8 @@ export class MPArticleHeader {
 						this.imageGenerateModal.open();
 					})
 			);
-		const container = details.createDiv({ cls: "cover-container" });
-		const coverframe = container.createDiv({
+		const coverContainer = container.createDiv({ cls: "cover-container" });
+		const coverframe = coverContainer.createDiv({
 			cls: "cover-frame",
 			attr: { droppable: true },
 		});

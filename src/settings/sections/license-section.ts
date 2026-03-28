@@ -171,8 +171,7 @@ export class LicenseSection extends SettingSection {
         benefitsEl.innerHTML = `
 			<div class="smart-mp-license-benefits-title">SmartMP Pro 权益 (¥69 永久买断)：</div>
 			<div class="smart-mp-license-benefits-list">
-				✨ <b>去除水印</b>：发布文章纯净无广告<br>
-				🎨 <b>主题克隆</b>：一键复刻任意公众号排版<br>
+				✨ <b>中心令牌服务器</b>：无需公网 IP 即可同步<br>
 				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
 				📦 <b>永久更新</b>：包含所有未来本地新功能<br>
 				🎁 <b>多端漫游</b>：支持最多3台个人设备自动漫游验证
@@ -198,7 +197,7 @@ export class LicenseSection extends SettingSection {
             badge.textContent = '✓ Pro 已激活';
 
             const info = container.createSpan({ cls: 'smart-mp-license-info' });
-            info.textContent = '已解锁全部功能，发布文章不含水印';
+            info.textContent = '已解锁全部功能，支持中心令牌中转';
         } else {
             container.addClass('is-free');
 
@@ -206,7 +205,7 @@ export class LicenseSection extends SettingSection {
             badge.textContent = '免费版';
 
             const info = container.createSpan({ cls: 'smart-mp-license-info' });
-            info.textContent = '发布文章将包含 SmartMP 推广水印';
+            info.textContent = '免费版支持基础功能，专业版支持中心令牌中转';
         }
     }
 }
