@@ -304,13 +304,12 @@ export class WechatRender {
 	 * 为段落内的 <br> 换行点注入行号锚点
 	 * 将 <br> 前后的内容包裹在 <span data-source-line="N"> 中
 	 * 使滚动同步的锚点密度从"每段落一个"提升到"每行一个"
+	 *
+	 * 性能优化：减少 cloneNode 调用，直接移动节点
 	 */
 	private injectIntraLineAnchors(el: HTMLElement, startLine: number) {
 		const brElements = el.querySelectorAll('br');
 		if (brElements.length === 0) return;
-
-		// 收集所有 <br> 节点
-		const brs = Array.from(brElements);
 
 		// 使用 DocumentFragment 重建段落内容
 		const fragment = document.createDocumentFragment();
@@ -318,21 +317,22 @@ export class WechatRender {
 		let currentSpan = document.createElement('span');
 		currentSpan.setAttribute('data-source-line', String(currentLine));
 
-		// 遍历所有子节点
-		const childNodes = Array.from(el.childNodes);
-		for (const node of childNodes) {
+		// 直接遍历子节点（不创建数组副本）
+		while (el.firstChild) {
+			const node = el.firstChild;
+
 			if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
 				// 遇到 <br>：结束当前 span，添加 <br>，开始新 span
 				if (currentSpan.childNodes.length > 0) {
 					fragment.appendChild(currentSpan);
 				}
-				fragment.appendChild(node.cloneNode(true));
+				fragment.appendChild(node); // 直接移动节点，不克隆
 				currentLine++;
 				currentSpan = document.createElement('span');
 				currentSpan.setAttribute('data-source-line', String(currentLine));
 			} else {
-				// 普通节点：追加到当前 span
-				currentSpan.appendChild(node.cloneNode(true));
+				// 普通节点：直接移动到当前 span
+				currentSpan.appendChild(node);
 			}
 		}
 
@@ -341,8 +341,7 @@ export class WechatRender {
 			fragment.appendChild(currentSpan);
 		}
 
-		// 替换段落内容
-		el.innerHTML = '';
+		// 一次性替换内容（避免 innerHTML = '' 触发额外的 reflow）
 		el.appendChild(fragment);
 	}
 

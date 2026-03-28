@@ -45,6 +45,7 @@ import {
 	SYNC_PRECISION_PRESETS,
 	SyncPrecisionPreset
 } from "../utils/scroll-sync-config";
+import { LocalDraftItem, LocalDraftManager } from "../assets/draft-manager";
 import Logger from "src/utils/logger";
 
 export const VIEW_TYPE_SMART_MP_PREVIEW = "smart-mp-article-preview";
@@ -85,18 +86,48 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		}
 	}, 200);
 
+	/**
+	 * 根据文档大小自适应调整防抖延迟
+	 * 大文档使用更长的延迟，减少渲染频率
+	 */
 	rebuildDebounce() {
-		const delay = this.plugin.settings.realTimeRenderDelay || 200;
+		// 基础延迟
+		const baseDelay = this.plugin.settings.realTimeRenderDelay || 200;
+		// 自适应延迟：根据当前文档长度动态调整
+		const adaptiveDelay = this.calculateAdaptiveDelay(baseDelay);
+
 		this.debouncedRender = debounce(() => {
 			if (this.plugin.settings.realTimeRender) {
 				void this.renderDraft();
 			}
-		}, delay);
+		}, adaptiveDelay);
 		this.debouncedUpdate = debounce(() => {
 			if (this.plugin.settings.realTimeRender) {
 				void this.renderDraft();
 			}
-		}, delay);
+		}, adaptiveDelay);
+	}
+
+	/**
+	 * 计算自适应渲染延迟
+	 * 小文档 (< 5KB): 基础延迟
+	 * 中等文档 (5KB - 20KB): 基础延迟 * 2
+	 * 大文档 (> 20KB): 基础延迟 * 3
+	 */
+	private calculateAdaptiveDelay(baseDelay: number): number {
+		const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!mdView) return baseDelay;
+
+		const content = mdView.editor.getValue();
+		const contentLength = content.length;
+
+		if (contentLength < 5000) {
+			return baseDelay; // 小文档：快速响应
+		} else if (contentLength < 20000) {
+			return baseDelay * 2; // 中等文档：平衡响应
+		} else {
+			return Math.min(baseDelay * 3, 1000); // 大文档：最大 1000ms
+		}
 	}
 
 	private debouncedCustomThemeChange = debounce((theme: string) => {
@@ -125,6 +156,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	private scrollRAF: number | null = null;
 	private precisionController: SyncPrecisionController;
 	private lastHighlightedEl: HTMLElement | null = null;
+
+	// Cached scroll anchors for performance optimization
+	private cachedAnchors: Array<{ line: number; top: number }> = [];
+	private anchorsCacheValid: boolean = false;
+	private resizeObserver: ResizeObserver | null = null;
 
 	getViewType(): string {
 		return VIEW_TYPE_SMART_MP_PREVIEW;
@@ -373,19 +409,20 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					void this.renderDraft();
 				});
 			})
-			.setClass("smart-mp-toolbar-item");
 
-		this.draftHeader = new MPArticleHeader(this.plugin, mainDiv);
-
-		this.renderDiv = mainDiv.createDiv({ cls: "render-container" });
+		this.renderDiv = mainDiv.createDiv({ cls: "smart-mp-preview-container" });
 		this.renderDiv.id = "render-div";
+
+		this.draftHeader = new MPArticleHeader(this.plugin, this.renderDiv);
+
 		this.renderPreviewer = this.renderDiv.createDiv({
 			cls: "render-previewer",
-		})
+		});
 		// 使用常规 DOM 容器，避免 Shadow DOM 带来的额外开销
 		this.containerDiv = this.renderPreviewer.createDiv({ cls: "smart-mp-article" });
 		this.articleDiv = this.containerDiv.createDiv({ cls: "article-div" });
 	}
+
 	async processArticleForExport(progressNotice?: Notice, uploadImages: boolean = true): Promise<{ html: string; text: string } | null> {
 		if (progressNotice) progressNotice.setMessage("正在准备文章内容...");
 		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
@@ -493,6 +530,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			notice.hide();
 		}
 	}
+
 	public getArticleContent() {
 		return serializeChildren(this.articleDiv);
 	}
@@ -590,6 +628,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				return;
 			}
 
+			// 重新计算统计信息
+			this.currentArticleStats = this.calculateStats(articleSection.textContent || "");
+
 			// Apply layout enhancements (Off-screen)
 			this.applyLayoutEnhancements(articleSection);
 
@@ -619,6 +660,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 			// 渲染完成后设置滚动同步
 			this.setupScrollSync();
+
+			// 刷新滚动锚点缓存（性能优化：避免滚动时 Layout Thrashing）
+			this.refreshScrollAnchors();
 			
 			const endTime = performance.now();
 			Logger.info("Previewer", `[Task #${taskId}] Render finished in ${(endTime - startTime).toFixed(2)}ms`);
@@ -1136,9 +1180,12 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		// 1. 移除旧监听器
 		this.stopScrollListeners(editorScrollDom, previewScrollDom);
 
+		// 2. 设置 ResizeObserver 监听窗口变化（性能优化）
+		this.setupResizeObserver();
+
 		const lockTimeout = this.precisionController.getLockTimeout();
 
-		// 2. 编辑器 -> 预览 (带插值和阈值判断)
+		// 3. 编辑器 -> 预览 (带插值和阈值判断)
 		this.editorScrollListener = () => {
 			if (!this.plugin.settings.scrollSync || this.isSyncing) return;
 
@@ -1191,12 +1238,13 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	 */
 	private syncEditorToPreview(scrollDom: HTMLElement, editor: any) {
 		const previewEl = this.renderDiv;
+		const cmView = editor.cm;
+		const doc = cmView.state.doc;
 
 		// 模式切换：平滑比例 (Proportional) vs 精确锚点 (Precise)
 		const syncMode = this.plugin.settings.scrollSyncMode || 'precise';
 
 		if (syncMode === 'proportional') {
-			// 平滑比例模式 (借鉴 doocs/md)
 			const sourceMax = scrollDom.scrollHeight - scrollDom.clientHeight;
 			if (sourceMax <= 0) return;
 
@@ -1204,71 +1252,64 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			const targetMax = previewEl.scrollHeight - previewEl.clientHeight;
 			const targetScrollTop = percentage * targetMax;
 
-			// 视觉反馈：依然高亮当前行，提供连续感
-			const cmView = editor.cm;
-			const lineBlock = cmView.lineBlockAtHeight(scrollDom.scrollTop);
-			const topLine = cmView.state.doc.lineAt(lineBlock.from).number;
-			this.updatePreviewHighlight(topLine);
-			cmView.dispatch({ effects: setSyncLineEffect.of(topLine) });
+			try {
+				const lineBlock = cmView.lineBlockAtHeight(scrollDom.scrollTop);
+				const topLine = doc.lineAt(lineBlock.from).number;
+				this.updatePreviewHighlight(topLine);
+				cmView.dispatch({ effects: setSyncLineEffect.of(topLine) });
+			} catch(e) {}
 
-			Logger.debug("ScrollSync", `Proportional Mode: ${(percentage * 100).toFixed(2)}%, Target: ${targetScrollTop.toFixed(0)}px`);
 			this.smoothScroll(previewEl, targetScrollTop);
 			return;
 		}
 
+		// 精确物理坐标映射模式 (解决 YAML 属性区等高度漂移)
 		const anchors = this.getScrollAnchors();
-		if (anchors.length === 0) return;
-
-		const cmView = editor.cm;
 		const editorScrollTop = scrollDom.scrollTop;
-		const doc = cmView.state.doc;
-		const lineBlock = cmView.lineBlockAtHeight(editorScrollTop);
-		const topLine = doc.lineAt(lineBlock.from).number;
 
-		// 行内偏移：当前滚动位置在当前行块内的进度 (0~1)
-		const intraLineProgress = lineBlock.height > 0
-			? (editorScrollTop - lineBlock.top) / lineBlock.height
-			: 0;
+		// 虚拟锚点定位：两端顶部对齐
+		let prevAnchor = { editorTop: 0, previewTop: 0 };
+		let nextAnchor = { editorTop: scrollDom.scrollHeight, previewTop: previewEl.scrollHeight };
 
-		// 查找相邻锚点
-		let prev: { line: number; top: number } = { line: 1, top: 0 };
-		let next: { line: number; top: number } = { line: doc.lines, top: previewEl.scrollHeight };
+		if (anchors.length > 0) {
+			try {
+				// 获取所有锚点在编辑器中的物理坐标
+				const physicalAnchors = anchors.map(a => {
+					const line = Math.min(a.line, doc.lines);
+					const block = cmView.lineBlockAt(doc.line(line).from);
+					return {
+						previewTop: a.top,
+						editorTop: block.top
+					};
+				});
 
-		for (let i = 0; i < anchors.length; i++) {
-			if (anchors[i].line <= topLine) {
-				prev = anchors[i];
-			} else {
-				next = anchors[i];
-				break;
+				// 查找当前滚动位置所属的物理区间
+				for (let i = 0; i < physicalAnchors.length; i++) {
+					if (physicalAnchors[i].editorTop <= editorScrollTop) {
+						prevAnchor = physicalAnchors[i];
+					} else {
+						nextAnchor = physicalAnchors[i];
+						break;
+					}
+				}
+			} catch (err) {
+				Logger.warn("ScrollSync", "Physical anchor mapping failed, falling back", err);
 			}
 		}
 
-		// Properties 区锁定：首个实质内容前，预览侧保持顶部
-		if (anchors.length > 1 && topLine < anchors[0].line) {
-			this.smoothScroll(previewEl, 0);
-			cmView.dispatch({ effects: setSyncLineEffect.of(topLine) });
-			this.updatePreviewHighlight(topLine);
-			return;
-		}
+		// 执行物理区间内的线性插值
+		const editorRange = nextAnchor.editorTop - prevAnchor.editorTop;
+		const progress = editorRange > 0 ? (editorScrollTop - prevAnchor.editorTop) / editorRange : 0;
+		const targetScrollTop = prevAnchor.previewTop + progress * (nextAnchor.previewTop - prevAnchor.previewTop);
 
-		// 线性插值 + 行内微调
-		const lineRange = next.line - prev.line;
-		const baseProgress = lineRange > 0 ? (topLine - prev.line) / lineRange : 0;
-		// 将行内偏移量按比例叠加（亚像素级平滑）
-		const microProgress = lineRange > 0 ? intraLineProgress / lineRange : 0;
-		const totalProgress = Math.min(1, baseProgress + microProgress);
-		const targetScrollTop = prev.top + totalProgress * (next.top - prev.top);
+		// 更新视觉反馈 (行高亮)
+		try {
+			const currentLineBlock = cmView.lineBlockAtHeight(editorScrollTop);
+			const currentLine = doc.lineAt(currentLineBlock.from).number;
+			this.updatePreviewHighlight(currentLine);
+			cmView.dispatch({ effects: setSyncLineEffect.of(currentLine) });
+		} catch(e) {}
 
-		// 设置编辑器侧的同步视觉反馈
-		cmView.dispatch({
-			effects: setSyncLineEffect.of(topLine)
-		});
-
-		// 更新预览侧高亮
-		this.updatePreviewHighlight(topLine);
-
-		// 平滑滚动
-		Logger.debug("ScrollSync", `Editor -> Preview: line ${topLine} (intra: ${(intraLineProgress * 100).toFixed(0)}%), prev: ${prev.line}@${prev.top}, next: ${next.line}@${next.top}, target: ${targetScrollTop.toFixed(0)}px`);
 		this.smoothScroll(previewEl, targetScrollTop);
 	}
 
@@ -1301,11 +1342,18 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}
 
 	/**
-	 * 获取预览区所有物理锚点
+	 * 获取预览区所有物理锚点（带缓存）
 	 * 使用 getBoundingClientRect 获取相对于滚动容器的精确位置，
 	 * 并补偿顶部装饰区域（字数统计）的偏移量
+	 *
+	 * 性能优化：缓存锚点位置，仅在渲染后或窗口变化时重新计算
 	 */
 	private getScrollAnchors(): Array<{ line: number; top: number }> {
+		// 返回缓存的锚点，避免每次滚动都触发 Layout Thrashing
+		if (this.anchorsCacheValid && this.cachedAnchors.length > 0) {
+			return this.cachedAnchors;
+		}
+
 		const anchors: Array<{ line: number; top: number }> = [];
 		const container = this.renderDiv;
 
@@ -1326,17 +1374,45 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			}
 		});
 
-		// 添加虚拟起始锚点，确保 line=1 时 top=0
-		if (anchors.length > 0 && anchors[0].line > 1) {
-			anchors.unshift({ line: 1, top: 0 });
-		}
-
 		const sortedAnchors = anchors.sort((a, b) => a.line - b.line);
 
+		// 缓存结果
+		this.cachedAnchors = sortedAnchors;
+		this.anchorsCacheValid = true;
+
 		// 汇总日志（仅开发环境）
-		Logger.debug("ScrollSync", `Found ${sortedAnchors.length} anchors, first: line ${sortedAnchors[0]?.line}@${sortedAnchors[0]?.top}, last: line ${sortedAnchors[sortedAnchors.length - 1]?.line}@${sortedAnchors[sortedAnchors.length - 1]?.top}`);
+		Logger.debug("ScrollSync", `Anchors cached: ${sortedAnchors.length} anchors, first: line ${sortedAnchors[0]?.line}@${sortedAnchors[0]?.top}, last: line ${sortedAnchors[sortedAnchors.length - 1]?.line}@${sortedAnchors[sortedAnchors.length - 1]?.top}`);
 
 		return sortedAnchors;
+	}
+
+	/**
+	 * 刷新滚动锚点缓存
+	 * 应在渲染完成后调用，或在窗口大小变化时调用
+	 */
+	private refreshScrollAnchors() {
+		this.anchorsCacheValid = false;
+		this.cachedAnchors = [];
+		// 预计算一次
+		this.getScrollAnchors();
+	}
+
+	/**
+	 * 设置 ResizeObserver 监听预览区大小变化
+	 */
+	private setupResizeObserver() {
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+		}
+
+		this.resizeObserver = new ResizeObserver(() => {
+			// 窗口大小变化时，使缓存失效
+			this.anchorsCacheValid = false;
+		});
+
+		if (this.renderDiv) {
+			this.resizeObserver.observe(this.renderDiv);
+		}
 	}
 
 	/**
@@ -1374,6 +1450,16 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			cancelAnimationFrame(this.scrollRAF);
 			this.scrollRAF = null;
 		}
+
+		// 清理 ResizeObserver
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+			this.resizeObserver = null;
+		}
+
+		// 清理缓存
+		this.cachedAnchors = [];
+		this.anchorsCacheValid = false;
 
 		// 移除监听器
 		const editor = this.getMarkdownView()?.editor;

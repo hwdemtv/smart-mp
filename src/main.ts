@@ -481,9 +481,16 @@ export default class SmartMPPlugin extends Plugin {
 		// Initialize Floating Toolbar
 		this.floatingToolbar = new FloatingToolbar(this);
 
-		// Register Smart Toolbar events
+		// Register Smart Toolbar events (optimized for performance)
 		this.registerDomEvent(document, 'mouseup', (evt: MouseEvent) => {
 			if (!this.settings.enableFloatingToolbar) return;
+
+			// Fast path: Check browser selection first (cheaper than Obsidian API)
+			const docSelection = document.getSelection();
+			if (!docSelection || docSelection.toString().trim().length === 0) {
+				return; // No selection, skip expensive checks
+			}
+
 			// Delay to ensure selection is settled
 			setTimeout(() => {
 				const activeLeaf = this.app.workspace.activeLeaf;
@@ -493,18 +500,12 @@ export default class SmartMPPlugin extends Plugin {
 						const selection = editor.getSelection();
 						// Only show if selection is meaningful (not just whitespace)
 						if (selection && selection.trim().length > 0) {
-							// Also check browser selection to be safe about focus
-							const docSelection = document.getSelection();
-							if (docSelection && docSelection.toString().length > 0) {
-								Logger.debug("FloatingToolbar", `Show Toolbar for selection: ${selection.substring(0, 20)}...`);
-								this.floatingToolbar.show(editor, selection);
-							} else {
-								Logger.debug("FloatingToolbar", "Document selection empty/invalid.");
-							}
+							Logger.debug("FloatingToolbar", `Show Toolbar for selection: ${selection.substring(0, 20)}...`);
+							this.floatingToolbar.show(editor, selection);
 						}
 					}
 				}
-			}, 100);
+			}, 50); // Reduced delay from 100ms to 50ms
 		});
 
 		// 滚动同步相关
