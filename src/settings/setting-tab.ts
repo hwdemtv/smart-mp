@@ -2065,7 +2065,7 @@ export class SmartMPSettingTab extends PluginSettingTab {
 		// Pro Benefits Info
 		const benefitsEl = frame.createDiv({ cls: 'smart-mp-benefits' });
 		benefitsEl.innerHTML = `
-			<div style="font-weight: 600; margin-bottom: 8px;">SmartMP Pro 权益 (¥69 永久买断)：</div>
+			<div style="font-weight: 600; margin-bottom: 8px;">SmartMP Pro 权益 (¥69/年)：</div>
 			<div style="color: var(--text-muted); line-height: 1.8;">
 				✨ <b>中心令牌服务器</b>：无需公网 IP 即可同步<br>
 				🛠️ <b>优先支持</b>：一对一解决使用问题<br>
