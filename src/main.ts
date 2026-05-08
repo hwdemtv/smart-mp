@@ -443,11 +443,20 @@ export default class SmartMPPlugin extends Plugin {
 		initDraftDB();
 	}
 	async onload() {
-		const buildTime = "2026-03-26 18:58"; // 动态注入或手动更新
+		const buildTime = "2026-03-30 10:00"; // 动态注入或手动更新
 		console.log(`[SmartMP] Plugin loading... Build: ${buildTime}`);
 		Logger.info("Main", `Plugin loading... Build: ${buildTime}`);
 		addIcon("smart-mp-logo", SMART_MP_ICON);
-		this.initDB();
+
+		// [PERF] 使用 setTimeout(0) 确保不阻塞 UI 渲染
+		// 将数据库初始化和设置加载移到下一个事件循环
+		await new Promise<void>(resolve => {
+			setTimeout(() => {
+				this.initDB();
+				resolve();
+			}, 0);
+		});
+
 		this.messageService = new MessageService();
 		await this.loadSettings();
 		this.wechatClient = WechatClient.getInstance(this);

@@ -2,7 +2,7 @@
 
 > **SmartMP** 是专为微信公众号创作者打造的 Obsidian 插件，完美集成了本地 Markdown 渲染、AI 智能写作辅助、素材管理与一键发布功能。让您专注于内容创作，剩下的交给我们。
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/hwdemtv/smart-mp)
+[![Version](https://img.shields.io/badge/version-1.5.4-blue.svg)](https://github.com/hwdemtv/smart-mp)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## ✨ 核心特性

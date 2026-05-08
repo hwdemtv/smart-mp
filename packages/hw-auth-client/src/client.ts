@@ -39,17 +39,24 @@ export class HwAuthClient {
 
   /**
    * 生成设备指纹
+   * 注意：此方法故意不阻塞主线程，使用 setTimeout 延迟执行
    */
   private async generateDeviceId(): Promise<string> {
-    try {
-      // 动态导入 node-machine-id
-      const { machineId } = require('node-machine-id');
-      // 使用异步方法避免阻塞主线程
-      return await machineId(false);
-    } catch (e) {
-      console.warn('[HwAuth] Failed to get machine ID, using fallback UUID');
-      return crypto.randomUUID();
-    }
+    return new Promise((resolve) => {
+      // 使用 setTimeout 确保不阻塞主线程
+      setTimeout(async () => {
+        try {
+          // 动态导入 node-machine-id
+          const { machineId } = require('node-machine-id');
+          // 使用异步方法
+          const id = await machineId(false);
+          resolve(id);
+        } catch (e) {
+          console.warn('[HwAuth] Failed to get machine ID, using fallback UUID:', e);
+          resolve(crypto.randomUUID());
+        }
+      }, 0);
+    });
   }
 
   /**

@@ -151,6 +151,54 @@ export class WechatClient {
 	}
 
 	/**
+	 * 统一微信 API 调用助手（返回完整响应，包含错误码）
+	 * 用于需要根据特定错误码做重试逻辑的场景
+	 */
+	private async callWechatApiRaw<T extends WechatBaseResponse>(
+		endpoint: string,
+		method: "GET" | "POST" = "GET",
+		body?: any,
+		accountName?: string,
+		isRetry = false
+	): Promise<T | false> {
+		const accessToken = await this.plugin.refreshAccessToken(
+			accountName || this.plugin.settings.selectedMPAccount
+		);
+		if (!accessToken) {
+			return false;
+		}
+		const accessTokenValue = String(accessToken);
+		const url = `${this.getApiBaseUrl()}${endpoint}${endpoint.includes('?') ? '&' : '?'}access_token=${accessTokenValue}`;
+
+		try {
+			const res = await requestUrl({
+				url: url,
+				method: method,
+				headers: this.getHeaders(),
+				body: body ? JSON.stringify(body) : undefined,
+				throw: false,
+			});
+
+			const resData = res.json as T;
+			if (resData.errcode !== undefined && resData.errcode !== 0) {
+				// 处理令牌过期或无效 (40001, 42001)
+				if ((resData.errcode === 40001 || resData.errcode === 42001) && !isRetry) {
+					Logger.warn('WechatClient', `Token invalid (${resData.errcode}), retrying...`);
+					return this.callWechatApiRaw(endpoint, method, body, accountName, true);
+				}
+				
+				Logger.error('WechatClient', `API Error: ${resData.errcode} - ${resData.errmsg}`, { endpoint });
+				// 不自动弹 Notice，让调用方决定如何处理
+				return resData; // 返回完整响应，包含错误码
+			}
+			return resData;
+		} catch (error) {
+			Logger.error('WechatClient', `Request failed: ${endpoint}`, error);
+			return false;
+		}
+	}
+
+	/**
 	 * 统一微信 API 调用助手
 	 */
 	private async callWechatApi<T extends WechatBaseResponse>(
@@ -250,9 +298,16 @@ export class WechatClient {
 		};
 	}
 
+	/**
+	 * 发送单篇文章到草稿箱
+	 * @param localDraft 本地草稿信息
+	 * @param data 文章 HTML 内容
+	 * @param onThumbMediaIdExpired 当 thumb_media_id 失效时的回调，返回新的 thumb_media_id
+	 */
 	public async sendArticleToDraftBox(
 		localDraft: LocalDraftItem,
-		data: string
+		data: string,
+		onThumbMediaIdExpired?: () => Promise<string | undefined>
 	) {
 		Logger.debug("sendArticleToDraftBox", `Sending draft: ${localDraft.title}`);
 		
@@ -261,13 +316,36 @@ export class WechatClient {
 			localDraft
 		);
 
-		const resData = await this.callWechatApi<UploadMaterialResponse>(
+		const resData = await this.callWechatApiRaw<UploadMaterialResponse>(
 			"/draft/add",
 			"POST",
 			{ articles: [formattedArticle] }
 		);
 
-		if (!resData) return false;
+		// 处理 thumb_media_id 失效 (40007)
+		if (resData && resData.errcode === 40007 && onThumbMediaIdExpired) {
+			Logger.warn("sendArticleToDraftBox", "thumb_media_id invalid (40007), re-uploading cover image...");
+			new Notice("封面素材已失效，正在重新上传...", 3000);
+			
+			const newThumbMediaId = await onThumbMediaIdExpired();
+			if (newThumbMediaId) {
+				localDraft.thumb_media_id = newThumbMediaId;
+				const retryArticle = await this.formatArticle(
+					{ title: localDraft.title, content: data, digest: localDraft.digest },
+					localDraft
+				);
+				const retryResData = await this.callWechatApi<UploadMaterialResponse>(
+					"/draft/add",
+					"POST",
+					{ articles: [retryArticle] }
+				);
+				if (!retryResData) return false;
+				new Notice($t("wechat-api.send-article-to-draft-box-successfully"));
+				return retryResData.media_id;
+			}
+		}
+
+		if (!resData || (resData.errcode !== undefined && resData.errcode !== 0)) return false;
 
 		new Notice($t("wechat-api.send-article-to-draft-box-successfully"));
 		return resData.media_id;

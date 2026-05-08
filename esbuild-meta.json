@@ -466,11 +466,11 @@
       "format": "esm"
     },
     "src/lang/locales/en-us.json": {
-      "bytes": 23055,
+      "bytes": 23532,
       "imports": []
     },
     "src/lang/locales/zh-cn.json": {
-      "bytes": 22463,
+      "bytes": 22940,
       "imports": []
     },
     "src/lang/i18n.ts": {
@@ -2358,7 +2358,7 @@
       "format": "esm"
     },
     "src/utils/indexeddb.ts": {
-      "bytes": 3543,
+      "bytes": 3656,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -2369,7 +2369,7 @@
       "format": "esm"
     },
     "src/theme/css-cache.ts": {
-      "bytes": 9825,
+      "bytes": 10159,
       "imports": [
         {
           "path": "src/utils/indexeddb.ts",
@@ -2520,7 +2520,7 @@
       "format": "esm"
     },
     "src/wechat-api/wechat-client.ts": {
-      "bytes": 15761,
+      "bytes": 15362,
       "imports": [
         {
           "path": "obsidian",
@@ -10407,12 +10407,12 @@
       "format": "esm"
     },
     "src/utils/code-block-mapper.ts": {
-      "bytes": 7647,
+      "bytes": 7891,
       "imports": [],
       "format": "esm"
     },
     "src/render/wechat-render.ts": {
-      "bytes": 20660,
+      "bytes": 20700,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -10611,7 +10611,7 @@
       "format": "esm"
     },
     "src/views/mp-article-header.ts": {
-      "bytes": 19456,
+      "bytes": 18900,
       "imports": [
         {
           "path": "obsidian",
@@ -10703,12 +10703,12 @@
       "format": "esm"
     },
     "src/utils/scroll-sync-config.ts": {
-      "bytes": 7913,
+      "bytes": 8216,
       "imports": [],
       "format": "esm"
     },
     "src/render/scroll-sync-extension.ts": {
-      "bytes": 5363,
+      "bytes": 5549,
       "imports": [
         {
           "path": "@codemirror/view",
@@ -10729,7 +10729,7 @@
       "format": "esm"
     },
     "src/views/previewer.ts": {
-      "bytes": 46045,
+      "bytes": 50063,
       "imports": [
         {
           "path": "@codemirror/view",
@@ -10815,6 +10815,11 @@
           "path": "src/utils/scroll-sync-config.ts",
           "kind": "import-statement",
           "original": "../utils/scroll-sync-config"
+        },
+        {
+          "path": "../assets/draft-manager",
+          "kind": "import-statement",
+          "external": true
         },
         {
           "path": "src/utils/logger.ts",
@@ -12232,7 +12237,7 @@
       "format": "esm"
     },
     "src/theme/theme-extractor.ts": {
-      "bytes": 35989,
+      "bytes": 36929,
       "imports": [
         {
           "path": "obsidian",
@@ -14084,7 +14089,7 @@
       "format": "esm"
     },
     "src/settings/setting-tab.ts": {
-      "bytes": 79362,
+      "bytes": 79122,
       "imports": [
         {
           "path": "obsidian",
@@ -14504,7 +14509,7 @@
       "format": "esm"
     },
     "src/utils/ai-base-client.ts": {
-      "bytes": 6106,
+      "bytes": 6222,
       "imports": [
         {
           "path": "src/main",
@@ -14535,7 +14540,7 @@
       "format": "esm"
     },
     "src/utils/ollama-client.ts": {
-      "bytes": 3657,
+      "bytes": 3786,
       "imports": [
         {
           "path": "node_modules/ollama/dist/index.mjs",
@@ -14617,7 +14622,7 @@
       "format": "esm"
     },
     "src/utils/openAI-client.ts": {
-      "bytes": 4590,
+      "bytes": 4731,
       "imports": [
         {
           "path": "node_modules/openai/index.mjs",
@@ -14905,7 +14910,7 @@
       "format": "esm"
     },
     "src/settings/migrate.ts": {
-      "bytes": 3872,
+      "bytes": 3983,
       "imports": [
         {
           "path": "./smart-mp-setting",
@@ -14931,7 +14936,7 @@
       "format": "esm"
     },
     "packages/hw-auth-client/dist/storage.js": {
-      "bytes": 4162,
+      "bytes": 4303,
       "imports": [],
       "format": "cjs"
     },
@@ -14972,7 +14977,7 @@
       "format": "cjs"
     },
     "packages/hw-auth-client/dist/client.js": {
-      "bytes": 8512,
+      "bytes": 8759,
       "imports": [
         {
           "path": "packages/hw-auth-client/dist/storage.js",
@@ -14993,7 +14998,7 @@
       "format": "cjs"
     },
     "packages/hw-auth-client/dist/index.js": {
-      "bytes": 942,
+      "bytes": 972,
       "imports": [
         {
           "path": "packages/hw-auth-client/dist/client.js",
@@ -15009,7 +15014,7 @@
       "format": "cjs"
     },
     "src/services/auth-service.ts": {
-      "bytes": 5144,
+      "bytes": 5302,
       "imports": [
         {
           "path": "obsidian",
@@ -15056,7 +15061,7 @@
       "format": "esm"
     },
     "src/services/ip-service.ts": {
-      "bytes": 748,
+      "bytes": 775,
       "imports": [
         {
           "path": "src/utils/ip-address.ts",
@@ -15072,7 +15077,7 @@
       "format": "esm"
     },
     "src/services/account-service.ts": {
-      "bytes": 3555,
+      "bytes": 3693,
       "imports": [
         {
           "path": "obsidian",
@@ -15119,7 +15124,7 @@
       "format": "esm"
     },
     "src/core/command-manager.ts": {
-      "bytes": 10558,
+      "bytes": 10923,
       "imports": [
         {
           "path": "obsidian",
@@ -15244,7 +15249,7 @@
       "format": "esm"
     },
     "src/services/ai-feature-manager.ts": {
-      "bytes": 12807,
+      "bytes": 13174,
       "imports": [
         {
           "path": "obsidian",
@@ -15315,7 +15320,7 @@
       "format": "esm"
     },
     "src/main.ts": {
-      "bytes": 21756,
+      "bytes": 22021,
       "imports": [
         {
           "path": "obsidian",
@@ -16113,7 +16118,7 @@
           "bytesInOutput": 15410
         },
         "src/wechat-api/wechat-client.ts": {
-          "bytesInOutput": 7509
+          "bytesInOutput": 7181
         },
         "src/render/dom-to-image-more.js": {
           "bytesInOutput": 17168
@@ -17880,7 +17885,7 @@
           "bytesInOutput": 7201
         },
         "src/main.ts": {
-          "bytesInOutput": 11119
+          "bytesInOutput": 11120
         },
         "src/utils/crypto-helper.ts": {
           "bytesInOutput": 1907
@@ -17982,7 +17987,7 @@
           "bytesInOutput": 603
         },
         "src/settings/setting-tab.ts": {
-          "bytesInOutput": 52462
+          "bytesInOutput": 52183
         },
         "src/theme/theme-manager.ts": {
           "bytesInOutput": 6869
@@ -18111,13 +18116,13 @@
           "bytesInOutput": 126936
         },
         "src/views/previewer.ts": {
-          "bytesInOutput": 23730
+          "bytesInOutput": 25097
         },
         "src/render/post-render.ts": {
           "bytesInOutput": 9492
         },
         "src/render/wechat-render.ts": {
-          "bytesInOutput": 8290
+          "bytesInOutput": 8215
         },
         "node_modules/marked/lib/marked.esm.js": {
           "bytesInOutput": 39152
@@ -18180,7 +18185,7 @@
           "bytesInOutput": 1945
         },
         "src/views/mp-article-header.ts": {
-          "bytesInOutput": 12132
+          "bytesInOutput": 12175
         },
         "src/assets/draft-manager.ts": {
           "bytesInOutput": 2174
@@ -18549,7 +18554,7 @@
           "bytesInOutput": 1423
         }
       },
-      "bytes": 4573097
+      "bytes": 4573826
     }
   }
 }

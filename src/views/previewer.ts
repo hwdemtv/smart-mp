@@ -135,7 +135,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	}, 2000);
 
 	private draftHeader: MPArticleHeader;
-	private isHeaderHidden: boolean = false;
+	private isHeaderHidden: boolean = true;
 	private lastRenderedContent: string = "";
 	private lastRenderTaskId: number = 0;
 	articleProperties: Map<string, string> = new Map();
@@ -434,6 +434,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		this.draftHeader = new MPArticleHeader(this.plugin, this.renderDiv);
 
+		// 默认隐藏文章标题区域
+		if (this.isHeaderHidden) {
+			const headerEl = this.draftHeader.getContainerEl?.();
+			if (headerEl) {
+				headerEl.addClass("smart-mp-header-hidden");
+			}
+		}
+
 		this.renderPreviewer = this.renderDiv.createDiv({
 			cls: "render-previewer",
 		});
@@ -512,7 +520,14 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 			const media_id = await this.wechatClient.sendArticleToDraftBox(
 				activeDraft,
-				result.html
+				result.html,
+				async () => {
+					// 当 thumb_media_id 失效时，重新上传封面图
+					if (activeDraft.cover_image_url) {
+						return await this.draftHeader.reuploadCoverImage(activeDraft);
+					}
+					return undefined;
+				}
 			);
 
 			if (!media_id) {
@@ -1366,6 +1381,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	 * 并补偿顶部装饰区域（字数统计）的偏移量
 	 *
 	 * 性能优化：缓存锚点位置，仅在渲染后或窗口变化时重新计算
+	 * [PERF] 如果缓存失效，返回空数组，避免同步 Layout Thrashing
 	 */
 	private getScrollAnchors(): Array<{ line: number; top: number }> {
 		// 返回缓存的锚点，避免每次滚动都触发 Layout Thrashing
@@ -1373,47 +1389,63 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			return this.cachedAnchors;
 		}
 
-		const anchors: Array<{ line: number; top: number }> = [];
+		// [PERF] 缓存失效时返回空数组，不进行同步计算
+		// 锚点会在 refreshScrollAnchors() 中通过 requestAnimationFrame 异步计算
+		return [];
+	}
+
+	/**
+	 * 异步计算锚点位置
+	 * [PERF] 使用 requestAnimationFrame 避免 Layout Thrashing 阻塞主线程
+	 */
+	private computeAnchorsAsync() {
 		const container = this.renderDiv;
+		if (!container) return;
 
-		if (!container) return anchors;
+		// 使用 requestAnimationFrame 在浏览器下一帧执行布局计算
+		requestAnimationFrame(() => {
+			const anchors: Array<{ line: number; top: number }> = [];
 
-		// 使用 getBoundingClientRect 获取精确位置
-		const containerRect = container.getBoundingClientRect();
+			try {
+				// 使用 getBoundingClientRect 获取精确位置
+				const containerRect = container.getBoundingClientRect();
+				const elements = this.articleDiv.querySelectorAll('[data-source-line]');
 
-		const elements = this.articleDiv.querySelectorAll('[data-source-line]');
+				// [PERF] 批量读取，避免读写交替
+				elements.forEach((el) => {
+					const line = parseInt(el.getAttribute('data-source-line') || '0');
+					if (line > 0) {
+						const elRect = (el as HTMLElement).getBoundingClientRect();
+						// 相对于容器顶部的精确位置 = 元素距视口顶部距离 - 容器距视口顶部距离 + 容器滚动距离
+						const relativeTop = elRect.top - containerRect.top + container.scrollTop;
+						anchors.push({ line, top: relativeTop });
+					}
+				});
 
-		elements.forEach((el) => {
-			const line = parseInt(el.getAttribute('data-source-line') || '0');
-			if (line > 0) {
-				const elRect = (el as HTMLElement).getBoundingClientRect();
-				// 相对于容器顶部的精确位置 = 元素距视口顶部距离 - 容器距视口顶部距离 + 容器滚动距离
-				const relativeTop = elRect.top - containerRect.top + container.scrollTop;
-				anchors.push({ line, top: relativeTop });
+				const sortedAnchors = anchors.sort((a, b) => a.line - b.line);
+
+				// 缓存结果
+				this.cachedAnchors = sortedAnchors;
+				this.anchorsCacheValid = true;
+
+				// 汇总日志（仅开发环境）
+				Logger.debug("ScrollSync", `Anchors cached: ${sortedAnchors.length} anchors, first: line ${sortedAnchors[0]?.line}@${sortedAnchors[0]?.top}, last: line ${sortedAnchors[sortedAnchors.length - 1]?.line}@${sortedAnchors[sortedAnchors.length - 1]?.top}`);
+			} catch (e) {
+				Logger.warn("ScrollSync", "Failed to compute anchors", e);
 			}
 		});
-
-		const sortedAnchors = anchors.sort((a, b) => a.line - b.line);
-
-		// 缓存结果
-		this.cachedAnchors = sortedAnchors;
-		this.anchorsCacheValid = true;
-
-		// 汇总日志（仅开发环境）
-		Logger.debug("ScrollSync", `Anchors cached: ${sortedAnchors.length} anchors, first: line ${sortedAnchors[0]?.line}@${sortedAnchors[0]?.top}, last: line ${sortedAnchors[sortedAnchors.length - 1]?.line}@${sortedAnchors[sortedAnchors.length - 1]?.top}`);
-
-		return sortedAnchors;
 	}
 
 	/**
 	 * 刷新滚动锚点缓存
 	 * 应在渲染完成后调用，或在窗口大小变化时调用
+	 * [PERF] 使用异步计算，不阻塞主线程
 	 */
 	private refreshScrollAnchors() {
 		this.anchorsCacheValid = false;
 		this.cachedAnchors = [];
-		// 预计算一次
-		this.getScrollAnchors();
+		// [PERF] 异步计算锚点，避免阻塞渲染
+		this.computeAnchorsAsync();
 	}
 
 	/**
@@ -1424,9 +1456,18 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			this.resizeObserver.disconnect();
 		}
 
+		// [PERF] 使用防抖避免频繁回调
+		let resizeDebounce: number | null = null;
 		this.resizeObserver = new ResizeObserver(() => {
-			// 窗口大小变化时，使缓存失效
-			this.anchorsCacheValid = false;
+			// 取消之前的防抖
+			if (resizeDebounce) {
+				clearTimeout(resizeDebounce);
+			}
+			// 延迟 100ms 标记缓存失效，避免快速连续触发
+			resizeDebounce = window.setTimeout(() => {
+				this.anchorsCacheValid = false;
+				resizeDebounce = null;
+			}, 100);
 		});
 
 		if (this.renderDiv) {
