@@ -15,7 +15,8 @@ import { ObsidianMarkdownRenderer } from "../markdown-render";
 import { SmartMPMarkedExtension } from "./extension";
 import { Logger } from "src/utils/logger";
 import { Notice } from "obsidian";
-import hljs from "highlight.js";
+import { hljs } from "../hljs-languages";
+import { ResourceManager } from "src/assets/resource-manager";
 
 export class CodeRenderer extends SmartMPMarkedExtension {
 	showLineNumber: boolean;
@@ -28,6 +29,51 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 		this.admonitionIndex = 0;
 		this.chartsIndex = 0;
 		return Promise.resolve();
+	}
+
+	async postprocess(dom: HTMLElement): Promise<HTMLElement> {
+		// Find all pre elements that might have been rendered by Obsidian or other plugins
+		const preElements = dom.querySelectorAll('pre');
+		preElements.forEach((pre) => {
+			// Skip if already processed by our custom renderer (has header or our specific styles)
+			if (pre.getAttribute('style')?.includes('box-shadow') || 
+				pre.previousElementSibling?.getAttribute('style')?.includes('code-header-bg')) {
+				return;
+			}
+
+			// Extract language from class if available (Obsidian uses language-xyz)
+			const classList = Array.from(pre.classList);
+			const langClass = classList.find(c => c.startsWith('language-'));
+			const lang = langClass ? langClass.replace('language-', '') : '';
+
+			// IMPROVED: Get code content more reliably from Obsidian's DOM structure
+			const codeElement = pre.querySelector('code');
+			let code = '';
+			if (codeElement) {
+				// innerText preserves newlines better than textContent in some browsers
+				code = (codeElement as HTMLElement).innerText || codeElement.textContent || '';
+			} else {
+				code = (pre as HTMLElement).innerText || pre.textContent || '';
+			}
+
+			if (!code.trim()) return;
+
+			const newHtml = this.codeRenderer(code, lang);
+			
+			// Replace the existing pre with our styled version
+			const tempDiv = document.createElement('div');
+			tempDiv.innerHTML = newHtml;
+			
+			const parent = pre.parentElement;
+			if (parent) {
+				const fragment = document.createDocumentFragment();
+				while (tempDiv.firstChild) {
+					fragment.appendChild(tempDiv.firstChild);
+				}
+				parent.replaceChild(fragment, pre);
+			}
+		});
+		return dom;
 	}
 
 	static srcToBlob(src: string) {
@@ -60,8 +106,9 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	codeRenderer(code: string, infostring: string | undefined): string {
 		const lang = (infostring || '').match(/^\S*/)?.[0];
 		const theme = this.plugin.settings.codeTheme || 'github';
+		const showLineNumbers = this.plugin.settings.codeLineNumber === true;
 		const codeHash = this.simpleHash(code);
-		const cacheKey = `${CodeRenderer.CACHE_VERSION}:${theme}:${lang || 'auto'}:${codeHash}`;
+		const cacheKey = `${CodeRenderer.CACHE_VERSION}:${theme}:${lang || 'auto'}:${codeHash}:${showLineNumbers ? 'ln' : ''}`;
 
 		if (CodeRenderer.HighlightCache.has(cacheKey)) {
 			return CodeRenderer.HighlightCache.get(cacheKey)!;
@@ -106,19 +153,18 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			'hljs-bullet': '#98c379',
 			'hljs-addition': '#98c379',
 			'hljs-title': '#61aeee',
-			'hljs-section': '#61aeee',
+			'hljs-section': '#e06c75', // Heading
 			'hljs-keyword': '#c678dd',
 			'hljs-selector-tag': '#c678dd',
-			'hljs-emphasis': '#c678dd', // italic handled separately if needed
-			'hljs-strong': '#c678dd',   // bold handled separately
-
-			// Additional mappings for compatibility
+			'hljs-emphasis': '#c678dd', 
+			'hljs-strong': '#d19a66',   
+			'hljs-punctuation': '#abb2bf',
 			'hljs-attr': '#d19a66',
 			'hljs-operator': '#56b6c2',
 			'hljs-class': '#e6c07b',
 			'hljs-function': '#61aeee',
 			'hljs-property': '#d19a66',
-			'hljs-subst': '#abb2bf' // Standard text color for variable substitution
+			'hljs-subst': '#abb2bf' 
 		};
 
 		// Github Theme (Light)
@@ -148,15 +194,16 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			'hljs-addition': '#22863a',
 			'hljs-title': '#6f42c1',
 			'hljs-section': '#005cc5',
-			'hljs-keyword': '#d73a49',
+			'hljs-keyword': '#cf222e', // Improved red for github
 			'hljs-selector-tag': '#22863a',
 			'hljs-emphasis': '#24292e',
 			'hljs-strong': '#24292e',
-			'hljs-attr': '#005cc5',
-			'hljs-operator': '#d73a49',
-			'hljs-class': '#6f42c1',
-			'hljs-function': '#6f42c1',
-			'hljs-property': '#005cc5',
+			'hljs-punctuation': '#24292e',
+			'hljs-attr': '#0550ae',
+			'hljs-operator': '#0550ae',
+			'hljs-class': '#953800',
+			'hljs-function': '#8250df',
+			'hljs-property': '#0550ae',
 			'hljs-subst': '#24292e'
 		};
 
@@ -180,12 +227,8 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 			// Find matching styles from classes
 			for (const className of classes) {
-				if (themeColorMap[className]) {
-					styles.push(`color:${themeColorMap[className]} !important`);
-				} else if (theme === 'github' && !themeColorMap[className]) {
-					// For github theme, if no color map found, try not to apply style or use default text color
-					// Actually, if we use github theme, we should have a map for it.
-					// But if fallback to "no style", default text color will be used which is good for github light.
+				if (currentThemeMap[className]) {
+					styles.push(`color:${currentThemeMap[className]} !important`);
 				}
 				if (className === 'hljs-strong') {
 					styles.push(`font-weight:bold !important`);
@@ -205,19 +248,43 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			return `<span>`; // Strip class to prevent WeChat filtering issues
 		});
 
+		// [FIX] Force line breaks for WeChat Editor compatibility
+		// Replace \n with <br/> to ensure segments are preserved even if pre style is stripped
+		highlighted = highlighted.replace(/\n/g, '<br/>');
+
+		// Determine border radius based on header visibility
+		const hasHeader = this.plugin.settings.showCodeMacHeader !== false && !!lang;
+		const finalCodeRadius = hasHeader ? '0 0 6px 6px' : 'var(--code-radius, 6px)';
+		const finalHeaderRadius = '6px 6px 0 0';
+
+		// Line numbers support
+		let codeContent = highlighted;
+		if (showLineNumbers) {
+			const lines = highlighted.split('<br/>');
+			const lineCount = lines.length;
+			const lineNumWidth = String(lineCount).length;
+			const lineNumStyle = `color:#999 !important;user-select:none !important;text-align:right !important;padding-right:1em !important;border-right:1px solid #ddd !important;margin-right:1em !important;display:inline-block !important;min-width:${lineNumWidth}em !important;font-variant-numeric:tabular-nums !important;`;
+			const lineNums = Array.from({ length: lineCount }, (_, i) =>
+				`<span style="${lineNumStyle}">${i + 1}</span>`
+			).join('<br/>');
+			const codeLines = lines.join('<br/>');
+			codeContent = `<span style="display:inline-block !important;">${lineNums}</span><span style="display:inline-block !important;white-space:pre-wrap !important;">${codeLines}</span>`;
+		}
+
 		// Basic Code Block Styles - Using CSS Variables with hardcoded fallbacks
-		// This allows themes to override these via :root variables since CssMerger resolves them
-		const codeStyle = `background:var(--code-bg, ${bg}) !important;color:var(--code-text, ${color}) !important;font-family:var(--code-font, ui-monospace,SFMono-Regular,Menlo,Consolas,monospace) !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:var(--code-radius, 6px) !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0.5em 0 !important;border:var(--code-border, none) !important;`;
+		// Use pre-wrap with <br/> for maximum compatibility
+		const codeStyle = `display:block !important;background:var(--code-bg, ${bg}) !important;color:var(--code-text, ${color}) !important;font-family:var(--code-font, ui-monospace,SFMono-Regular,Menlo,Consolas,monospace) !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:${finalCodeRadius} !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0 0 0.5em 0 !important;border:var(--code-border, none) !important;box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;`;
 
 		let codeSection = '';
-		if (this.plugin.settings.showCodeMacHeader !== false && lang) {
-			const headerStyle = `display:var(--code-header-display, flex);background:var(--code-header-bg, ${headerBg});padding:4px 12px;align-items:center;gap:6px;border-radius:6px 6px 0 0;`;
-			const dotStyle = 'width:8px;height:8px;border-radius:50%;display:inline-block;';
-			const labelStyle = 'margin-left:auto;font-size:11px;color:var(--code-header-text, #6a737d);font-weight:bold;text-transform:uppercase;';
+		if (hasHeader) {
+			const headerStyle = `display:var(--code-header-display, flex);background:var(--code-header-bg, ${headerBg});padding:8px 12px;align-items:center;gap:8px;border-radius:${finalHeaderRadius};border-bottom:1px solid rgba(0,0,0,0.05);`;
+			// Standard macOS window button colors
+			const dotStyle = 'width:12px;height:12px;border-radius:50%;display:inline-block;';
+			const labelStyle = 'margin-left:auto;font-size:11px;color:var(--code-header-text, #6a737d);font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
 
-			codeSection = `<pre style="${headerStyle}"><span style="${dotStyle}background:#ff5f56;"></span><span style="${dotStyle}background:#ffbd2e;"></span><span style="${dotStyle}background:#27c93f;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle};border-radius:var(--code-header-display, flex) === 'none' ? var(--code-radius, 6px) : 0 0 6px 6px;">${highlighted}</pre>`;
+			codeSection = `<pre style="${headerStyle}"><span style="${dotStyle}background:#FF5F56;"></span><span style="${dotStyle}background:#FFBD2E;"></span><span style="${dotStyle}background:#27C93F;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle}">${codeContent}</pre>`;
 		} else {
-			codeSection = `<pre style="${codeStyle}">${highlighted}</pre>`;
+			codeSection = `<pre style="${codeStyle}">${codeContent}</pre>`;
 		}
 
 		if (CodeRenderer.HighlightCache.size >= CodeRenderer.MAX_CACHE_SIZE) {
@@ -254,7 +321,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			try {
 				foldDiv.parentNode!.removeChild(foldDiv);
 			} catch (e) {
-				console.error(e)
+				Logger.error('CodeHighlight', 'Failed to remove callout fold', e)
 			}
 
 		}
@@ -278,7 +345,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			try {
 				foldDiv.parentNode!.removeChild(foldDiv);
 			} catch (e) {
-				console.error(e)
+				Logger.error('CodeHighlight', 'Failed to remove callout fold', e)
 			}
 
 		}
@@ -458,7 +525,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			new Notice($t('render.charts-plugin-not-installed'))
 			return false;
 		}
-		const root = this.plugin.resourceManager.getMarkdownRenderedElement(this.chartsIndex, '.block-language-chart')
+		const root = ResourceManager.getInstance(this.plugin).getMarkdownRenderedElement(this.chartsIndex, '.block-language-chart')
 
 		if (!root) {
 			return $t('render.charts-failed');
@@ -511,28 +578,23 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	}
 	markedExtension() {
 		return {
-			extensions: [{
-				name: 'code',
-				level: 'block',
-
-				renderer: (token: Tokens.Generic) => {
+			renderer: {
+				code: (token: Tokens.Code) => {
 					if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {
-						return token.html
+						return (token as any).html || '';
 					}
-					else
-						if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
-							return this.renderCharts(token);
-						}
-						else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'smart-mp-profile') {
-							return this.renderSmartMPProfile(token);
-						}
-						else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
-							return token.html
-						}
+					else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'chart') {
+						return this.renderCharts(token);
+					}
+					else if (token.lang && token.lang.trim().toLocaleLowerCase() == 'smart-mp-profile') {
+						return this.renderSmartMPProfile(token);
+					}
+					else if (token.lang && token.lang.trim().toLocaleLowerCase().startsWith('ad-')) {
+						return (token as any).html || '';
+					}
 					return this.codeRenderer(token.text, token.lang);
-				},
-			}
-			],
+				}
+			},
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
 				if (token.lang && token.lang.trim().toLocaleLowerCase() == 'mermaid') {

@@ -340,7 +340,7 @@ export class Embed extends SmartMPMarkedExtension {
 
 		if (file == null) {
 			const msg = "File not found:" + path;
-			console.error(msg);
+			Logger.error('EmbedExtension', msg);
 			return;
 		}
 
@@ -408,7 +408,7 @@ export class Embed extends SmartMPMarkedExtension {
 
 		if (file == null) {
 			const msg = $t("render.file-not-found") + file;
-			console.error(msg);
+			Logger.error('EmbedExtension', msg);
 			this.previewRender.updateElementByID(id, msg);
 			return;
 		}

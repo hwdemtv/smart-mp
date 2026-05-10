@@ -1,9 +1,9 @@
 /*
 * marked extension for math:
- use mathjax to render math
+  use mathjax to render math
 
   credits to Sun BooShi, author of note-to-mp plugin
-  
+
  */
 
 import { parseMath } from "../mathjax";
@@ -21,7 +21,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
     private static readonly MAX_CACHE_SIZE = 500;
     private static readonly MAX_FORMULA_SIZE = 1000;
 
-    renderer(token: Tokens.Generic, inline: boolean, type: string = '') {
+    async renderer(token: Tokens.Generic, inline: boolean, type: string = ''): Promise<string> {
         // Skip caching for very large formulas
         if (token.text.length > MathRenderer.MAX_FORMULA_SIZE) {
             return this.renderMathDirect(token.text, inline, type);
@@ -32,7 +32,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
             return MathRenderer.mathCache.get(cacheKey)!;
         }
 
-        const result = this.renderMathDirect(token.text, inline, type);
+        const result = await this.renderMathDirect(token.text, inline, type);
 
         // Evict oldest entries if cache is full
         if (MathRenderer.mathCache.size >= MathRenderer.MAX_CACHE_SIZE) {
@@ -44,7 +44,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
         return result;
     }
 
-    private renderMathDirect(text: string, inline: boolean, type: string): string {
+    private async renderMathDirect(text: string, inline: boolean, type: string): Promise<string> {
 
         if (type === '') {
             type = 'InlineMath'
@@ -53,7 +53,7 @@ export class MathRenderer extends SmartMPMarkedExtension {
         let result = '';
         try {
             // [Fix] Pass display mode to parseMath (false for inline, true for block)
-            const svg = parseMath(text, !inline);
+            const svg = await parseMath(text, !inline);
             if (!svg) {
                 result = inline
                     ? `<span class="math-error">Math Parse Error</span>`
@@ -76,21 +76,33 @@ export class MathRenderer extends SmartMPMarkedExtension {
     }
 
     markedExtension(): MarkedExtension {
+        const self = this;
         return {
+            async: true,
             extensions: [
                 this.inlineMath(),
                 this.blockMath()
-            ]
+            ],
+            walkTokens: async (token: Tokens.Generic) => {
+                if (token.type === 'InlineMath') {
+                    // Convert to 'html' type so marked's built-in html renderer outputs it directly
+                    (token as any).type = 'html';
+                    (token as any).html = await self.renderer(token, true, 'InlineMath');
+                } else if (token.type === 'BlockMath') {
+                    (token as any).type = 'html';
+                    (token as any).html = await self.renderer(token, false, 'BlockMath');
+                }
+            }
         }
     }
 
     inlineMath() {
         return {
             name: 'InlineMath',
-            level: 'inline',
+            level: 'inline' as const,
             start(src: string) {
 
-                // 
+                //
                 let index;
                 let indexSrc = src;
 
@@ -122,15 +134,12 @@ export class MathRenderer extends SmartMPMarkedExtension {
                     };
                 }
             },
-            renderer: (token: Tokens.Generic) => {
-                return this.renderer(token, true);
-            }
         }
     }
     blockMath() {
         return {
             name: 'BlockMath',
-            level: 'block',
+            level: 'block' as const,
             tokenizer(src: string) {
                 const match = src.match(blockRule);
                 if (match) {
@@ -142,9 +151,6 @@ export class MathRenderer extends SmartMPMarkedExtension {
                     };
                 }
             },
-            renderer: (token: Tokens.Generic) => {
-                return this.renderer(token, false);
-            }
         };
     }
 }

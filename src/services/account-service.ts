@@ -11,6 +11,7 @@ export class AccountService {
 	}
 
 	async TestAccessToken(accountName: string) {
+		await this.plugin.ensureDecrypted();
 		if (this.plugin.settings.useCenterToken) {
 			const account = this.getMPAccountByName(accountName);
 			if (account === undefined) return false;
@@ -38,6 +39,7 @@ export class AccountService {
 	}
 
 	async refreshAccessToken(accountName: string | undefined): Promise<string | boolean | null> {
+		await this.plugin.ensureDecrypted();
 		if (this.plugin.settings.useCenterToken) {
 			const account = this.getMPAccountByName(accountName);
 			if (account === undefined) return false;
@@ -102,6 +104,9 @@ export class AccountService {
 	}
 
 	getMPAccountByName(accountName: string | undefined) {
+		// Note: This is synchronous, but settings might not be decrypted yet.
+		// However, most callers of this are async or can wait.
+		// For UI display, encrypted strings are fine (masked).
 		return this.plugin.settings.mpAccounts.find(
 			(account) => account.accountName === accountName
 		);

@@ -117,6 +117,34 @@ export function removeThinkTags(content: string): string {
     return content.replace(regex, "");
 }
 
+/**
+ * 使用 juice 将 <style> 标签中的 CSS 规则内联到对应元素的 style 属性上。
+ * 这是 CssMerger 的安全网，处理 CssMerger 无法内联的 CSS（如 :nth-child 伪类）。
+ * 必须在 cleanHtmlForWechat() 之前调用，因为该函数会删除 <style> 标签。
+ */
+export async function inlineCssWithJuice(root: HTMLElement): Promise<void> {
+    const html = root.outerHTML;
+    if (!html || html.trim().length === 0) {
+        return;
+    }
+    try {
+        const { default: juice } = await import("juice");
+        const inlined = juice(html, {
+            inlinePseudoElements: true,
+            preserveImportant: true,
+            preservePseudos: false,
+            preserveFontFaces: false,
+            preserveKeyFrames: false,
+            preserveMediaQueries: false,
+            resolveCSSVariables: false, // CssMerger already resolves CSS variables
+            removeStyleTags: true,
+        });
+        root.outerHTML = inlined;
+    } catch (e) {
+        Logger.warn("Utils", "juice CSS inlining failed, falling back to original HTML:", e);
+    }
+}
+
 export function cleanHtmlForWechat(root: HTMLElement): HTMLElement {
     const restrictedTags = [
         'script', 'style', 'noscript', 'object', 'embed',

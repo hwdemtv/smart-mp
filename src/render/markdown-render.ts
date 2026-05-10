@@ -4,7 +4,7 @@
 */
 
 import { App, Component, MarkdownRenderChild, MarkdownRenderer } from "obsidian";
-import domtoimage from './dom-to-image-more';
+import Logger from "src/utils/logger";
 export class ObsidianMarkdownRenderer {
     private static instance: ObsidianMarkdownRenderer;
     private path: string
@@ -28,7 +28,7 @@ export class ObsidianMarkdownRenderer {
     public static onPluginUnload(): void {
         this.instance = undefined as any;
     }
-    public async render(path: string, container: HTMLElement, view: Component) {
+    public async render(path: string, container: HTMLElement, view: Component, content?: string) {
         // 使用 Obsidian 自带渲染器生成 DOM（用于处理内部链接/嵌入等）
         if (path === undefined || !path || !path.toLowerCase().endsWith('.md')) {
             return;
@@ -55,7 +55,7 @@ export class ObsidianMarkdownRenderer {
         this.view.addChild(this.mdv)
         this.container.appendChild(this.previewEl)
         this.path = path
-        const markdown = await this.app.vault.adapter.read(path)
+        const markdown = content ?? await this.app.vault.adapter.read(path)
         await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.mdv
             // this.app.workspace.getActiveViewOfType(MarkdownView)!
             // || this.app.workspace.activeLeaf?.view
@@ -86,7 +86,7 @@ export class ObsidianMarkdownRenderer {
                 await Promise.all(waiters);
             }
         } catch (err) {
-            console.warn("部分插件渲染超时（非致命）", err);
+            Logger.warn("MarkdownRender", "部分插件渲染超时（非致命）", err);
         }
         this.rendering = false
         // this.container.hide() 
@@ -112,6 +112,7 @@ export class ObsidianMarkdownRenderer {
         element: Element,
         p: Record<string, unknown> = {}
     ): Promise<string> {
+        const { default: domtoimage } = await import('./dom-to-image-more');
         return domtoimage.toPng(element, p)
     }
     waitForSelector(

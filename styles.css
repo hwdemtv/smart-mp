@@ -27,6 +27,13 @@
   --smart-mp-error: #e74c3c;
   --smart-mp-danger:  #dc3545;
   --smart-mp-blue: #1e3a8a;
+  /* 代码块变量 */
+  --code-bg: #f6f8fa;
+  --code-text: #24292e;
+  --code-radius: 6px;
+  --code-header-bg: #e1e4e8;
+  --code-header-text: #6a737d;
+  --code-border: none;
 }	
 
 :root {

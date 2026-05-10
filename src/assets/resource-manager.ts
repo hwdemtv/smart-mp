@@ -6,6 +6,7 @@
 
 import { MarkdownView, requestUrl } from 'obsidian';
 import SmartMPPlugin from 'src/main';
+import Logger from 'src/utils/logger';
 
 export class ResourceManager {
     private static instance: ResourceManager;
@@ -120,7 +121,7 @@ export class ResourceManager {
 
             return fullPath;
         } catch (error) {
-            console.error('Error saving image:', error);
+            Logger.error('ResourceManager', 'Error saving image', error);
             return null;
         }
     }

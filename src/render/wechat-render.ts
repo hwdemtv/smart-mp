@@ -16,7 +16,7 @@ import { Marked, Tokens, RendererObject, RendererThis } from "marked";
 import { Component, TFile } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { WechatClient } from "../wechat-api/wechat-client";
-import { BlockquoteRenderer } from "./marked-extensions/blockquote";
+import { BlockquoteRenderer, preprocessCalloutContainers } from "./marked-extensions/blockquote";
 import { CodeRenderer } from "./marked-extensions/code";
 import { CodespanRenderer } from "./marked-extensions/codespan";
 import { Embed } from "./marked-extensions/embed";
@@ -126,9 +126,13 @@ export class WechatRender {
      */
     public setPreviewRender(previewRender: PreviewRender) {
         this.previewRender = previewRender;
-        // Re-initialize extensions with new context
-        this.extensions = [];
-        this.useExtensions();
+        if (this.extensions.length === 0) {
+            // First time: register extensions on the Marked instance
+            this.useExtensions();
+        } else {
+            // Subsequent calls: just update the previewRender reference on existing extensions
+            this.extensions.forEach(ext => ext.previewRender = previewRender);
+        }
     }
 	addExtension(extension: SmartMPMarkedExtension) {
 		this.extensions.push(extension);
@@ -185,7 +189,8 @@ export class WechatRender {
 	private lineCounter = 0;
 
 	async parse(md: string) {
-		const { data, content } = matter(md);
+		const { data, content: rawContent } = matter(md);
+		const content = preprocessCalloutContainers(rawContent);
 		await Promise.all(this.extensions.map(ext => ext.prepare()));
 
 		// Reset line tracking
@@ -375,11 +380,25 @@ export class WechatRender {
 		contentOverride?: string
 	): Promise<HTMLElement> {
 		Logger.debug('WechatRender', `Starting parseNote for ${path}`);
-		const content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
+		let content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
 		
 		if (!content) {
 			Logger.warn('WechatRender', `Content is empty for ${path}. Returning empty div.`);
 			return createDiv({ text: '内容为空', cls: 'smart-mp-empty-notice' });
+		}
+
+		// Strip YAML Frontmatter
+		if (content.startsWith('---')) {
+			const endOfFrontmatter = content.indexOf('---', 3);
+			if (endOfFrontmatter !== -1) {
+				// Check if there is a newline after the closing ---
+				const nextNewLine = content.indexOf('\n', endOfFrontmatter + 3);
+				if (nextNewLine !== -1) {
+					content = content.substring(nextNewLine + 1).trimStart();
+				} else {
+					content = content.substring(endOfFrontmatter + 3).trimStart();
+				}
+			}
 		}
 
 		const hash = this.simpleHash(content);
@@ -429,7 +448,7 @@ export class WechatRender {
 			Logger.debug('WechatRender', `Complex content detected (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid}, Table: ${needsTable}, etc.), triggering Obsidian render.`);
 			try {
 				// Render to temp container to initialize previewEl and markdownBody
-				await renderer.render(path, tempContainer, view);
+				await renderer.render(path, tempContainer, view, content);
 				Logger.debug('WechatRender', `Obsidian renderer finished for ${path}.`);
 
 				// Give a small buffer for plugins to react to DOM insertion

@@ -34,10 +34,7 @@ import {
 	getSmartMPSetting,
 	saveSmartMPSetting,
 	SmartMPSetting,
-	initSmartMPDB
 } from "./settings/smart-mp-setting";
-import { initAssetsDB } from "./assets/assets-manager";
-import { initDraftDB } from "./assets/draft-manager";
 import { AiClient } from "./utils/ai-client";
 import { MessageService } from "./utils/message-service";
 import {
@@ -108,7 +105,7 @@ export default class SmartMPPlugin extends Plugin {
 	private imageGenerateModal: ImageGenerateModal | undefined;
 	matierialView: MaterialView;
 	messageService: MessageService;
-	resourceManager = ResourceManager.getInstance(this);
+	resourceManager: ResourceManager | undefined;
 	active: boolean = false;
 	spinner: Spinner;
 	themeHotReloader: ThemeHotReloader;
@@ -187,7 +184,7 @@ export default class SmartMPPlugin extends Plugin {
 		}
 
 		// this.trimSettings(); // Trim only makes sense for raw input, here we are saving
-		await saveSmartMPSetting(settingsCopy);
+		await saveSmartMPSetting(this, settingsCopy);
 		await this.saveThemeFolder();
 	}
 
@@ -240,11 +237,52 @@ export default class SmartMPPlugin extends Plugin {
 		this.spinner.hideSpinner();
 	}
 
+	private _isDecrypted = false;
+
+	/**
+	 * Ensures that sensitive settings (API keys, secrets) are decrypted.
+	 * This is called lazily when a service actually needs to use these values.
+	 * This avoids expensive bulk decryption during plugin startup.
+	 */
+	async ensureDecrypted(): Promise<void> {
+		if (this._isDecrypted) return;
+		
+		const key = this.settings.cryptoKey;
+		if (!key) {
+			this._isDecrypted = true;
+			return;
+		}
+
+		Logger.debug("Main", "Starting lazy decryption of settings...");
+		const startTime = Date.now();
+
+		await Promise.all([
+			// MP Accounts
+			...this.settings.mpAccounts.map(async (acc) => {
+				if (acc.appSecret) acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
+			}),
+			// LLM Providers (New Architecture)
+			...(this.settings.llmProviders || []).map(async (provider) => {
+				if (provider.apiKey) provider.apiKey = await CryptoHelper.decrypt(provider.apiKey, key);
+			}),
+			// Legacy accounts (Compatibility)
+			...this.settings.chatAccounts.map(async (acc) => {
+				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+			}),
+			...this.settings.drawAccounts.map(async (acc) => {
+				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+			}),
+		]);
+
+		this._isDecrypted = true;
+		Logger.debug("Main", `Lazy decryption completed in ${Date.now() - startTime}ms`);
+	}
+
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await getSmartMPSetting()
+			await getSmartMPSetting(this)
 		);
 
 		// Run Migration
@@ -267,28 +305,12 @@ export default class SmartMPPlugin extends Plugin {
 				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
 			});
 			// Save immediately to apply new AES encryption
-			await this.saveSettings();
+			await this.persistSettings();
+			this._isDecrypted = true; // Migrated content is already plain text in memory
 		} else {
-			// Decrypt sensitive info using AES-GCM (or fallback to XOR)
-			const key = this.settings.cryptoKey || "";
-			for (const acc of this.settings.mpAccounts) {
-				if (acc.appSecret) acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
-			}
-			for (const acc of this.settings.chatAccounts) {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
-			}
-			for (const acc of this.settings.drawAccounts) {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
-			}
+			// DO NOT DECRYPT HERE. Will be done lazily via ensureDecrypted()
+			this._isDecrypted = false;
 		}
-
-		// If migration happened (plain text found and decrypted=plain), saving will encrypted it.
-		// Since we modify saveSettings to encrypt, we should trigger a save to ensure data on disk becomes encrypted eventually.
-		// However, explicitly saving on every load might be aggressive. 
-		// Let's rely on user action or auto-migration if we detect plain text?
-		// Actually, CryptoHelper.deobfuscate returns plain text if it detects it's not encrypted.
-		// So if we find any plain text that SHOULD be encrypted, we might want to trigger a save.
-		// For now, let's keep it simple: It validates on load, and encrypts on next manual save.
 
 		await this.loadThemeFolder();
 	}
@@ -437,48 +459,38 @@ export default class SmartMPPlugin extends Plugin {
 			modal.open();
 		});
 	}
-	initDB() {
-		initSmartMPDB();
-		initAssetsDB();
-		initDraftDB();
-	}
+	// DB init removed — each service uses its own lazy PouchDB singleton
 	async onload() {
-		const buildTime = "2026-03-30 10:00"; // 动态注入或手动更新
-		console.log(`[SmartMP] Plugin loading... Build: ${buildTime}`);
-		Logger.info("Main", `Plugin loading... Build: ${buildTime}`);
+		const buildTime = "2026-03-30 10:00"; 
+		console.log(`[SmartMP] Initializing... Build: ${buildTime}`);
+		const totalStartTime = Date.now();
+
 		addIcon("smart-mp-logo", SMART_MP_ICON);
-
-		// [PERF] 使用 setTimeout(0) 确保不阻塞 UI 渲染
-		// 将数据库初始化和设置加载移到下一个事件循环
-		await new Promise<void>(resolve => {
-			setTimeout(() => {
-				this.initDB();
-				resolve();
-			}, 0);
-		});
-
 		this.messageService = new MessageService();
+
+		// Phase 1: Critical path - minimum work to be active
 		await this.loadSettings();
-		this.wechatClient = WechatClient.getInstance(this);
-		this.assetsManager = AssetsManager.getInstance(this.app, this);
-		this.aiClient = AiClient.getInstance(this);
-		this.ipService = new IPService(this);
-		this.accountService = new AccountService(this);
-		this.aiFeatureManager = new AIFeatureManager(this);
-		this.authService = new AuthService(this);
-		// 异步初始化认证服务，不阻塞插件 onload，避免黑屏
-		this.authService.init().then(() => {
-			Logger.debug("Main", "AuthService initialized in background");
-			// 检查是否有即将过期（7天内）的订阅产品
-			this.authService.checkExpirationReminder();
-			// 通知 UI 更新激活状态
-			this.messageService.sendMessage("auth-initialized", null);
-		}).catch(err => {
-			Logger.error("Main", "AuthService failed to initialize:", err);
+
+		// Phase 2: UI Elements (Non-blocking)
+		requestAnimationFrame(() => {
+			this.registerViews();
+			this.addSettingTab(new SmartMPSettingTab(this.app, this));
+			this.createSpinner();
+			
+			// Phase 3: Commands and Menus
+			setTimeout(() => {
+				this.initCommands();
+				Logger.info("Main", `Critical loading path completed in ${Date.now() - totalStartTime}ms`);
+			}, 0);
+
+			// Phase 4: Deferred Services (Heavy lifting)
+			setTimeout(() => {
+				this.initDeferredServices();
+			}, 100);
 		});
+	}
 
-		this.registerViews();
-
+	private initCommands(): void {
 		this.commandManager = new CommandManager(this);
 		this.commandManager.registerCommands();
 		this.commandManager.addEditorMenu();
@@ -487,70 +499,65 @@ export default class SmartMPPlugin extends Plugin {
 			void this.activateView();
 		});
 
-		// Initialize Floating Toolbar
+		// Floating Toolbar setup
 		this.floatingToolbar = new FloatingToolbar(this);
+		this.registerFloatingToolbarEvents();
+	}
 
-		// Register Smart Toolbar events (optimized for performance)
+	private initDeferredServices(): void {
+		Logger.debug("Main", "Initializing deferred services...");
+		this.resourceManager = ResourceManager.getInstance(this);
+		this.wechatClient = WechatClient.getInstance(this);
+		this.assetsManager = AssetsManager.getInstance(this.app, this);
+		this.aiClient = AiClient.getInstance(this);
+		this.ipService = new IPService(this);
+		this.accountService = new AccountService(this);
+		this.aiFeatureManager = new AIFeatureManager(this);
+
+		// Auth service (async init, non-blocking)
+		this.authService = new AuthService(this);
+		this.authService.init().then(() => {
+			this.authService.checkExpirationReminder();
+			this.messageService.sendMessage("auth-initialized", null);
+		}).catch(err => {
+			Logger.error("Main", "AuthService failed to initialize:", err);
+		});
+
+		// Editor extensions
+		this.registerEditorExtension([syncLineField, scrollSyncPlugin, scrollSyncStyles]);
+		initScrollSyncStyle(this.settings.scrollHighlightPreset as any);
+	}
+
+	private registerFloatingToolbarEvents(): void {
 		this.registerDomEvent(document, 'mouseup', (evt: MouseEvent) => {
 			if (!this.settings.enableFloatingToolbar) return;
 
-			// Fast path: Check browser selection first (cheaper than Obsidian API)
 			const docSelection = document.getSelection();
-			if (!docSelection || docSelection.toString().trim().length === 0) {
-				return; // No selection, skip expensive checks
-			}
+			if (!docSelection || docSelection.toString().trim().length === 0) return;
 
-			// Delay to ensure selection is settled
 			setTimeout(() => {
 				const activeLeaf = this.app.workspace.activeLeaf;
 				if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
 					const editor = activeLeaf.view.editor;
 					if (editor.somethingSelected()) {
 						const selection = editor.getSelection();
-						// Only show if selection is meaningful (not just whitespace)
 						if (selection && selection.trim().length > 0) {
-							Logger.debug("FloatingToolbar", `Show Toolbar for selection: ${selection.substring(0, 20)}...`);
 							this.floatingToolbar.show(editor, selection);
 						}
 					}
 				}
-			}, 50); // Reduced delay from 100ms to 50ms
+			}, 50);
 		});
 
-		// 滚动同步相关
-		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-			this.floatingToolbar.hide();
-		}));
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.floatingToolbar.hide()));
+		this.registerEvent(this.app.workspace.on('editor-change', () => this.floatingToolbar.hide()));
 
-		this.registerEvent(this.app.workspace.on('editor-change', () => {
-			this.floatingToolbar.hide();
-		}));
-
-		this.addSettingTab(new SmartMPSettingTab(this.app, this));
-
-		this.createSpinner();
-
-		// -- proofread
-		// this.registerEditorExtension([proofreadStateField, proofreadPlugin]);
-
-		// -- scroll sync
-		this.registerEditorExtension([syncLineField, scrollSyncPlugin, scrollSyncStyles]);
-		// 初始化滚动同步样式
-		initScrollSyncStyle(this.settings.scrollHighlightPreset as 'gold' | 'blue' | 'green' | 'purple' | 'minimal' | undefined);
-
-		// this.addCommand({
-		// 	id: "proofread-text",
-		// 	name: "校对文本",
-		// 	editorCallback: async (editor: Editor, view: MarkdownView) => {
-		// 		await proofreadText(editor, view);
-		// 	},
-		// });
 		this.messageService.registerListener('show-spinner', (msg: string) => {
 			this.showSpinner(msg);
-		})
+		});
 		this.messageService.registerListener('hide-spinner', () => {
 			this.hideSpinner();
-		})
+		});
 	}
 	registerViewOnce(viewType: string) {
 		if (this.app.workspace.getLeavesOfType(viewType).length === 0) {

@@ -56,17 +56,14 @@ export class CodespanRenderer extends SmartMPMarkedExtension {
 
 	markedExtension() {
 		return {
-			extensions: [{
-				name: 'codespan',
-				level: 'inline',
-				renderer: (token: Tokens.Generic) => {
-					return token.html;
-				},
-			}
-			],
+			renderer: {
+				codespan: (token: Tokens.Codespan) => {
+					return (token as any).html || this.codespanRenderer(token.text);
+				}
+			},
 			walkTokens: (token: Tokens.Generic) => {
 				if (token.type === 'codespan') {
-					token.html = this.codespanRenderer(token.text);
+					(token as any).html = this.codespanRenderer(token.text);
 				}
 			}
 		}

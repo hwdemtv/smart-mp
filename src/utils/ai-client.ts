@@ -17,9 +17,6 @@ export class AiClient {
 
 	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
-		this.openaiClient = OpenAIClient.getInstance(plugin);
-		this.ollamaClient = OllamaClient.getInstance(plugin);
-		this.imageClient = QwenImageClient.getInstance(plugin);
 	}
 
 	public static getInstance(plugin: SmartMPPlugin): AiClient {
@@ -33,7 +30,9 @@ export class AiClient {
 		this.instance = undefined as any;
 	}
 
-	private getClient(): IAIClient {
+	private async getClient(): Promise<IAIClient> {
+		await this.plugin.ensureDecrypted();
+
 		const provider = this.plugin.settings.llmProviders?.find(p => p.id === this.plugin.settings.selectedLLMProviderId);
 		if (!provider) {
 			throw new Error($t("settings.no-chat-account-selected"));
@@ -43,75 +42,77 @@ export class AiClient {
 		}
 
 		if (provider.type === LLMProviderType.Ollama && !provider.baseUrl.includes("/v1")) {
+			if (!this.ollamaClient) this.ollamaClient = OllamaClient.getInstance(this.plugin);
 			return this.ollamaClient;
 		} else {
+			if (!this.openaiClient) this.openaiClient = OpenAIClient.getInstance(this.plugin);
 			return this.openaiClient;
 		}
 	}
 
 	public async getModelList(): Promise<string[]> {
-		return this.getClient().getModelList();
+		return (await this.getClient()).getModelList();
 	}
 
 	public async generateSummary(content: string): Promise<string | null> {
-		return this.getClient().generateSummary(content);
+		return (await this.getClient()).generateSummary(content);
 	}
 
 	public async generateSummaryStream(content: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		return client.generateSummaryStream ? client.generateSummaryStream(content, onChunk, signal) : "";
 	}
 
 	public async generateTitle(content: string): Promise<string[]> {
-		return this.getClient().generateTitle(content);
+		return (await this.getClient()).generateTitle(content);
 	}
 
 	public async generateTitleStream(content: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		return client.generateTitleStream ? client.generateTitleStream(content, onChunk, signal) : "";
 	}
 
 	public async proofContent(content: string): Promise<DeepSeekResult | null> {
-		return this.getClient().proofContent(content);
+		return (await this.getClient()).proofContent(content);
 	}
 
 	public async proofContentStream(content: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		return client.proofContentStream ? client.proofContentStream(content, onChunk, signal) : "";
 	}
 
 	public async polishContent(content: string): Promise<DeepSeekResult | null> {
-		return this.getClient().polishContent(content);
+		return (await this.getClient()).polishContent(content);
 	}
 
 	public async polishContentStream(content: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		return client.polishContentStream ? client.polishContentStream(content, onChunk, signal) : "";
 	}
 
 	public async translateText(content: string, sourceLang: string, targetLang: string): Promise<string> {
-		return this.getClient().translateText(content, sourceLang, targetLang);
+		return (await this.getClient()).translateText(content, sourceLang, targetLang);
 	}
 
 	public async translateStream(content: string, sourceLang: string, targetLang: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		return client.translateTextStream ? client.translateTextStream(content, sourceLang, targetLang, onChunk, signal) : "";
 	}
 
 	public async generateMermaid(content: string): Promise<string> {
-		return this.getClient().generateMermaid(content);
+		return (await this.getClient()).generateMermaid(content);
 	}
 
 	public async generateLaTeX(content: string): Promise<string> {
-		return this.getClient().generateLaTeX(content);
+		return (await this.getClient()).generateLaTeX(content);
 	}
 
 	public async synonym(content: string): Promise<string[]> {
-		return this.getClient().synonym(content);
+		return (await this.getClient()).synonym(content);
 	}
 
 	public async getSynonymsStream(content: string, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
-		const client = this.getClient();
+		const client = await this.getClient();
 		if (client.getSynonymsStream) {
 			return client.getSynonymsStream(content, onChunk, signal);
 		}
@@ -123,10 +124,12 @@ export class AiClient {
 	}
 
 	public async generateCustom(promptTemplate: string, content: string, providerId?: string, modelId?: string): Promise<string> {
-		return this.getClient().generateCustom(promptTemplate, content, providerId, modelId);
+		return (await this.getClient()).generateCustom(promptTemplate, content, providerId, modelId);
 	}
 
 	public async generateCoverImageFromText(prompt: string, negative_prompt: string = "", size: string = "1440*613"): Promise<string> {
+		await this.plugin.ensureDecrypted();
+		if (!this.imageClient) this.imageClient = QwenImageClient.getInstance(this.plugin);
 		return this.imageClient.generateCoverImageFromText(prompt, negative_prompt, size);
 	}
 }

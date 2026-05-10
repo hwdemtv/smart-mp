@@ -1,12 +1,13 @@
-/** 
+/**
  * Procesing the image data for a valid WeChat MP article for upload.
- * 
+ *
  */
 import { $t } from 'src/lang/i18n';
 import { fetchImageBlob, serializeElement } from 'src/utils/utils';
 import { WechatClient } from './../wechat-api/wechat-client';
 import SmartMPPlugin from 'src/main';
 import { Logger } from 'src/utils/logger';
+import SparkMD5 from 'spark-md5';
 function imageFileName(mime: string) {
     const type = mime.split('/')[1]
     return `image-${new Date().getTime()}.${type}`
@@ -75,15 +76,42 @@ export function getCanvasBlob(canvas: HTMLCanvasElement) {
 }
 
 const imageCache = new Map<string, string>();
+const SVG_CACHE_KEY = 'smart-mp-svg-upload-cache';
+const SVG_CACHE_MAX = 200;
 
-function simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash.toString(36);
+// Load persistent cache from localStorage
+function loadImageCache(): void {
+    try {
+        const raw = localStorage.getItem(SVG_CACHE_KEY);
+        if (raw) {
+            const entries = JSON.parse(raw) as [string, string][];
+            for (const [k, v] of entries) {
+                imageCache.set(k, v);
+            }
+        }
+    } catch { /* ignore corrupted cache */ }
+}
+
+// Save cache to localStorage (LRU eviction: keep newest entries)
+function saveImageCache(): void {
+    try {
+        if (imageCache.size > SVG_CACHE_MAX) {
+            const entries = Array.from(imageCache.entries());
+            const keep = entries.slice(-SVG_CACHE_MAX);
+            imageCache.clear();
+            for (const [k, v] of keep) {
+                imageCache.set(k, v);
+            }
+        }
+        localStorage.setItem(SVG_CACHE_KEY, JSON.stringify(Array.from(imageCache.entries())));
+    } catch { /* localStorage full or unavailable */ }
+}
+
+// Initialize cache on load
+loadImageCache();
+
+function md5Hash(str: string): string {
+    return SparkMD5.hash(str);
 }
 
 export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) {
@@ -238,7 +266,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
             // 4. Replace currentColor
             svgString = svgString.replace(/currentColor/g, '#333');
 
-            const hash = simpleHash(svgString);
+            const hash = md5Hash(svgString);
 
             // [Cache Check]: logic to prevent re-uploading same math formula
             if (imageCache.has(hash)) {
@@ -283,6 +311,7 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                 if (res && res.url) {
                     // Update Cache
                     imageCache.set(hash, res.url);
+                    saveImageCache();
 
                     const img = document.createElement('img');
                     img.src = res.url;

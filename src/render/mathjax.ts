@@ -1,63 +1,51 @@
 /**
- * new version os mathjax wrapper for render math LaTeX to svg
+ * MathJax wrapper — lazy-loaded to avoid bloating the bundle (~776KB).
+ * Only imported on first math render.
  */
 
-import { LiteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor'
-import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html'
-import { TeX } from 'mathjax-full/js/input/tex'
-import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages'
-import { mathjax } from 'mathjax-full/js/mathjax'
-import { SVG } from 'mathjax-full/js/output/svg'
+let _init: Promise<{ parseMath: (math: string, display?: boolean) => string }> | null = null;
 
-const adaptor = new LiteAdaptor()
-RegisterHTMLHandler(adaptor)
+function ensureMathjax() {
+  if (!_init) {
+    _init = (async () => {
+      const [
+        { LiteAdaptor },
+        { RegisterHTMLHandler },
+        { TeX },
+        { AllPackages },
+        { mathjax },
+        { SVG },
+      ] = await Promise.all([
+        import('mathjax-full/js/adaptors/liteAdaptor'),
+        import('mathjax-full/js/handlers/html'),
+        import('mathjax-full/js/input/tex'),
+        import('mathjax-full/js/input/tex/AllPackages'),
+        import('mathjax-full/js/mathjax'),
+        import('mathjax-full/js/output/svg'),
+      ]);
 
-const mathjax_document = mathjax.document('', {
-  InputJax: new TeX({ packages: AllPackages }),
-  OutputJax: new SVG({
-    fontCache: 'none',
-    scale: 0.8
-  })
-})
+      const adaptor = new LiteAdaptor();
+      RegisterHTMLHandler(adaptor);
 
-const mathjax_options = {
-  em: 13,
-  ex: 6.5,
-  containerWidth: 1280,
-  //   display: true
-}
+      const doc = mathjax.document('', {
+        InputJax: new TeX({ packages: AllPackages }),
+        OutputJax: new SVG({ fontCache: 'none', scale: 0.8 }),
+      });
 
-export function parseMath(math: string, display: boolean = false): string {
+      const options = { em: 13, ex: 6.5, containerWidth: 1280 };
 
-  const node = mathjax_document.convert(math, { ...mathjax_options, display })
-
-  return adaptor.outerHTML(node)
-}
-
-const inlineRule = /\$(.*)\$/g // /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\1/;
-const blockRule = /\$\$(?!<\$\$)([\s\S]*?)\$\$/g;  // /^(\${1,2})\n((?:\\[^]|[^\\])+?)\n\1(?:\n|$)/;
-
-export function parseHTML(html: string): string {
-  let matches = html.match(blockRule)
-  if (matches) {
-    matches.forEach(match => {
-      const math = match.replace(/\$/g, '')
-      // [Fix] 显式传入 display: true，生成块级标记
-      const svg = parseMath(math, true)
-      html = html.replace(match, svg)
-    })
+      return {
+        parseMath(math: string, display: boolean = false): string {
+          const node = doc.convert(math, { ...options, display });
+          return adaptor.outerHTML(node);
+        },
+      };
+    })();
   }
-
-  matches = html.match(inlineRule)
-  if (matches) {
-    matches.forEach(match => {
-      const math = match.replace(/\$/g, '')
-      // [Fix] 显式传入 display: false，生成行内标记
-      const svg = parseMath(math, false)
-      html = html.replace(match, svg)
-    })
-  }
-  return html
+  return _init;
 }
 
-
+export async function parseMath(math: string, display: boolean = false): Promise<string> {
+  const mj = await ensureMathjax();
+  return mj.parseMath(math, display);
+}

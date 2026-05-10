@@ -6,7 +6,7 @@
 import { MarkedExtension } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
 import { markedHighlight } from "marked-highlight";
-import hljs from "highlight.js";
+import { hljs } from "../hljs-languages";
 import { CodeRenderer } from "./code";
 
 export class CodeHighlight extends SmartMPMarkedExtension {

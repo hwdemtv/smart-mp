@@ -18,7 +18,10 @@
   "errors": {
     "api-error": "API error occurred",
     "wechat-error": "WeChat API error",
-    "render-error": "Render error"
+    "render-error": "Render error",
+    "network-error": "Network error occurred",
+    "unexpected-error": "An unexpected error occurred",
+    "unknown-error": "An unknown error occurred"
   },
   "commands": {
     "polish": "SmartMP: Polish Selected Text",
@@ -44,13 +47,10 @@
     "please-check-you-appid-and-appsecret": "Please check your App ID and App Secret.",
     "polish": "Polish",
     "polishing": "Polishing...",
-    "proof": "Proof",
     "proofing": "Proofing...",
     "generating-latex": "Generate LaTeX",
     "generating-mermaid": "Generate Mermaid",
     "text-to-image": "Text to image",
-    "to-chinese": "Translate to Chinese",
-    "to-english": "Translate to English",
     "translating-to-chinese": "Translating to Chinese...",
     "translating-to-english": "Translating to English...",
     "smart-mp-ai": "SmartMP AI",
@@ -112,6 +112,8 @@
     "charts-plugin-not-installed": "Charts plugin not installed.",
     "rendering": "Rendering...",
     "failed-to-parse-custom-css": "Custom CSS parsing failed: {0}",
+    "reference-links": "🔗 References",
+    "footnotes": "📝 Footnotes",
     "general-tab": "General / Layout",
     "llm-tab": "AI / Large Model"
   },
@@ -260,6 +262,11 @@
       "activation-code": "Activation Code",
       "activation-code-desc": "Enter activation code to unlock Pro features, supports binding multiple devices"
     },
+    "ai-chat-section": {
+      "model-select-desc": "Select the provider and model for this assistant (leave empty to use global default)"
+    },
+    "migrate-success": "SmartMP: LLM settings migrated to new format.",
+    "restore-assistants-success": "SmartMP: Default AI assistants restored.",
     "llm-provider": {
       "default-provider": "Default Provider",
       "default-model": "Default Model",
@@ -279,8 +286,7 @@
       "unnamed-provider": "Unnamed Provider",
       "fetch-models": "Fetch Models from API",
       "model-id-header": "Model ID",
-      "model-name-header": "Display Name",
-      "model-select-desc": "Select the provider and model for this assistant (leave empty to use global default)"
+      "model-name-header": "Display Name"
     }
   },
   "utils": {
@@ -311,7 +317,6 @@
       "only-fans-can-comment": "Only Fans Can Comment",
       "only-fans-can-comment-description": "Only users who follow the official account can comment",
       "open-comments": "Open Comments",
-      "title": "Article Title",
       "upload-cover-image-error": "Failed to upload cover image, please try again"
     },
     "delete-draft": "Delete draft",
@@ -356,6 +361,7 @@
     }
   },
   "wechat-api": {
+    "error": "WeChat API error",
     "center-token-request-failed": "Failed to get center token, please check network connection or try again later",
     "center-token-enabled": "Center token server enabled",
     "center-token-disabled": "Center token server disabled, please ensure IP whitelist is configured",
@@ -363,8 +369,7 @@
     "video-size-exceeds-10m": "Video size exceeds 10MB limit",
     "voice-size-exceeds-2m": "Voice size exceeds 2MB limit",
     "send-article-to-draft-box-successfully": "Article sent to draft box successfully.",
-    "uploading-material-type": "uploading material {0}",
-    "article-content-exceeds-limit": "Article content exceeds limit, please manually split (must be less than 20,000 characters), or use 'Copy All' to manually paste to WeChat editor"
+    "uploading-material-type": "uploading material {0}"
   },
   "streaming-diff-modal": {
     "title": "AI Modification Comparison (Streaming)",
@@ -457,9 +462,7 @@
     "settings": {
       "template-exists": "Template already exists, no need to add again",
       "base-url-required": "Base URL is required",
-      "license-key-required": "Activation code cannot be empty",
-      "migrate-success": "SmartMP: LLM Settings migrated to new format.",
-      "restore-assistants-success": "SmartMP: Default AI Assistants restored."
+      "license-key-required": "Activation code cannot be empty"
     },
     "theme": {
       "clone-invalid-url": "Please enter a valid WeChat article URL",

@@ -234,7 +234,7 @@
 	text-indent: 0;
 }
 
-.smart-mp>p {
+.smart-mp p {
 	text-indent: var(--article-text-indent);
 	font-weight: var(--article-font-weight, 400);
 	word-break: var(--article-word-break, break-word);

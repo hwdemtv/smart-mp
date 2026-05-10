@@ -391,7 +391,8 @@ export class WechatClient {
 		// 1. 校验文件大小
 		const sizeLimit = type === "video" ? WECHAT_LIMIT_VIDEO : (type === "voice" ? WECHAT_LIMIT_VOICE : WECHAT_LIMIT_IMAGE);
 		if (data.size > sizeLimit) {
-			new Notice($t(`wechat-api.${type || 'image'}-size-exceeds-limit`) || "文件大小超出限制");
+			const sizeKey = type === "video" ? "wechat-api.video-size-exceeds-10m" : type === "voice" ? "wechat-api.voice-size-exceeds-2m" : "wechat-api.image-size-exceeds-10m";
+			new Notice($t(sizeKey) || "文件大小超出限制");
 			return false;
 		}
 

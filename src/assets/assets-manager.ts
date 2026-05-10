@@ -1,6 +1,6 @@
 /**
  * Assets Manager
- * 
+ *
  * - manages the assets for WeChat MP platform, including:
  *  - thumbnails from WeChat
  *  - images, videos, audios, etc from WeChat.
@@ -11,18 +11,17 @@
  *  - mermaid
  *  - admonitions
  *  - LaTeX
- * 
- * 
+ *
+ *
  * - tracking the mapping between local and remote assets
  * - sync the assets with remote, upload.
- * - for replacing links during markdown rendering 
+ * - for replacing links during markdown rendering
  */
 
-import { App, Notice, sanitizeHTMLToDom } from "obsidian";
-import PouchDB from 'pouchdb';
-import PouchDBFind from 'pouchdb-find';
+import { App, Notice, debounce, sanitizeHTMLToDom } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { areObjectsEqual } from "src/utils/utils";
+import Logger from "src/utils/logger";
 import { getErrorMessage } from "src/wechat-api/error-code";
 import { ConfirmDeleteModal } from "src/modals/confirm-delete-modal";
 import { ConfirmPublishModal } from "src/modals/confirm-publish-modal";
@@ -36,24 +35,13 @@ export const MediaTypeLable = new Map([
     ['draft', $t('assets.draft')]
 ]);
 
-type DeletableMaterialItem = MaterialItem & {
-    _deleted?: boolean;
-}
-
-PouchDB.plugin(PouchDBFind);
-
-
-
-
 const MAX_COUNT = 20;
-export const initAssetsDB = () => {
-    const db = new PouchDB('smart-mp-wechat-assets');
-    return db;
-}
 export class AssetsManager {
     app: App;
     assets: Map<string, MaterialItem[]>
-    db: PouchDB.Database;
+    /** In-memory store keyed by _id (media_id) */
+    private itemStore: Map<string, MaterialItem> = new Map();
+    private dirty = false;
     used: Map<string, string[]>
     confirmPublishModal: ConfirmPublishModal;
     confirmDeleteModal: ConfirmDeleteModal;
@@ -66,7 +54,7 @@ export class AssetsManager {
         this.plugin = plugin;
         this.assets = new Map();
         this.used = new Map();
-        this.db = initAssetsDB();
+        this.loadFromDisk();
 
         this.plugin.messageService.registerListener('wechat-account-changed', (data: string) => {
             void this.loadMaterial(data);
@@ -91,6 +79,34 @@ export class AssetsManager {
         });
 
     }
+
+    private async loadFromDisk(): Promise<void> {
+        try {
+            const data = await this.plugin.loadData();
+            const raw = data?.['wechat-assets'] || {};
+            this.itemStore = new Map(Object.entries(raw));
+        } catch (e) {
+            Logger.warn('AssetsManager', 'Failed to load assets from disk', e);
+        }
+    }
+
+    private persistDebounced = debounce(async () => {
+        if (!this.dirty) return;
+        this.dirty = false;
+        try {
+            const data = (await this.plugin.loadData()) || {};
+            data['wechat-assets'] = Object.fromEntries(this.itemStore);
+            await this.plugin.saveData(data);
+        } catch (e) {
+            Logger.error('AssetsManager', 'Failed to save assets', e);
+        }
+    }, 3000);
+
+    private markDirty(): void {
+        this.dirty = true;
+        this.persistDebounced();
+    }
+
     addImageItem(item: MaterialItem) {
         this.assets.get('image')?.push(item)
     }
@@ -123,7 +139,7 @@ export class AssetsManager {
         ];
         for (const type of types) {
             this.plugin.messageService.sendMessage(`clear-${type}-list`, null)
-            const list = await this.getAllMeterialOfTypeFromDB(accountName, type)
+            const list = this.getAllMeterialOfTypeFromDB(accountName, type)
             this.assets.set(type, list)
             list.forEach(item => {
                 this.plugin.messageService.sendMessage(`${type}-item-updated`, item)
@@ -161,7 +177,7 @@ export class AssetsManager {
             item.accountName = accountName
             item.type = 'news'
 
-            void this.pushMaterailToDB(item)
+            this.pushMaterailToDB(item)
             if (callback) {
                 callback(item)
             }
@@ -184,14 +200,14 @@ export class AssetsManager {
             return b.update_time - a.update_time
         })
         this.assets.set('draft', draftList)
-        await this.removeMediaItemsFromDB('draft')
+        this.removeMediaItemsFromDB('draft')
         draftList.forEach((i: DraftItem) => {
             i.accountName = accountName
             i.type = 'draft'
             if (callback) {
                 callback(i)
             }
-            void this.pushMaterailToDB(i)
+            this.pushMaterailToDB(i)
         })
         this.scanDraftNewsUsedImages()
     }
@@ -218,14 +234,14 @@ export class AssetsManager {
         })
 
         this.assets.set(type, list)
-        await this.removeMediaItemsFromDB(type)
+        this.removeMediaItemsFromDB(type)
         list.forEach((item: MaterialItem) => {
             item.accountName = accountName
             item.type = type
             if (callback) {
                 callback(item)
             }
-            void this.pushMaterailToDB(item)
+            this.pushMaterailToDB(item)
         })
     }
     public getImageUsedUrl(imgItem: MaterialMeidaItem): string[] | null {
@@ -303,103 +319,36 @@ export class AssetsManager {
         })
     }
 
-    fetchAllMeterialOfTypeFromDB(accountName: string, type: MediaType): Promise<MaterialItem[]> {
-        return new Promise((resolve) => {
-
-            this.db.find({
-                selector: {
-                    accountName: { $eq: accountName },
-                    type: { $eq: type }
-                }
-            }).then((result: PouchDB.Find.FindResponse<MaterialItem>) => {
-                resolve(result.docs as Array<MaterialItem>)
-            }).catch((err) => {
-                console.error(err);
-                resolve([])
-            })
-
-        })
+    fetchAllMeterialOfTypeFromDB(accountName: string, type: MediaType): MaterialItem[] {
+        return Array.from(this.itemStore.values()).filter(
+            item => item.accountName === accountName && item.type === type
+        );
     }
-    pushMaterailToDB(doc: MaterialItem): Promise<void> {
-        return new Promise((resolve) => {
-            if (doc._id === undefined) {
-                doc._id = doc.media_id
-            }
-
-            this.db.get(doc._id).then(existedDoc => {
-                if (areObjectsEqual(doc, existedDoc)) {
-                    // the material has not been changed
-                    resolve()
-                } else {
-                    doc._rev = existedDoc._rev;
-                    this.db.put(doc)
-                        .then(() => {
-                            resolve();
-                        })
-                        .catch((error: unknown) => {
-                            console.error('Error saving material:', error);
-                            resolve()
-                        });
-                }
-            }).catch(error => {
-                this.db.put(doc).then(() => {
-                    resolve()
-                }).catch((err) => {
-                    console.error(err);
-                    resolve()
-                })
-                resolve()
-            })
-        })
-    }
-    AllMeterialOfTypeFromDB(media_id: string): Promise<MaterialItem[]> {
-        return new Promise((resolve) => {
-            this.db.find({
-                selector: {
-                    mediea_id: { $eq: media_id }
-                }
-            }).then((result: PouchDB.Find.FindResponse<MaterialItem>) => {
-                resolve(result.docs as Array<MaterialItem>)
-            }).catch((err) => {
-                console.error(err);
-                resolve([])
-            })
-        })
-    }
-    async getAllMeterialOfTypeFromDB(accountName: string, type: string): Promise<MaterialItem[]> {
-        const pageSize = 50;
-        let offset = 0;
-        const items: Array<MaterialItem> = [];
-        if (accountName === undefined || !accountName) {
-            return items;
+    pushMaterailToDB(doc: MaterialItem): void {
+        if (!doc._id) {
+            doc._id = doc.media_id;
         }
-        while (true) {
-            try {
-                const result = await this.db.find({
-                    selector: {
-                        accountName: { $eq: accountName },
-                        type: { $eq: type }
-                    },
-                    limit: pageSize,
-                    skip: offset
-                });
 
-                const docs = result.docs as Array<MaterialItem>;
-                if (docs.length === 0) {
-                    break;
-                }
-
-                items.push(...docs);
-
-                offset += docs.length;
-            } catch (error) {
-                console.error('Error fetching material from DB:', error);
-                break;
-            }
+        const existing = this.itemStore.get(doc._id);
+        if (existing && areObjectsEqual(doc, existing)) {
+            return; // unchanged
         }
-        items.sort((a, b) => {
-            return b.update_time - a.update_time
-        })
+
+        this.itemStore.set(doc._id, { ...doc });
+        this.markDirty();
+    }
+    AllMeterialOfTypeFromDB(media_id: string): MaterialItem[] {
+        // Note: original code had a typo (mediea_id) — fixed to media_id
+        return Array.from(this.itemStore.values()).filter(
+            item => item.media_id === media_id
+        );
+    }
+    getAllMeterialOfTypeFromDB(accountName: string, type: string): MaterialItem[] {
+        if (!accountName) return [];
+        const items = Array.from(this.itemStore.values()).filter(
+            item => item.accountName === accountName && item.type === type
+        );
+        items.sort((a, b) => b.update_time - a.update_time);
         return items;
     }
     findUrlOfMediaId(type: MediaType, media_id: string) {
@@ -445,62 +394,51 @@ export class AssetsManager {
 
         return panels;
     }
-    async removeMediaItemsFromDB(type: MediaType) {
+    removeMediaItemsFromDB(type: MediaType) {
         const accountName = this.plugin.settings.selectedMPAccount;
-        await this.db.find({
-            selector: {
-                accountName: { $eq: accountName },
-                type: { $eq: type }
+        let changed = false;
+        for (const [id, item] of this.itemStore) {
+            if (item.accountName === accountName && item.type === type) {
+                this.itemStore.delete(id);
+                changed = true;
             }
-        }).then((result: PouchDB.Find.FindResponse<DeletableMaterialItem>) => {
-            const docsToDelete = result.docs.map((doc) => {
-                doc._deleted = true; // Mark the document for deletion
-                return doc;
-            });
-
-            // Perform bulk deletion
-            return this.db.bulkDocs(docsToDelete);
-        }).catch((err) => {
-            console.error('Error deleting documents:', err);
-        });
+        }
+        if (changed) this.markDirty();
     }
     public async deleteMediaItem(item: MaterialMeidaItem) {
         const type = item.type
         if (type === undefined) {
-            console.error('deleteMediaItem type is undefined', item)
+            Logger.error('AssetsManager', 'deleteMediaItem type is undefined', item)
             return;
         }
         if (!await this.plugin.wechatClient.deleteMedia(item.media_id)) {
-            console.error('delete media failed', item)
+            Logger.error('AssetsManager', 'delete media failed', item)
             return false;
         }
-        await this.removeDocFromDB(item._id!)
+        this.removeDocFromDB(item._id!)
         this.plugin.messageService.sendMessage(`${type}-item-deleted`, item)
         this.updateUsed(item.url)
         return true
     }
     public async deleteDraftItem(item: DraftItem) {
         if (!await this.plugin.wechatClient.deleteDraft(item.media_id)) {
-            console.error('delete draft failed', item)
+            Logger.error('AssetsManager', 'delete draft failed', item)
             return false;
         }
-        await this.removeDocFromDB(item._id!)
+        this.removeDocFromDB(item._id!)
         this.plugin.messageService.sendMessage('draft-item-deleted', item)
         item.content.news_item.forEach((newsItem) => {
             if (newsItem.url) {
                 this.updateUsed(newsItem.url);
             }
         });
-        return true;
+        return true
     }
-    public async removeDocFromDB(_id: string) {
-        await this.db.get(_id).then((doc) => {
-            return this.db.remove(doc);
-        })
-            .catch((err) => {
-                console.error('Error deleting document:', err);
-            });
-
+    public removeDocFromDB(_id: string) {
+        if (this.itemStore.has(_id)) {
+            this.itemStore.delete(_id);
+            this.markDirty();
+        }
     }
     confirmPublish(item: DraftItem) {
         if (this.confirmPublishModal === undefined) {

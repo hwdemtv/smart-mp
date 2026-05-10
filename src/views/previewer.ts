@@ -30,7 +30,7 @@ import {
 	uploadURLVideo,
 	convertAssetsToDataURLs
 } from "src/render/post-render";
-import { serializeChildren, cleanHtmlForWechat } from "src/utils/utils";
+import { serializeChildren, cleanHtmlForWechat, inlineCssWithJuice } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
 import { ObsidianMarkdownRenderer } from "src/render/markdown-render";
 import { ResourceManager } from "../assets/resource-manager";
@@ -51,6 +51,75 @@ import Logger from "src/utils/logger";
 export const VIEW_TYPE_SMART_MP_PREVIEW = "smart-mp-article-preview";
 export interface ElectronWindow extends Window {
 	WEBVIEW_SERVER_URL: string;
+}
+
+/**
+ * Apply WeChat-compatible inline styles and DOM fixes before CSS inlining.
+ * Handles cases that juice or CssMerger cannot address:
+ * 1. <img> width/height attributes → inline style (WeChat ignores bare attributes)
+ * 2. Nested lists outside <li> (WeChat breaks nested lists inside <li>)
+ * 3. Mermaid SVG <tspan> color fix (WeChat overrides stroke colors)
+ * 4. AntV dominant-baseline → dy conversion (WeChat strips dominant-baseline)
+ * 5. Residual CSS var() cleanup
+ */
+function applyWechatCompatStyles(root: HTMLElement): void {
+	// 1. Convert img width/height attributes to inline styles
+	root.querySelectorAll('img').forEach((img) => {
+		const width = img.getAttribute('width');
+		const height = img.getAttribute('height');
+		if (width && /^\d+$/.test(width)) {
+			img.removeAttribute('width');
+			img.style.width = `${width}px`;
+		}
+		if (height && /^\d+$/.test(height)) {
+			img.removeAttribute('height');
+			img.style.height = `${height}px`;
+		}
+	});
+
+	// 2. Fix nested lists: move li > ul/ol after the parent <li>
+	root.querySelectorAll('li > ul, li > ol').forEach((nestedList) => {
+		nestedList.parentElement?.insertAdjacentElement('afterend', nestedList);
+	});
+
+	// 3. Mermaid SVG tspan color fix — force text color visible in WeChat
+	root.querySelectorAll('tspan').forEach((tspan) => {
+		tspan.setAttribute('style', 'fill: #333333 !important; color: #333333 !important; stroke: none !important;');
+	});
+
+	// 4. AntV infographic: convert dominant-baseline to dy offset
+	const baselineToDy: Record<string, string> = {
+		'alphabetic': '',
+		'central': '0.35em',
+		'middle': '0.35em',
+		'hanging': '-0.55em',
+		'ideographic': '0.18em',
+		'text-before-edge': '-0.85em',
+		'text-after-edge': '0.15em',
+	};
+	root.querySelectorAll('text[dominant-baseline]').forEach((text) => {
+		const baseline = text.getAttribute('dominant-baseline');
+		if (baseline && baselineToDy[baseline] !== undefined) {
+			text.removeAttribute('dominant-baseline');
+			if (baselineToDy[baseline]) {
+				text.setAttribute('dy', baselineToDy[baseline]);
+			}
+		}
+	});
+
+	// 5. Clean residual CSS var() references in inline styles
+	root.querySelectorAll('[style]').forEach((el) => {
+		const style = el.getAttribute('style') || '';
+		if (style.includes('var(--')) {
+			const cleaned = style
+				.replace(/var\(--smart-mp-primary[^)]*\)/g, '#2c3e50')
+				.replace(/var\(--smart-mp-text[^)]*\)/g, '#333')
+				.replace(/var\(--article-text[^)]*\)/g, '#333')
+				.replace(/var\(--article-heading[^)]*\)/g, '#2c3e50')
+				.replace(/var\(--[^)]+\)/g, '#333');
+			el.setAttribute('style', cleaned);
+		}
+	});
 }
 
 /**
@@ -454,6 +523,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (progressNotice) progressNotice.setMessage("正在准备文章内容...");
 		const finalArticleEl = this.articleDiv.cloneNode(true) as HTMLElement;
 
+		applyWechatCompatStyles(finalArticleEl);
+
 		if (progressNotice) progressNotice.setMessage("正在应用排版主题...");
 		const root = finalArticleEl.firstElementChild as HTMLElement | null;
 		if (root) {
@@ -484,6 +555,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				new Notice($t("notice.previewer.image-processing-failed") ?? "图片处理失败，部分图片可能无法显示");
 			}
 		}
+
+		if (progressNotice) progressNotice.setMessage("正在内联 CSS 样式...");
+		await inlineCssWithJuice(finalArticleEl);
 
 		if (progressNotice) progressNotice.setMessage("正在优化 HTML 结构...");
 		const cleanedArticleEl = cleanHtmlForWechat(finalArticleEl);

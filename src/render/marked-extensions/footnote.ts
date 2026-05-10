@@ -5,6 +5,7 @@
 import { MarkedExtension } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
 import { SafeHTML } from "../../utils/sanitize-html";
+import { $t } from "../../lang/i18n";
 
 interface FootnoteToken {
     type: 'footnote';
@@ -56,7 +57,7 @@ export class Footnote extends SmartMPMarkedExtension {
         const title = footnotesContainer.createEl('p', {
             cls: 'smart-mp-footnotes-title'
         });
-        title.textContent = "📝 文章脚注";
+        title.textContent = $t('render.footnotes') || "📝 文章脚注";
 
         // Ordered List
         const ol = footnotesContainer.createEl('ol');

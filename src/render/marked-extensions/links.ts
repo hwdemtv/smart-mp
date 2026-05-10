@@ -6,6 +6,7 @@ import { MarkedExtension, Tokens } from "marked";
 import { SmartMPMarkedExtension } from "./extension";
 import { SafeHTML } from "../../utils/sanitize-html";
 import { Logger } from "../../utils/logger";
+import { $t } from "../../lang/i18n";
 
 export class Links extends SmartMPMarkedExtension {
 
@@ -34,7 +35,7 @@ export class Links extends SmartMPMarkedExtension {
         referencesContainer.createEl('hr', { cls: 'smart-mp-references-separator' });
 
         const title = referencesContainer.createEl('p', { cls: 'smart-mp-references-title' });
-        title.textContent = "🔗 参考链接";
+        title.textContent = $t('render.reference-links') || "🔗 参考链接";
 
         const ol = referencesContainer.createEl('ol');
         SafeHTML.setSafeHTML(ol, linksHtml);
@@ -57,6 +58,10 @@ export class Links extends SmartMPMarkedExtension {
                     }
 
                     if (href.startsWith('http')) {
+                        // WeChat links are already in WeChat format, don't convert to footnotes
+                        if (href.includes('mp.weixin.qq.com')) {
+                            return `<a href="${href}">${text}</a>`;
+                        }
                         // Diagnostic log to catch why it duplicates
                         Logger.debug('Links', `Rendering link: "${text}" -> ${href}, current allLinks: ${this.allLinks.length}`);
 

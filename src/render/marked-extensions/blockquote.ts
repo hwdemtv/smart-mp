@@ -126,6 +126,20 @@ function getCalloutColors(calloutType: string): { bg: string; text: string } {
 
 
 
+/**
+ * Pre-process ::: fenced container syntax into standard callout blockquotes
+ * e.g., :::note\ntitle\ncontent\n::: → > [!note]\n> title\n> content
+ */
+export function preprocessCalloutContainers(md: string): string {
+	return md.replace(
+		/^:::(\w+)[ \t]*\n([\s\S]*?)\n:::/gm,
+		(_match, type, content) => {
+			const lines = content.split('\n');
+			return `> [!${type.toLowerCase()}]\n> ` + lines.join('\n> ');
+		}
+	);
+}
+
 export class BlockquoteRenderer extends SmartMPMarkedExtension {
 	prepare(): Promise<void> {
 		if (!this.marked) {
@@ -174,6 +188,7 @@ export class BlockquoteRenderer extends SmartMPMarkedExtension {
 
 
 	markedExtension(): MarkedExtension {
+		const self = this;
 		return {
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
@@ -187,20 +202,16 @@ export class BlockquoteRenderer extends SmartMPMarkedExtension {
 				// Only hijack if it's a Callout, otherwise let default blockquote rendering occur
 				const matched = matchCallout(rawText);
 				if (matched) {
-					token.html = await this.rendererCallout(blockquote);
+					(token as any).html = await self.rendererCallout(blockquote);
 				} else {
-					token.html = await this.rendererBlockquote(blockquote);
+					(token as any).html = await self.rendererBlockquote(blockquote);
 				}
 			},
-			extensions: [
-				{
-					name: "blockquote",
-					level: "block",
-					renderer: (token: Tokens.Generic) => {
-						return String(token.html ?? "");
-					},
-				},
-			],
+			renderer: {
+				blockquote: (token: Tokens.Blockquote) => {
+					return String((token as any).html ?? "");
+				}
+			} as any
 		};
 	}
 }

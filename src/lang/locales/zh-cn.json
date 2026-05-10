@@ -18,7 +18,10 @@
   "errors": {
     "api-error": "API 调用错误",
     "wechat-error": "微信 API 错误",
-    "render-error": "渲染错误"
+    "render-error": "渲染错误",
+    "network-error": "网络错误",
+    "unexpected-error": "发生意外错误",
+    "unknown-error": "未知错误"
   },
   "commands": {
     "polish": "公众号：润色选中文本",
@@ -44,13 +47,10 @@
     "please-check-you-appid-and-appsecret": "请检查您的App ID和App Secret。",
     "polish": "润色",
     "polishing": "润色中...",
-    "proof": "校对",
     "proofing": "校对中...",
     "generating-latex": "生成LaTeX",
     "generating-mermaid": "生成Mermaid",
     "text-to-image": "文生图",
-    "to-chinese": "翻译为中文",
-    "to-english": "翻译为英文",
     "translating-to-chinese": "正在翻译为中文...",
     "translating-to-english": "正在翻译为英文...",
     "smart-mp-ai": "SmartMP AI",
@@ -112,6 +112,8 @@
     "charts-plugin-not-installed": "图表插件未安装。",
     "rendering": "渲染中...",
     "failed-to-parse-custom-css": "定制风格存在CSS语法错误：{0}",
+    "reference-links": "🔗 参考链接",
+    "footnotes": "📝 文章脚注",
     "general-tab": "通用 / 排版",
     "llm-tab": "AI / 大模型"
   },
@@ -260,6 +262,11 @@
       "activation-code": "激活码",
       "activation-code-desc": "输入激活码以解锁 Pro 功能，支持同时绑定多台设备"
     },
+    "ai-chat-section": {
+      "model-select-desc": "选择此助手使用的服务商和模型（留空则使用全局默认）"
+    },
+    "migrate-success": "SmartMP: LLM 设置已迁移至新格式。",
+    "restore-assistants-success": "SmartMP: 默认 AI 助手已恢复。",
     "llm-provider": {
       "default-provider": "默认服务商",
       "default-model": "默认模型",
@@ -279,8 +286,7 @@
       "unnamed-provider": "未命名服务商",
       "fetch-models": "从 API 获取模型列表",
       "model-id-header": "模型 ID",
-      "model-name-header": "显示名称",
-      "model-select-desc": "选择此助手使用的服务商和模型（留空则使用全局默认）"
+      "model-name-header": "显示名称"
     }
   },
   "utils": {
@@ -306,7 +312,6 @@
       "only-fans-can-comment": "仅粉丝可评论",
       "only-fans-can-comment-description": "仅关注公众号的用户可以评论",
       "open-comments": "开启评论",
-      "title": "文章标题",
       "ai-title-recommendation": "AI 推荐标题",
       "click-to-use": "点击下方标题可直接填入编辑框",
       "edit-title": "编辑最终标题:",
@@ -356,6 +361,7 @@
     }
   },
   "wechat-api": {
+    "error": "微信接口错误",
     "center-token-request-failed": "获取中心令牌失败，请检查网络连接或稍后重试",
     "center-token-enabled": "已启用中心令牌服务器",
     "center-token-disabled": "已关闭中心令牌服务器，请确保已配置 IP 白名单",
@@ -363,8 +369,7 @@
     "video-size-exceeds-10m": "视频大小超过10MB限制",
     "voice-size-exceeds-2m": "语音大小超过2MB限制",
     "send-article-to-draft-box-successfully": "文章成功发送到草稿箱。",
-    "uploading-material-type": "上传素材类型：{0}",
-    "article-content-exceeds-limit": "文章内容超过限制，请手动分割（必须少于2万字符），或使用「一键复制」手动粘贴到公众号编辑器"
+    "uploading-material-type": "上传素材类型：{0}"
   },
   "streaming-diff-modal": {
     "title": "AI 修改对比 (流式模式)",
@@ -457,9 +462,7 @@
     "settings": {
       "template-exists": "模板已存在，无需重复添加",
       "base-url-required": "Base URL is required",
-      "license-key-required": "激活码不能为空",
-      "migrate-success": "SmartMP: LLM 设置已迁移至新格式。",
-      "restore-assistants-success": "SmartMP: 默认 AI 助手已恢复。"
+      "license-key-required": "激活码不能为空"
     },
     "theme": {
       "clone-invalid-url": "请输入有效的微信文章链接",

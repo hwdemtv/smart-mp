@@ -43,7 +43,7 @@ const context = await esbuild.context({
 	// Performance optimizations
 	metafile: prod,  // Generate build analysis in production
 	ignoreAnnotations: prod,  // Ignore /* @__PURE__ */ annotations in prod
-	legalComments: prod ? 'none' : 'inline',  // Remove comments in prod
+	legalComments: prod ? 'none' : 'inline',  // Remove comments in production
 	define: {
 		'SMARTMP_ENV': prod ? '"production"' : '"development"'
 	},
