@@ -461,7 +461,7 @@ export default class SmartMPPlugin extends Plugin {
 	}
 	// DB init removed — each service uses its own lazy PouchDB singleton
 	async onload() {
-		const buildTime = "2026-03-30 10:00"; 
+		const buildTime = "2026-05-12 06:03"; 
 		console.log(`[SmartMP] Initializing... Build: ${buildTime}`);
 		const totalStartTime = Date.now();
 
