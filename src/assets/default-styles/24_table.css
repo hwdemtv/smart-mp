@@ -21,8 +21,8 @@
 	--table-min-width: var(--smart-mp-min-width, 100px);
 	--table-container-overflow: auto;
 	--tabble-radius: 0;
-	--table-width: max-content;
-	--tabble-white-space: nowrap;
+	/* 微信导出：宽度铺满 + 允许折行（max-content/nowrap 会导致移动端横向溢出，触发结构检测 #1.4.2） */
+	--table-width: 100%;
 	--table-layout: fixed;
 	--table-collapse: collapse;
 	--table-td-max-width: 200px;
@@ -30,6 +30,7 @@
 	--table-td-text-align: left;
 	--table-td-word-break: break-word;
 	--table-td-white-space: normal;
+	--table-cell-padding: 8px 12px;
 }
 
 .smart-mp .table-container {
@@ -37,14 +38,14 @@
 	width: 100%;
 	overflow-x: var(--table-container-overflow);
 	padding: 1px;
-	box-shadow: 0 4px 8px var(--smart-mp-shadow, (0, 0, 0, 0.1));
+	box-shadow: 0 4px 8px var(--smart-mp-shadow, rgba(0, 0, 0, 0.1));
 }
 
 .smart-mp table {
 	border-collapse: var(--table-collapse);
+	border-spacing: 0;
 	width: var(--table-width);
 	border-color: var(--table-border-color);
-	white-space: var(--tabble-white-space);
 	table-layout: var(--table-layout);
 }
 
@@ -72,6 +73,7 @@
 	border-color: var(--table-border-color);
 	border-width: var(--table-border-width);
 	border-style: solid;
+	padding: var(--table-cell-padding);
 	max-width: var(--table-td-max-width);
 	min-width: var(--table-td-min-width);
 	text-align: var(--table-td-text-align);

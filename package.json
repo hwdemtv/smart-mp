@@ -11,6 +11,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
+		"verify:wechat": "node scripts/verify-wechat-structure.mjs",
 		"test:theme": "ts-node src/theme/test.ts",
 		"test:ds": "ts-node  src/theme/ds-theme.ts",
 		"scan:themes": "ts-node themes/scanThemes.ts",

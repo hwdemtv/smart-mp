@@ -117,9 +117,8 @@ export default class SmartMPPlugin extends Plugin {
 	aiFeatureManager: AIFeatureManager;
 
 	async saveThemeFolder() {
-		const config = {
-			custom_theme_folder: this.settings.css_styles_folder,
-		};
+		const config = (await this.loadData()) || {};
+		config.custom_theme_folder = this.settings.css_styles_folder;
 		await this.saveData(config);
 		this.messageService.sendMessage("custom-theme-folder-changed", null);
 	}

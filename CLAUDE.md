@@ -14,6 +14,7 @@ npm run build        # Production build
 npm test             # Run tests (Vitest)
 npm run test:watch   # Watch mode
 npm run test:coverage # Coverage report
+npm run verify:wechat # Verify exported article against WeChat editor plugin spec (official CLI + supplementary checks)
 npm run i18n:check   # Check i18n keys consistency
 ```
 

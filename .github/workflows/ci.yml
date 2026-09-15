@@ -23,3 +23,22 @@ jobs:
       
       - name: Run ESLint
         run: npm run lint || echo "ESLint issues found"
+
+  # 微信《公众平台编辑器插件开发规范》内容结构验证：
+  # 固定基准文章全管线导出 → 官方 CLI（wechatjs/verify-article-structure-spec）+ 补充条款静态检查
+  verify-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify WeChat article structure
+        run: npm run verify:wechat

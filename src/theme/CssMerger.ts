@@ -354,6 +354,20 @@ export class CSSMerger {
 		'--code-background': '#f5f5f5',
 		'--tag-background': '#e0e0e0',
 		'--tag-color': '#333333',
+		// [Fix] Code block related variables used in default-styles/25_code.css
+		'--code-radius': '6px',
+		'--code-line-color': 'rgb(253, 247, 247)',
+		'--code-line-height': '20px',
+		'--code-header-text': '#999',
+		'--code-font-size': '14px',
+		'--code-line-number-color': '#999',
+		'--code-line-number-width': '35px',
+		'--code-padding': '12px',
+		// Theme variables that may appear in custom themes
+		'--smart-mp-primary': '#2c3e50',
+		'--smart-mp-text': '#333333',
+		'--article-text': '#333333',
+		'--article-heading': '#2c3e50',
 	};
 
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
@@ -566,8 +580,9 @@ export class CSSMerger {
 							rule.forEach((decl, prop) => {
 								if (prop === 'content') return;
 								// Values are already pre-resolved in pickRules!
-								const fullValue = decl.important ? `${decl.value} !important` : decl.value;
-								this.appendStyleText(target, prop, fullValue);
+								// [Fix] Don't write !important — WeChat strips it, causing priority inversion.
+								// Instead, rely on correct rule order in CSSMerger to handle overrides.
+								this.appendStyleText(target, prop, decl.value);
 							})
 						} else {
 							// Main Element Rules
@@ -591,8 +606,9 @@ export class CSSMerger {
 									return;
 								}
 
-								const fullValue = decl.important ? `${value} !important` : value;
-								themeStyleBatch.push(`${prop}: ${fullValue}`);
+								// [Fix] Don't append !important — WeChat strips it, causing priority inversion.
+								// The CSSMerger rule order already handles priority correctly (later rules override).
+								themeStyleBatch.push(`${prop}: ${value}`);
 							})
 						}
 					}

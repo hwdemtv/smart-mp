@@ -30,7 +30,7 @@ import {
 	uploadURLVideo,
 	convertAssetsToDataURLs
 } from "src/render/post-render";
-import { serializeChildren, cleanHtmlForWechat, inlineCssWithJuice } from "src/utils/utils";
+import { serializeChildren, cleanHtmlForWechat, inlineCssWithJuice, stripUnsupportedCssFromHtml, stripCssVarReferences } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
 import { ObsidianMarkdownRenderer } from "src/render/markdown-render";
 import { ResourceManager } from "../assets/resource-manager";
@@ -62,7 +62,8 @@ export interface ElectronWindow extends Window {
  * 4. AntV dominant-baseline → dy conversion (WeChat strips dominant-baseline)
  * 5. Residual CSS var() cleanup
  */
-function applyWechatCompatStyles(root: HTMLElement): void {
+// 导出供测试复现导出管线使用（微信兼容预处理，processArticleForExport 的第一步）
+export function applyWechatCompatStyles(root: HTMLElement): void {
 	// 1. Convert img width/height attributes to inline styles
 	root.querySelectorAll('img').forEach((img) => {
 		const width = img.getAttribute('width');
@@ -70,6 +71,8 @@ function applyWechatCompatStyles(root: HTMLElement): void {
 		if (width && /^\d+$/.test(width)) {
 			img.removeAttribute('width');
 			img.style.width = `${width}px`;
+			// 微信官方 width 检测建议：标注原始像素宽，减少"居中不一致/宽度差异"误报
+			img.setAttribute('data-w', width);
 		}
 		if (height && /^\d+$/.test(height)) {
 			img.removeAttribute('height');
@@ -108,16 +111,31 @@ function applyWechatCompatStyles(root: HTMLElement): void {
 	});
 
 	// 5. Clean residual CSS var() references in inline styles
-	root.querySelectorAll('[style]').forEach((el) => {
-		const style = el.getAttribute('style') || '';
-		if (style.includes('var(--')) {
-			const cleaned = style
-				.replace(/var\(--smart-mp-primary[^)]*\)/g, '#2c3e50')
-				.replace(/var\(--smart-mp-text[^)]*\)/g, '#333')
-				.replace(/var\(--article-text[^)]*\)/g, '#333')
-				.replace(/var\(--article-heading[^)]*\)/g, '#2c3e50')
-				.replace(/var\(--[^)]+\)/g, '#333');
-			el.setAttribute('style', cleaned);
+	// 共享实现位于 utils.stripCssVarReferences（juice 之后会再次调用，见 processArticleForExport）
+	stripCssVarReferences(root);
+
+	// 6. Ensure <code> elements have visible inline styles
+	// Obsidian renders inline code with class-based styles (e.g., .inline-code) from global CSS.
+	// juice cannot inline global CSS, so we add default inline styles to <code> without them.
+	root.querySelectorAll('code').forEach((code) => {
+		const style = code.getAttribute('style') || '';
+		if (!style.includes('background-color')) {
+			code.style.backgroundColor = '#f6f8fa';
+		}
+		if (!style.includes('color')) {
+			code.style.color = '#24292e';
+		}
+		if (!style.includes('padding')) {
+			code.style.padding = '.2em .4em';
+		}
+		if (!style.includes('border-radius')) {
+			code.style.borderRadius = '4px';
+		}
+		if (!style.includes('font-family')) {
+			code.style.fontFamily = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
+		}
+		if (!style.includes('font-size')) {
+			code.style.fontSize = '.85em';
 		}
 	});
 }
@@ -525,11 +543,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		applyWechatCompatStyles(finalArticleEl);
 
-		if (progressNotice) progressNotice.setMessage("正在应用排版主题...");
-		const root = finalArticleEl.firstElementChild as HTMLElement | null;
-		if (root) {
-			await ThemeManager.getInstance(this.plugin).applyTheme(root);
-		}
+		// [Fix] Removed duplicate ThemeManager.applyTheme() here.
+		// The preview DOM (articleDiv) already has theme styles applied during rendering.
+		// Cloning already preserves those inline styles, so re-applying causes:
+		// 1. Redundant computation  2. data-original-style mismatch on cloned nodes
+		// 3. Potential style duplication if SmartMPThemeKey is lost in clone
 
 		if (uploadImages) {
 			if (progressNotice) progressNotice.setMessage("正在上传/处理图片 (这可能需要一点时间)...");
@@ -559,6 +577,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		if (progressNotice) progressNotice.setMessage("正在内联 CSS 样式...");
 		await inlineCssWithJuice(finalArticleEl);
 
+		// [微信结构检测] juice 以 resolveCSSVariables:false 内联 <style> 标签规则，
+		// 会把未解析的 var() 重新写回 inline style（如 line-height: var(--x)），
+		// 微信无法解析会触发"继承的 line-height: 0"兜底检测，必须再次清理
+		stripCssVarReferences(finalArticleEl);
+
 		if (progressNotice) progressNotice.setMessage("正在优化 HTML 结构...");
 		const cleanedArticleEl = cleanHtmlForWechat(finalArticleEl);
 
@@ -566,11 +589,31 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const html = serializeChildren(cleanedArticleEl);
 		const text = cleanedArticleEl.textContent || '';
 
-		if (!html || html.trim().length === 0) {
+		// [Fix 45166] 字符串级终极 CSS 过滤——确保所有不支持的属性被移除
+		const finalHtml = stripUnsupportedCssFromHtml(html);
+
+		// 开发环境验证：检查是否仍有不支持的 CSS 模式
+		Logger.debug("Previewer", `Before strip: ${html.length} chars, After strip: ${finalHtml.length} chars`);
+
+		// 快速检查关键问题模式（仅在有差异时输出详细日志）
+		const criticalPatterns: [string, RegExp][] = [
+			['display:flex', /display:\s*flex/gi],
+			['display:grid', /display:\s*grid/gi],
+			['<table>', /<table/gi],
+			['!important', /!important/gi],
+		];
+		for (const [name, pattern] of criticalPatterns) {
+			const matches = finalHtml.match(pattern);
+			if (matches && matches.length > 0) {
+				Logger.warn("Previewer", `Unsupported pattern "${name}" found (${matches.length}x) in final HTML — may cause 45166`);
+			}
+		}
+
+		if (!finalHtml || finalHtml.trim().length === 0) {
 			new Notice($t("notice.previewer.content-empty") ?? '生成的内容为空，无法发送至草稿箱。请检查文章内容。', 5000);
 			return null;
 		}
-		return { html, text };
+		return { html: finalHtml, text };
 	}
 
 	async checkCoverImage() {

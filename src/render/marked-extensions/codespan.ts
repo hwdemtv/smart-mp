@@ -42,7 +42,7 @@ export class CodespanRenderer extends SmartMPMarkedExtension {
 		let style = 'padding: .2em .4em; border-radius: 4px; font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; font-size: .85em; margin: 0 .2em;';
 
 		if (theme === 'github' || theme === 'github-light') {
-			style += 'background-color: rgba(27,31,35,0.05); color: #24292e;';
+			style += 'background-color: #f6f8fa; color: #24292e;';
 		} else {
 			// One Dark / Default
 			style += 'background-color: #282c34; color: #e5c07b;';

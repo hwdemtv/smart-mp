@@ -36,7 +36,11 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 		const preElements = dom.querySelectorAll('pre');
 		preElements.forEach((pre) => {
 			// Skip if already processed by our custom renderer (has header or our specific styles)
-			if (pre.getAttribute('style')?.includes('box-shadow') || 
+			// [Fix] marked code() 已完整渲染的 pre 带 data-smart-mp-rendered 标记，必须跳过：
+			// 否则二次处理会把行号列读进代码内容（innerText 含行号文本），且 jsdom 无
+			// innerText 时 <br/> 无法还原为换行，导致代码块结构损坏
+			if (pre.hasAttribute('data-smart-mp-rendered') ||
+				pre.getAttribute('style')?.includes('box-shadow') ||
 				pre.previousElementSibling?.getAttribute('style')?.includes('code-header-bg')) {
 				return;
 			}
@@ -90,7 +94,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	// Simple LRU cache
 	static HighlightCache = new Map<string, string>();
 	static readonly MAX_CACHE_SIZE = 100;
-	static readonly CACHE_VERSION = "v11"; // Restored highlighting with better inline styles
+	static readonly CACHE_VERSION = "v13"; // v13: 行号改逐行结构（每行 行号+代码 同行，防错位）
 
 	private simpleHash(str: string): string {
 		let hash = 0;
@@ -220,7 +224,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 		}
 
 
-		// Convert hljs classes to inline styles with !important
+		// Convert hljs classes to inline styles (微信不支持 !important)
 		highlighted = highlighted.replace(/<span class="([^"]+)">/g, (match, classString) => {
 			const classes = classString.split(/\s+/);
 			const styles: string[] = [];
@@ -228,24 +232,24 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			// Find matching styles from classes
 			for (const className of classes) {
 				if (currentThemeMap[className]) {
-					styles.push(`color:${currentThemeMap[className]} !important`);
+					styles.push(`color:${currentThemeMap[className]}`);
 				}
 				if (className === 'hljs-strong') {
-					styles.push(`font-weight:bold !important`);
+					styles.push(`font-weight:bold`);
 				}
 				if (className === 'hljs-emphasis') {
-					styles.push(`font-style:italic !important`);
+					styles.push(`font-style:italic`);
 				}
 			}
 
 			if (styles.length > 0) {
-				const mergedStyle = styles.join('; ');
+				const mergedStyle = styles.join(';');
 				Logger.debug('CodeRenderer', `[Code Highlight] Classes: ${classString} → Styles: ${mergedStyle}`);
-				return `<span style="${mergedStyle};">`;
+				return `<span style="${mergedStyle}">`;
 			}
 
 			Logger.warn('CodeRenderer', `[Code Highlight] Unmapped classes: ${classString}`);
-			return `<span>`; // Strip class to prevent WeChat filtering issues
+			return `<span style="color:${color}">`; // 确保所有 span 都有文字颜色
 		});
 
 		// [FIX] Force line breaks for WeChat Editor compatibility
@@ -254,7 +258,7 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 
 		// Determine border radius based on header visibility
 		const hasHeader = this.plugin.settings.showCodeMacHeader !== false && !!lang;
-		const finalCodeRadius = hasHeader ? '0 0 6px 6px' : 'var(--code-radius, 6px)';
+		const finalCodeRadius = hasHeader ? '0 0 6px 6px' : '6px';
 		const finalHeaderRadius = '6px 6px 0 0';
 
 		// Line numbers support
@@ -263,28 +267,28 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 			const lines = highlighted.split('<br/>');
 			const lineCount = lines.length;
 			const lineNumWidth = String(lineCount).length;
-			const lineNumStyle = `color:#999 !important;user-select:none !important;text-align:right !important;padding-right:1em !important;border-right:1px solid #ddd !important;margin-right:1em !important;display:inline-block !important;min-width:${lineNumWidth}em !important;font-variant-numeric:tabular-nums !important;`;
-			const lineNums = Array.from({ length: lineCount }, (_, i) =>
-				`<span style="${lineNumStyle}">${i + 1}</span>`
-			).join('<br/>');
-			const codeLines = lines.join('<br/>');
-			codeContent = `<span style="display:inline-block !important;">${lineNums}</span><span style="display:inline-block !important;white-space:pre-wrap !important;">${codeLines}</span>`;
+			// [Fix] 行号采用逐行结构：每行「行号 + 代码」在同一个 display:block 行内，
+			// 行号与代码永不错位（两列 inline-block 方案在代码行折行/高度不齐时会整体错位）。
+			// 行号 span 必须 display:inline-block + min-width，保证右对齐且不与代码混排行内
+			const lineNumStyle = `color:#999;text-align:right;padding-right:1em;border-right:1px solid #ddd;margin-right:1em;display:inline-block;min-width:${lineNumWidth}em;`;
+			codeContent = lines.map((line, i) =>
+				`<section style="display:block;"><span style="${lineNumStyle}">${i + 1}</span>${line}</section>`
+			).join('');
 		}
 
-		// Basic Code Block Styles - Using CSS Variables with hardcoded fallbacks
-		// Use pre-wrap with <br/> for maximum compatibility
-		const codeStyle = `display:block !important;background:var(--code-bg, ${bg}) !important;color:var(--code-text, ${color}) !important;font-family:var(--code-font, ui-monospace,SFMono-Regular,Menlo,Consolas,monospace) !important;font-size:14px !important;line-height:1.5 !important;padding:12px !important;border-radius:${finalCodeRadius} !important;overflow-x:auto !important;white-space:pre-wrap !important;word-wrap:break-word !important;margin:0 0 0.5em 0 !important;border:var(--code-border, none) !important;box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;`;
+		// [Fix] 微信不支持 CSS var()，直接使用硬编码颜色值
+		const codeStyle = `display:block;background:${bg};color:${color};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.5;padding:12px;border-radius:${finalCodeRadius};margin:0 0 0.5em 0;`;
 
 		let codeSection = '';
 		if (hasHeader) {
-			const headerStyle = `display:var(--code-header-display, flex);background:var(--code-header-bg, ${headerBg});padding:8px 12px;align-items:center;gap:8px;border-radius:${finalHeaderRadius};border-bottom:1px solid rgba(0,0,0,0.05);`;
+			const headerStyle = `display:block;background:${headerBg};padding:8px 12px;border-radius:${finalHeaderRadius};border-bottom:1px solid #e0e0e0;`;
 			// Standard macOS window button colors
-			const dotStyle = 'width:12px;height:12px;border-radius:50%;display:inline-block;';
-			const labelStyle = 'margin-left:auto;font-size:11px;color:var(--code-header-text, #6a737d);font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
+			const dotStyle = 'width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;';
+			const labelStyle = 'font-size:11px;color:#6a737d;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
 
-			codeSection = `<pre style="${headerStyle}"><span style="${dotStyle}background:#FF5F56;"></span><span style="${dotStyle}background:#FFBD2E;"></span><span style="${dotStyle}background:#27C93F;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle}">${codeContent}</pre>`;
+			codeSection = `<pre style="${headerStyle}" data-smart-mp-rendered="1"><span style="${dotStyle}background:#FF5F56;"></span><span style="${dotStyle}background:#FFBD2E;"></span><span style="${dotStyle}background:#27C93F;"></span><span style="${labelStyle}">${lang}</span></pre><pre style="${codeStyle}" data-smart-mp-rendered="1">${codeContent}</pre>`;
 		} else {
-			codeSection = `<pre style="${codeStyle}">${codeContent}</pre>`;
+			codeSection = `<pre style="${codeStyle}" data-smart-mp-rendered="1">${codeContent}</pre>`;
 		}
 
 		if (CodeRenderer.HighlightCache.size >= CodeRenderer.MAX_CACHE_SIZE) {

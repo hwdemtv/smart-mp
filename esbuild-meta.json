@@ -2311,7 +2311,7 @@
       "format": "cjs"
     },
     "src/utils/utils.ts": {
-      "bytes": 8949,
+      "bytes": 42769,
       "imports": [
         {
           "path": "obsidian",
@@ -2433,7 +2433,7 @@
       "format": "esm"
     },
     "src/assets/assets-manager.ts": {
-      "bytes": 16243,
+      "bytes": 16716,
       "imports": [
         {
           "path": "obsidian",
@@ -3991,7 +3991,7 @@
       "imports": []
     },
     "src/assets/default-styles/24_table.css": {
-      "bytes": 3380,
+      "bytes": 3530,
       "imports": []
     },
     "src/assets/default-styles/25_code.css": {
@@ -4043,7 +4043,7 @@
       "imports": []
     },
     "src/theme/CssMerger.ts": {
-      "bytes": 22748,
+      "bytes": 23490,
       "imports": [
         {
           "path": "node_modules/postcss/lib/postcss.mjs",
@@ -4277,7 +4277,7 @@
       "format": "esm"
     },
     "src/theme/theme-manager.ts": {
-      "bytes": 13493,
+      "bytes": 12741,
       "imports": [
         {
           "path": "node_modules/gray-matter/index.js",
@@ -4473,7 +4473,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/blockquote.ts": {
-      "bytes": 8069,
+      "bytes": 8018,
       "imports": [
         {
           "path": "marked",
@@ -4711,7 +4711,7 @@
       "format": "esm"
     },
     "src/render/hljs-languages.ts": {
-      "bytes": 3704,
+      "bytes": 3791,
       "imports": [
         {
           "path": "node_modules/highlight.js/es/core.js",
@@ -4897,7 +4897,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/code.ts": {
-      "bytes": 22489,
+      "bytes": 22363,
       "imports": [
         {
           "path": "marked",
@@ -4948,7 +4948,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/codespan.ts": {
-      "bytes": 2088,
+      "bytes": 2076,
       "imports": [
         {
           "path": "marked",
@@ -10499,7 +10499,7 @@
       "format": "cjs"
     },
     "src/render/mathjax.ts": {
-      "bytes": 1501,
+      "bytes": 1552,
       "imports": [
         {
           "path": "node_modules/mathjax-full/js/adaptors/liteAdaptor.js",
@@ -10535,7 +10535,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/math.ts": {
-      "bytes": 5445,
+      "bytes": 5601,
       "imports": [
         {
           "path": "src/render/mathjax.ts",
@@ -10895,7 +10895,7 @@
       "format": "esm"
     },
     "src/assets/draft-manager.ts": {
-      "bytes": 8105,
+      "bytes": 8323,
       "imports": [
         {
           "path": "src/main",
@@ -10947,7 +10947,7 @@
       "format": "esm"
     },
     "src/views/mp-article-header.ts": {
-      "bytes": 19481,
+      "bytes": 20127,
       "imports": [
         {
           "path": "obsidian",
@@ -11065,7 +11065,7 @@
       "format": "esm"
     },
     "src/views/previewer.ts": {
-      "bytes": 53355,
+      "bytes": 55619,
       "imports": [
         {
           "path": "@codemirror/view",
@@ -11660,7 +11660,7 @@
       "format": "esm"
     },
     "src/modals/theme-clone-modal.ts": {
-      "bytes": 4413,
+      "bytes": 4480,
       "imports": [
         {
           "path": "obsidian",
@@ -13833,7 +13833,7 @@
       "format": "esm"
     },
     "src/settings/smart-mp-setting.ts": {
-      "bytes": 5104,
+      "bytes": 5262,
       "imports": [
         {
           "path": "obsidian",
@@ -14712,7 +14712,7 @@
       "format": "esm"
     },
     "src/main.ts": {
-      "bytes": 21669,
+      "bytes": 21699,
       "imports": [
         {
           "path": "obsidian",
@@ -17158,7 +17158,7 @@
           "bytesInOutput": 7200
         },
         "src/main.ts": {
-          "bytesInOutput": 11642
+          "bytesInOutput": 11668
         },
         "src/utils/crypto-helper.ts": {
           "bytesInOutput": 1904
@@ -17167,10 +17167,10 @@
           "bytesInOutput": 7087
         },
         "src/utils/utils.ts": {
-          "bytesInOutput": 4129
+          "bytesInOutput": 15196
         },
         "src/utils/sanitize-html.ts": {
-          "bytesInOutput": 4357
+          "bytesInOutput": 4359
         },
         "src/modals/confirm-delete-modal.ts": {
           "bytesInOutput": 906
@@ -17194,13 +17194,13 @@
           "bytesInOutput": 52152
         },
         "src/theme/theme-manager.ts": {
-          "bytesInOutput": 6869
+          "bytesInOutput": 6532
         },
         "node_modules/postcss/lib/postcss.mjs": {
           "bytesInOutput": 575
         },
         "src/theme/CssMerger.ts": {
-          "bytesInOutput": 8368
+          "bytesInOutput": 8621
         },
         "src/assets/default-styles/00_smart-mp.css": {
           "bytesInOutput": 1699
@@ -17263,7 +17263,7 @@
           "bytesInOutput": 2537
         },
         "src/assets/default-styles/24_table.css": {
-          "bytesInOutput": 3506
+          "bytesInOutput": 3754
         },
         "src/assets/default-styles/25_code.css": {
           "bytesInOutput": 5973
@@ -17320,7 +17320,7 @@
           "bytesInOutput": 126936
         },
         "src/views/previewer.ts": {
-          "bytesInOutput": 26628
+          "bytesInOutput": 26999
         },
         "src/render/post-render.ts": {
           "bytesInOutput": 9795
@@ -17335,10 +17335,10 @@
           "bytesInOutput": 342
         },
         "src/render/marked-extensions/blockquote.ts": {
-          "bytesInOutput": 3704
+          "bytesInOutput": 3606
         },
         "src/render/marked-extensions/code.ts": {
-          "bytesInOutput": 12709
+          "bytesInOutput": 12052
         },
         "src/render/markdown-render.ts": {
           "bytesInOutput": 1982
@@ -17455,7 +17455,7 @@
           "bytesInOutput": 1296
         },
         "src/render/marked-extensions/codespan.ts": {
-          "bytesInOutput": 951
+          "bytesInOutput": 939
         },
         "src/render/marked-extensions/embed.ts": {
           "bytesInOutput": 9747
@@ -17518,7 +17518,7 @@
           "bytesInOutput": 2671
         },
         "src/modals/theme-clone-modal.ts": {
-          "bytesInOutput": 2677
+          "bytesInOutput": 2705
         },
         "src/theme/theme-extractor.ts": {
           "bytesInOutput": 13637
@@ -17686,7 +17686,7 @@
           "bytesInOutput": 1421
         }
       },
-      "bytes": 3872107
+      "bytes": 3883010
     }
   }
 }
