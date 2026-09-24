@@ -36,6 +36,7 @@ import { Summary } from "./marked-extensions/summary";
 import { Image } from "./marked-extensions/image";
 import { Highlight } from "./marked-extensions/highlight";
 import { getCodeBlockMapper, processCodeBlockLineNumbers, resetCodeBlockMapper } from "../utils/code-block-mapper";
+import { normalizeRenderedDomPunctuation } from "../utils/cjk-punctuation";
 // import { ListItem } from './marked-extensions/list-item'
 
 const markedOptiones = {
@@ -201,9 +202,15 @@ export class WechatRender {
 		resetCodeBlockMapper();
 
 		// Calculate line offsets for content (after frontmatter)
-		// Precise detection of frontmatter lines
-		const fmEndIndex = md.indexOf(content);
-		const frontmatterLines = (md.substring(0, fmEndIndex).match(/\n/g) || []).length;
+		// [Fix] 直接从原文正则计算 frontmatter 行数：preprocessCalloutContainers
+		// 可能改写 content（如 ::: 容器），此前 md.indexOf(content) 会返回 -1，
+		// md.substring(0, -1) 为空串导致行号偏移整体错位（滚动同步失准）；
+		// indexOf 首次匹配也可能命中 frontmatter 中与正文首行相同的文本
+		let frontmatterLines = 0;
+		const fmMatch = md.match(/^---\r?\n[\s\S]*?\r?\n---/);
+		if (fmMatch) {
+			frontmatterLines = (fmMatch[0].match(/\n/g) || []).length + 1;
+		}
 
 		// Use marked lexer to get tokens with positions
 		const tokens = this.marked.lexer(content);
@@ -249,6 +256,11 @@ export class WechatRender {
 		for (let ext of this.extensions) {
 			await ext.postprocess(wrapper);
 		}
+
+		// [接线] CJK 标点归一化：实现早已完备（代码块/URL/路径全保护）但从未接入。
+		// 放在所有扩展处理之后，预览与导出（剪贴板/草稿箱）共用此路径
+		normalizeRenderedDomPunctuation(wrapper, { enabled: this.plugin.settings.normalizePunctuation === true });
+
 		// Return DOM element directly
 		return this.removeEmptyListItems(wrapper);
 	}
@@ -408,7 +420,13 @@ export class WechatRender {
 			const cached = this.contentCache.get(path);
 			if (cached && cached.hash === hash) {
 				Logger.debug('WechatRender', `Cache HIT for ${path}`);
-				return await this.postprocess(cached.html);
+				// [Fix] 缓存的是 postprocess 之后的最终 HTML（已含脚注区、参考链接、
+				// 行号锚点）。此前缓存命中会跳过 parse()（不执行 ext.prepare()），
+				// Footnote/Links 等扩展的共享状态还停留在上一篇笔记，导致切回
+				// 缓存命中笔记时脚注列表丢失或显示别的笔记的链接
+				const wrapper = createDiv();
+				wrapper.innerHTML = cached.html;
+				return wrapper;
 			}
 		}
 
@@ -549,11 +567,13 @@ export class WechatRender {
 			htmlString = "<p>(解析后内容为空)</p>";
 		}
 
+		const domElement = await this.postprocess(htmlString);
+
 		// 2. Update Cache
-		this.contentCache.set(path, { hash, html: htmlString });
+		// [Fix] 在 postprocess 之后缓存最终 HTML（见上方缓存命中处的说明）
+		this.contentCache.set(path, { hash, html: domElement.innerHTML });
 		Logger.debug('WechatRender', `Cache updated for ${path}.`);
 
-		const domElement = await this.postprocess(htmlString);
 		// Do not remove tempContainer, keep it for reuse
 		// if (tempContainer.parentNode) {
 		// 	tempContainer.parentNode.removeChild(tempContainer);

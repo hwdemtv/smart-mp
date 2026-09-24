@@ -69,6 +69,10 @@ export type SmartMPSetting = {
     showImageCaptions?: boolean;
     showArticleStats?: boolean;
     embedArticleStats?: boolean;
+    /** 渲染时将中英混排的半角标点规范化为全角（代码块/URL/路径不受影响） */
+    normalizePunctuation?: boolean;
+    /** 微信兼容预览：预览阶段即过滤微信不支持的 CSS，预览所见=微信所得 */
+    wechatCompatPreview?: boolean;
     css_styles_folder: string;
     _id?: string; // deprecated (PouchDB), kept for type compat
     _rev?: string; // deprecated (PouchDB), kept for type compat
@@ -90,6 +94,8 @@ export type SmartMPSetting = {
     llmProviders?: Array<LLMProvider>;
     selectedLLMProviderId?: string;
     selectedLLMModelId?: string;
+    /** 设置结构版本号，用于迁移幂等保护（>=2 表示已完成 chatAccounts → llmProviders 迁移） */
+    schemaVersion?: number;
     cryptoKey?: string; // For upgraded encryption
     enableFloatingToolbar?: boolean;
     proPassword?: string; // Password to unlock Pro features (remove watermark)
@@ -124,6 +130,46 @@ export type ChatSetting = {
     frequency_penalty?: number;
     presence_penalty?: number;
     max_tokens?: number;
+}
+
+export const DEFAULT_SETTINGS: SmartMPSetting = {
+    mpAccounts: [],
+    ipAddress: "",
+    css_styles_folder: "smart-mp-css-styles",
+    codeLineNumber: true,
+    codeTheme: "github",
+    showCodeMacHeader: true,
+    fontSize: "15px",
+    firstLineIndent: false,
+    linkFootnotes: true,
+    showImageCaptions: false,
+    showArticleStats: false,
+    embedArticleStats: false,
+    normalizePunctuation: false,
+    wechatCompatPreview: true,
+    hrStyle: "dots",
+    customHrText: "· · ·",
+    accountDataPath: "smart-mp-accounts",
+    useCenterToken: false,
+    chatAccounts: [],
+    drawAccounts: [],
+    realTimeRender: true,
+    realTimeRenderDelay: 500,
+    scrollSync: true,
+    enableStrictSecurityMode: true,
+    enableFloatingToolbar: true,
+    chatSetting: {
+        temperature: 0.7,
+        max_tokens: 2048,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+    },
+    // 滚动同步增强设置
+    scrollSyncPrecision: 'balanced',
+    scrollHighlightPreset: 'gold',
+    enableCodeBlockLineMapping: false,
+    scrollSyncMode: 'precise',
 }
 
 export const getSmartMPSetting = async (plugin: Plugin): Promise<SmartMPSetting | undefined> => {

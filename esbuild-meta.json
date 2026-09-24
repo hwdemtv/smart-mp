@@ -6,7 +6,7 @@
       "format": "esm"
     },
     "src/utils/crypto-helper.ts": {
-      "bytes": 5398,
+      "bytes": 5683,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -2342,11 +2342,11 @@
       "format": "esm"
     },
     "src/lang/locales/en-us.json": {
-      "bytes": 23502,
+      "bytes": 27733,
       "imports": []
     },
     "src/lang/locales/zh-cn.json": {
-      "bytes": 22905,
+      "bytes": 27251,
       "imports": []
     },
     "src/lang/i18n.ts": {
@@ -2402,7 +2402,7 @@
       "format": "esm"
     },
     "src/modals/confirm-publish-modal.ts": {
-      "bytes": 2358,
+      "bytes": 4703,
       "imports": [
         {
           "path": "obsidian",
@@ -2433,7 +2433,7 @@
       "format": "esm"
     },
     "src/assets/assets-manager.ts": {
-      "bytes": 16716,
+      "bytes": 17415,
       "imports": [
         {
           "path": "obsidian",
@@ -2553,6 +2553,47 @@
           "path": "src/lang/i18n.ts",
           "kind": "import-statement",
           "original": "src/lang/i18n"
+        }
+      ],
+      "format": "esm"
+    },
+    "node_modules/spark-md5/spark-md5.js": {
+      "bytes": 22968,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/render/post-render.ts": {
+      "bytes": 31706,
+      "imports": [
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "src/utils/utils.ts",
+          "kind": "import-statement",
+          "original": "src/utils/utils"
+        },
+        {
+          "path": "./../wechat-api/wechat-client",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/main",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "src/utils/logger"
+        },
+        {
+          "path": "node_modules/spark-md5/spark-md5.js",
+          "kind": "import-statement",
+          "original": "spark-md5"
         }
       ],
       "format": "esm"
@@ -3300,1095 +3341,6 @@
       ],
       "format": "cjs"
     },
-    "node_modules/picocolors/picocolors.browser.js": {
-      "bytes": 598,
-      "imports": [],
-      "format": "cjs"
-    },
-    "(disabled):node_modules/postcss/lib/terminal-highlight": {
-      "bytes": 0,
-      "imports": []
-    },
-    "node_modules/postcss/lib/css-syntax-error.js": {
-      "bytes": 3402,
-      "imports": [
-        {
-          "path": "node_modules/picocolors/picocolors.browser.js",
-          "kind": "require-call",
-          "original": "picocolors"
-        },
-        {
-          "path": "(disabled):node_modules/postcss/lib/terminal-highlight",
-          "kind": "require-call",
-          "original": "./terminal-highlight"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/stringifier.js": {
-      "bytes": 8220,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/stringify.js": {
-      "bytes": 213,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/stringifier.js",
-          "kind": "require-call",
-          "original": "./stringifier"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/symbols.js": {
-      "bytes": 91,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/node.js": {
-      "bytes": 10719,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/css-syntax-error.js",
-          "kind": "require-call",
-          "original": "./css-syntax-error"
-        },
-        {
-          "path": "node_modules/postcss/lib/stringifier.js",
-          "kind": "require-call",
-          "original": "./stringifier"
-        },
-        {
-          "path": "node_modules/postcss/lib/stringify.js",
-          "kind": "require-call",
-          "original": "./stringify"
-        },
-        {
-          "path": "node_modules/postcss/lib/symbols.js",
-          "kind": "require-call",
-          "original": "./symbols"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/comment.js": {
-      "bytes": 203,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/declaration.js": {
-      "bytes": 495,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/container.js": {
-      "bytes": 10647,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/comment.js",
-          "kind": "require-call",
-          "original": "./comment"
-        },
-        {
-          "path": "node_modules/postcss/lib/declaration.js",
-          "kind": "require-call",
-          "original": "./declaration"
-        },
-        {
-          "path": "node_modules/postcss/lib/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "node_modules/postcss/lib/symbols.js",
-          "kind": "require-call",
-          "original": "./symbols"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/at-rule.js": {
-      "bytes": 471,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/document.js": {
-      "bytes": 654,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/nanoid/non-secure/index.cjs": {
-      "bytes": 1114,
-      "imports": [],
-      "format": "cjs"
-    },
-    "(disabled):node_modules/source-map-js/source-map.js": {
-      "bytes": 0,
-      "imports": []
-    },
-    "node_modules/postcss/lib/previous-map.js": {
-      "bytes": 3984,
-      "imports": [
-        {
-          "path": "fs",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "path",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "(disabled):node_modules/source-map-js/source-map.js",
-          "kind": "require-call",
-          "original": "source-map-js"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/input.js": {
-      "bytes": 6752,
-      "imports": [
-        {
-          "path": "node_modules/nanoid/non-secure/index.cjs",
-          "kind": "require-call",
-          "original": "nanoid/non-secure"
-        },
-        {
-          "path": "path",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "(disabled):node_modules/source-map-js/source-map.js",
-          "kind": "require-call",
-          "original": "source-map-js"
-        },
-        {
-          "path": "url",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "node_modules/postcss/lib/css-syntax-error.js",
-          "kind": "require-call",
-          "original": "./css-syntax-error"
-        },
-        {
-          "path": "node_modules/postcss/lib/previous-map.js",
-          "kind": "require-call",
-          "original": "./previous-map"
-        },
-        {
-          "path": "(disabled):node_modules/postcss/lib/terminal-highlight",
-          "kind": "require-call",
-          "original": "./terminal-highlight"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/root.js": {
-      "bytes": 1239,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/list.js": {
-      "bytes": 1227,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/rule.js": {
-      "bytes": 569,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        },
-        {
-          "path": "node_modules/postcss/lib/list.js",
-          "kind": "require-call",
-          "original": "./list"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/fromJSON.js": {
-      "bytes": 1506,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/at-rule.js",
-          "kind": "require-call",
-          "original": "./at-rule"
-        },
-        {
-          "path": "node_modules/postcss/lib/comment.js",
-          "kind": "require-call",
-          "original": "./comment"
-        },
-        {
-          "path": "node_modules/postcss/lib/declaration.js",
-          "kind": "require-call",
-          "original": "./declaration"
-        },
-        {
-          "path": "node_modules/postcss/lib/input.js",
-          "kind": "require-call",
-          "original": "./input"
-        },
-        {
-          "path": "node_modules/postcss/lib/previous-map.js",
-          "kind": "require-call",
-          "original": "./previous-map"
-        },
-        {
-          "path": "node_modules/postcss/lib/root.js",
-          "kind": "require-call",
-          "original": "./root"
-        },
-        {
-          "path": "node_modules/postcss/lib/rule.js",
-          "kind": "require-call",
-          "original": "./rule"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/map-generator.js": {
-      "bytes": 10031,
-      "imports": [
-        {
-          "path": "path",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "(disabled):node_modules/source-map-js/source-map.js",
-          "kind": "require-call",
-          "original": "source-map-js"
-        },
-        {
-          "path": "url",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "node_modules/postcss/lib/input.js",
-          "kind": "require-call",
-          "original": "./input"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/tokenize.js": {
-      "bytes": 6538,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/parser.js": {
-      "bytes": 14846,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/at-rule.js",
-          "kind": "require-call",
-          "original": "./at-rule"
-        },
-        {
-          "path": "node_modules/postcss/lib/comment.js",
-          "kind": "require-call",
-          "original": "./comment"
-        },
-        {
-          "path": "node_modules/postcss/lib/declaration.js",
-          "kind": "require-call",
-          "original": "./declaration"
-        },
-        {
-          "path": "node_modules/postcss/lib/root.js",
-          "kind": "require-call",
-          "original": "./root"
-        },
-        {
-          "path": "node_modules/postcss/lib/rule.js",
-          "kind": "require-call",
-          "original": "./rule"
-        },
-        {
-          "path": "node_modules/postcss/lib/tokenize.js",
-          "kind": "require-call",
-          "original": "./tokenize"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/parse.js": {
-      "bytes": 1147,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        },
-        {
-          "path": "node_modules/postcss/lib/input.js",
-          "kind": "require-call",
-          "original": "./input"
-        },
-        {
-          "path": "node_modules/postcss/lib/parser.js",
-          "kind": "require-call",
-          "original": "./parser"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/warning.js": {
-      "bytes": 739,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/result.js": {
-      "bytes": 738,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/warning.js",
-          "kind": "require-call",
-          "original": "./warning"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/warn-once.js": {
-      "bytes": 256,
-      "imports": [],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/lazy-result.js": {
-      "bytes": 13562,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        },
-        {
-          "path": "node_modules/postcss/lib/document.js",
-          "kind": "require-call",
-          "original": "./document"
-        },
-        {
-          "path": "node_modules/postcss/lib/map-generator.js",
-          "kind": "require-call",
-          "original": "./map-generator"
-        },
-        {
-          "path": "node_modules/postcss/lib/parse.js",
-          "kind": "require-call",
-          "original": "./parse"
-        },
-        {
-          "path": "node_modules/postcss/lib/result.js",
-          "kind": "require-call",
-          "original": "./result"
-        },
-        {
-          "path": "node_modules/postcss/lib/root.js",
-          "kind": "require-call",
-          "original": "./root"
-        },
-        {
-          "path": "node_modules/postcss/lib/stringify.js",
-          "kind": "require-call",
-          "original": "./stringify"
-        },
-        {
-          "path": "node_modules/postcss/lib/symbols.js",
-          "kind": "require-call",
-          "original": "./symbols"
-        },
-        {
-          "path": "node_modules/postcss/lib/warn-once.js",
-          "kind": "require-call",
-          "original": "./warn-once"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/no-work-result.js": {
-      "bytes": 2621,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/map-generator.js",
-          "kind": "require-call",
-          "original": "./map-generator"
-        },
-        {
-          "path": "node_modules/postcss/lib/parse.js",
-          "kind": "require-call",
-          "original": "./parse"
-        },
-        {
-          "path": "node_modules/postcss/lib/result.js",
-          "kind": "require-call",
-          "original": "./result"
-        },
-        {
-          "path": "node_modules/postcss/lib/stringify.js",
-          "kind": "require-call",
-          "original": "./stringify"
-        },
-        {
-          "path": "node_modules/postcss/lib/warn-once.js",
-          "kind": "require-call",
-          "original": "./warn-once"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/processor.js": {
-      "bytes": 1738,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/document.js",
-          "kind": "require-call",
-          "original": "./document"
-        },
-        {
-          "path": "node_modules/postcss/lib/lazy-result.js",
-          "kind": "require-call",
-          "original": "./lazy-result"
-        },
-        {
-          "path": "node_modules/postcss/lib/no-work-result.js",
-          "kind": "require-call",
-          "original": "./no-work-result"
-        },
-        {
-          "path": "node_modules/postcss/lib/root.js",
-          "kind": "require-call",
-          "original": "./root"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/postcss.js": {
-      "bytes": 2898,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/at-rule.js",
-          "kind": "require-call",
-          "original": "./at-rule"
-        },
-        {
-          "path": "node_modules/postcss/lib/comment.js",
-          "kind": "require-call",
-          "original": "./comment"
-        },
-        {
-          "path": "node_modules/postcss/lib/container.js",
-          "kind": "require-call",
-          "original": "./container"
-        },
-        {
-          "path": "node_modules/postcss/lib/css-syntax-error.js",
-          "kind": "require-call",
-          "original": "./css-syntax-error"
-        },
-        {
-          "path": "node_modules/postcss/lib/declaration.js",
-          "kind": "require-call",
-          "original": "./declaration"
-        },
-        {
-          "path": "node_modules/postcss/lib/document.js",
-          "kind": "require-call",
-          "original": "./document"
-        },
-        {
-          "path": "node_modules/postcss/lib/fromJSON.js",
-          "kind": "require-call",
-          "original": "./fromJSON"
-        },
-        {
-          "path": "node_modules/postcss/lib/input.js",
-          "kind": "require-call",
-          "original": "./input"
-        },
-        {
-          "path": "node_modules/postcss/lib/lazy-result.js",
-          "kind": "require-call",
-          "original": "./lazy-result"
-        },
-        {
-          "path": "node_modules/postcss/lib/list.js",
-          "kind": "require-call",
-          "original": "./list"
-        },
-        {
-          "path": "node_modules/postcss/lib/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "node_modules/postcss/lib/parse.js",
-          "kind": "require-call",
-          "original": "./parse"
-        },
-        {
-          "path": "node_modules/postcss/lib/processor.js",
-          "kind": "require-call",
-          "original": "./processor"
-        },
-        {
-          "path": "node_modules/postcss/lib/result.js",
-          "kind": "require-call",
-          "original": "./result.js"
-        },
-        {
-          "path": "node_modules/postcss/lib/root.js",
-          "kind": "require-call",
-          "original": "./root"
-        },
-        {
-          "path": "node_modules/postcss/lib/rule.js",
-          "kind": "require-call",
-          "original": "./rule"
-        },
-        {
-          "path": "node_modules/postcss/lib/stringify.js",
-          "kind": "require-call",
-          "original": "./stringify"
-        },
-        {
-          "path": "node_modules/postcss/lib/warning.js",
-          "kind": "require-call",
-          "original": "./warning"
-        }
-      ],
-      "format": "cjs"
-    },
-    "node_modules/postcss/lib/postcss.mjs": {
-      "bytes": 980,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/postcss.js",
-          "kind": "import-statement",
-          "original": "./postcss.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/assets/default-styles/00_smart-mp.css": {
-      "bytes": 1586,
-      "imports": []
-    },
-    "src/assets/default-styles/01_layout.css": {
-      "bytes": 865,
-      "imports": []
-    },
-    "src/assets/default-styles/02_icons.css": {
-      "bytes": 5962,
-      "imports": []
-    },
-    "src/assets/default-styles/03_typography.css": {
-      "bytes": 977,
-      "imports": []
-    },
-    "src/assets/default-styles/04_paragragh.css": {
-      "bytes": 1142,
-      "imports": []
-    },
-    "src/assets/default-styles/05_strong.css": {
-      "bytes": 853,
-      "imports": []
-    },
-    "src/assets/default-styles/06_em.css": {
-      "bytes": 852,
-      "imports": []
-    },
-    "src/assets/default-styles/07_u.css": {
-      "bytes": 1301,
-      "imports": []
-    },
-    "src/assets/default-styles/08_del.css": {
-      "bytes": 1276,
-      "imports": []
-    },
-    "src/assets/default-styles/09_codespan.css": {
-      "bytes": 810,
-      "imports": []
-    },
-    "src/assets/default-styles/10_heading.css": {
-      "bytes": 1827,
-      "imports": []
-    },
-    "src/assets/default-styles/11_h1.css": {
-      "bytes": 3631,
-      "imports": []
-    },
-    "src/assets/default-styles/12_h2.css": {
-      "bytes": 3625,
-      "imports": []
-    },
-    "src/assets/default-styles/13_h3.css": {
-      "bytes": 3627,
-      "imports": []
-    },
-    "src/assets/default-styles/14_h4.css": {
-      "bytes": 3629,
-      "imports": []
-    },
-    "src/assets/default-styles/15_h5.css": {
-      "bytes": 3627,
-      "imports": []
-    },
-    "src/assets/default-styles/16_h6.css": {
-      "bytes": 3625,
-      "imports": []
-    },
-    "src/assets/default-styles/20_image.css": {
-      "bytes": 2874,
-      "imports": []
-    },
-    "src/assets/default-styles/21_list.css": {
-      "bytes": 1221,
-      "imports": []
-    },
-    "src/assets/default-styles/23_footnote.css": {
-      "bytes": 2283,
-      "imports": []
-    },
-    "src/assets/default-styles/24_table.css": {
-      "bytes": 3530,
-      "imports": []
-    },
-    "src/assets/default-styles/25_code.css": {
-      "bytes": 5736,
-      "imports": []
-    },
-    "src/assets/default-styles/26_blockquote.css": {
-      "bytes": 1600,
-      "imports": []
-    },
-    "src/assets/default-styles/27_links.css": {
-      "bytes": 532,
-      "imports": []
-    },
-    "src/assets/default-styles/30_callout.css": {
-      "bytes": 6807,
-      "imports": []
-    },
-    "src/assets/default-styles/31_admonition.css": {
-      "bytes": 2544,
-      "imports": []
-    },
-    "src/assets/default-styles/32_math.css": {
-      "bytes": 1794,
-      "imports": []
-    },
-    "src/assets/default-styles/33_mermaid.css": {
-      "bytes": 373,
-      "imports": []
-    },
-    "src/assets/default-styles/34_chart.css": {
-      "bytes": 217,
-      "imports": []
-    },
-    "src/assets/default-styles/35_icon.css": {
-      "bytes": 305,
-      "imports": []
-    },
-    "src/assets/default-styles/40_summary.css": {
-      "bytes": 492,
-      "imports": []
-    },
-    "src/assets/default-styles/50_profile.css": {
-      "bytes": 2020,
-      "imports": []
-    },
-    "src/assets/default-styles/100_article.css": {
-      "bytes": 9229,
-      "imports": []
-    },
-    "src/theme/CssMerger.ts": {
-      "bytes": 23490,
-      "imports": [
-        {
-          "path": "node_modules/postcss/lib/postcss.mjs",
-          "kind": "import-statement",
-          "original": "postcss"
-        },
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "../utils/logger"
-        },
-        {
-          "path": "src/assets/default-styles/00_smart-mp.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/00_smart-mp.css"
-        },
-        {
-          "path": "src/assets/default-styles/01_layout.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/01_layout.css"
-        },
-        {
-          "path": "src/assets/default-styles/02_icons.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/02_icons.css"
-        },
-        {
-          "path": "src/assets/default-styles/03_typography.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/03_typography.css"
-        },
-        {
-          "path": "src/assets/default-styles/04_paragragh.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/04_paragragh.css"
-        },
-        {
-          "path": "src/assets/default-styles/05_strong.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/05_strong.css"
-        },
-        {
-          "path": "src/assets/default-styles/06_em.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/06_em.css"
-        },
-        {
-          "path": "src/assets/default-styles/07_u.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/07_u.css"
-        },
-        {
-          "path": "src/assets/default-styles/08_del.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/08_del.css"
-        },
-        {
-          "path": "src/assets/default-styles/09_codespan.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/09_codespan.css"
-        },
-        {
-          "path": "src/assets/default-styles/10_heading.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/10_heading.css"
-        },
-        {
-          "path": "src/assets/default-styles/11_h1.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/11_h1.css"
-        },
-        {
-          "path": "src/assets/default-styles/12_h2.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/12_h2.css"
-        },
-        {
-          "path": "src/assets/default-styles/13_h3.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/13_h3.css"
-        },
-        {
-          "path": "src/assets/default-styles/14_h4.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/14_h4.css"
-        },
-        {
-          "path": "src/assets/default-styles/15_h5.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/15_h5.css"
-        },
-        {
-          "path": "src/assets/default-styles/16_h6.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/16_h6.css"
-        },
-        {
-          "path": "src/assets/default-styles/20_image.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/20_image.css"
-        },
-        {
-          "path": "src/assets/default-styles/21_list.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/21_list.css"
-        },
-        {
-          "path": "src/assets/default-styles/23_footnote.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/23_footnote.css"
-        },
-        {
-          "path": "src/assets/default-styles/24_table.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/24_table.css"
-        },
-        {
-          "path": "src/assets/default-styles/25_code.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/25_code.css"
-        },
-        {
-          "path": "src/assets/default-styles/26_blockquote.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/26_blockquote.css"
-        },
-        {
-          "path": "src/assets/default-styles/27_links.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/27_links.css"
-        },
-        {
-          "path": "src/assets/default-styles/30_callout.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/30_callout.css"
-        },
-        {
-          "path": "src/assets/default-styles/31_admonition.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/31_admonition.css"
-        },
-        {
-          "path": "src/assets/default-styles/32_math.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/32_math.css"
-        },
-        {
-          "path": "src/assets/default-styles/33_mermaid.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/33_mermaid.css"
-        },
-        {
-          "path": "src/assets/default-styles/34_chart.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/34_chart.css"
-        },
-        {
-          "path": "src/assets/default-styles/35_icon.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/35_icon.css"
-        },
-        {
-          "path": "src/assets/default-styles/40_summary.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/40_summary.css"
-        },
-        {
-          "path": "src/assets/default-styles/50_profile.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/50_profile.css"
-        },
-        {
-          "path": "src/assets/default-styles/100_article.css",
-          "kind": "import-statement",
-          "original": "../assets/default-styles/100_article.css"
-        },
-        {
-          "path": "obsidian",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/lang/i18n.ts",
-          "kind": "import-statement",
-          "original": "src/lang/i18n"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/utils/indexeddb.ts": {
-      "bytes": 3656,
-      "imports": [
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "./logger"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/theme/css-cache.ts": {
-      "bytes": 10159,
-      "imports": [
-        {
-          "path": "src/utils/indexeddb.ts",
-          "kind": "import-statement",
-          "original": "../utils/indexeddb"
-        },
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "../utils/logger"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/theme/variables.ts": {
-      "bytes": 2751,
-      "imports": [],
-      "format": "esm"
-    },
-    "src/theme/presets.ts": {
-      "bytes": 3100,
-      "imports": [
-        {
-          "path": "src/theme/variables.ts",
-          "kind": "import-statement",
-          "original": "./variables"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/theme/theme-manager.ts": {
-      "bytes": 12741,
-      "imports": [
-        {
-          "path": "node_modules/gray-matter/index.js",
-          "kind": "import-statement",
-          "original": "gray-matter"
-        },
-        {
-          "path": "obsidian",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "postcss",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/lang/i18n.ts",
-          "kind": "import-statement",
-          "original": "src/lang/i18n"
-        },
-        {
-          "path": "src/main",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "../utils/logger"
-        },
-        {
-          "path": "src/theme/CssMerger.ts",
-          "kind": "import-statement",
-          "original": "./CssMerger"
-        },
-        {
-          "path": "src/theme/css-cache.ts",
-          "kind": "import-statement",
-          "original": "./css-cache"
-        },
-        {
-          "path": "src/theme/presets.ts",
-          "kind": "import-statement",
-          "original": "./presets"
-        }
-      ],
-      "format": "esm"
-    },
-    "src/utils/folder-suggest.ts": {
-      "bytes": 832,
-      "imports": [
-        {
-          "path": "obsidian",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    "src/settings/mp-web-images.ts": {
-      "bytes": 126965,
-      "imports": [],
-      "format": "esm"
-    },
-    "src/settings/llm-types.ts": {
-      "bytes": 791,
-      "imports": [],
-      "format": "esm"
-    },
-    "node_modules/spark-md5/spark-md5.js": {
-      "bytes": 22968,
-      "imports": [],
-      "format": "cjs"
-    },
-    "src/render/post-render.ts": {
-      "bytes": 29746,
-      "imports": [
-        {
-          "path": "src/lang/i18n.ts",
-          "kind": "import-statement",
-          "original": "src/lang/i18n"
-        },
-        {
-          "path": "src/utils/utils.ts",
-          "kind": "import-statement",
-          "original": "src/utils/utils"
-        },
-        {
-          "path": "./../wechat-api/wechat-client",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/main",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "src/utils/logger"
-        },
-        {
-          "path": "node_modules/spark-md5/spark-md5.js",
-          "kind": "import-statement",
-          "original": "spark-md5"
-        }
-      ],
-      "format": "esm"
-    },
     "node_modules/marked/lib/marked.esm.js": {
       "bytes": 96065,
       "imports": [
@@ -4406,7 +3358,7 @@
       "format": "esm"
     },
     "src/wechat-api/wechat-client.ts": {
-      "bytes": 18419,
+      "bytes": 21892,
       "imports": [
         {
           "path": "obsidian",
@@ -4499,7 +3451,7 @@
       "format": "cjs"
     },
     "src/render/markdown-render.ts": {
-      "bytes": 5368,
+      "bytes": 5846,
       "imports": [
         {
           "path": "obsidian",
@@ -4897,7 +3849,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/code.ts": {
-      "bytes": 22363,
+      "bytes": 28546,
       "imports": [
         {
           "path": "marked",
@@ -10618,7 +9570,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/footnote.ts": {
-      "bytes": 10407,
+      "bytes": 10555,
       "imports": [
         {
           "path": "marked",
@@ -10747,8 +9699,13 @@
       "imports": [],
       "format": "esm"
     },
+    "src/utils/cjk-punctuation.ts": {
+      "bytes": 13157,
+      "imports": [],
+      "format": "esm"
+    },
     "src/render/wechat-render.ts": {
-      "bytes": 21531,
+      "bytes": 22797,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -10869,6 +9826,11 @@
           "path": "src/utils/code-block-mapper.ts",
           "kind": "import-statement",
           "original": "../utils/code-block-mapper"
+        },
+        {
+          "path": "src/utils/cjk-punctuation.ts",
+          "kind": "import-statement",
+          "original": "../utils/cjk-punctuation"
         }
       ],
       "format": "esm"
@@ -10947,7 +9909,7 @@
       "format": "esm"
     },
     "src/views/mp-article-header.ts": {
-      "bytes": 20127,
+      "bytes": 20579,
       "imports": [
         {
           "path": "obsidian",
@@ -11012,8 +9974,1035 @@
       ],
       "format": "esm"
     },
+    "node_modules/picocolors/picocolors.browser.js": {
+      "bytes": 598,
+      "imports": [],
+      "format": "cjs"
+    },
+    "(disabled):node_modules/postcss/lib/terminal-highlight": {
+      "bytes": 0,
+      "imports": []
+    },
+    "node_modules/postcss/lib/css-syntax-error.js": {
+      "bytes": 3402,
+      "imports": [
+        {
+          "path": "node_modules/picocolors/picocolors.browser.js",
+          "kind": "require-call",
+          "original": "picocolors"
+        },
+        {
+          "path": "(disabled):node_modules/postcss/lib/terminal-highlight",
+          "kind": "require-call",
+          "original": "./terminal-highlight"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/stringifier.js": {
+      "bytes": 8220,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/stringify.js": {
+      "bytes": 213,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/stringifier.js",
+          "kind": "require-call",
+          "original": "./stringifier"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/symbols.js": {
+      "bytes": 91,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/node.js": {
+      "bytes": 10719,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/css-syntax-error.js",
+          "kind": "require-call",
+          "original": "./css-syntax-error"
+        },
+        {
+          "path": "node_modules/postcss/lib/stringifier.js",
+          "kind": "require-call",
+          "original": "./stringifier"
+        },
+        {
+          "path": "node_modules/postcss/lib/stringify.js",
+          "kind": "require-call",
+          "original": "./stringify"
+        },
+        {
+          "path": "node_modules/postcss/lib/symbols.js",
+          "kind": "require-call",
+          "original": "./symbols"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/comment.js": {
+      "bytes": 203,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/declaration.js": {
+      "bytes": 495,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/container.js": {
+      "bytes": 10647,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/comment.js",
+          "kind": "require-call",
+          "original": "./comment"
+        },
+        {
+          "path": "node_modules/postcss/lib/declaration.js",
+          "kind": "require-call",
+          "original": "./declaration"
+        },
+        {
+          "path": "node_modules/postcss/lib/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "node_modules/postcss/lib/symbols.js",
+          "kind": "require-call",
+          "original": "./symbols"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/at-rule.js": {
+      "bytes": 471,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/document.js": {
+      "bytes": 654,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/nanoid/non-secure/index.cjs": {
+      "bytes": 1114,
+      "imports": [],
+      "format": "cjs"
+    },
+    "(disabled):node_modules/source-map-js/source-map.js": {
+      "bytes": 0,
+      "imports": []
+    },
+    "node_modules/postcss/lib/previous-map.js": {
+      "bytes": 3984,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "(disabled):node_modules/source-map-js/source-map.js",
+          "kind": "require-call",
+          "original": "source-map-js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/input.js": {
+      "bytes": 6752,
+      "imports": [
+        {
+          "path": "node_modules/nanoid/non-secure/index.cjs",
+          "kind": "require-call",
+          "original": "nanoid/non-secure"
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "(disabled):node_modules/source-map-js/source-map.js",
+          "kind": "require-call",
+          "original": "source-map-js"
+        },
+        {
+          "path": "url",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node_modules/postcss/lib/css-syntax-error.js",
+          "kind": "require-call",
+          "original": "./css-syntax-error"
+        },
+        {
+          "path": "node_modules/postcss/lib/previous-map.js",
+          "kind": "require-call",
+          "original": "./previous-map"
+        },
+        {
+          "path": "(disabled):node_modules/postcss/lib/terminal-highlight",
+          "kind": "require-call",
+          "original": "./terminal-highlight"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/root.js": {
+      "bytes": 1239,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/list.js": {
+      "bytes": 1227,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/rule.js": {
+      "bytes": 569,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        },
+        {
+          "path": "node_modules/postcss/lib/list.js",
+          "kind": "require-call",
+          "original": "./list"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/fromJSON.js": {
+      "bytes": 1506,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/at-rule.js",
+          "kind": "require-call",
+          "original": "./at-rule"
+        },
+        {
+          "path": "node_modules/postcss/lib/comment.js",
+          "kind": "require-call",
+          "original": "./comment"
+        },
+        {
+          "path": "node_modules/postcss/lib/declaration.js",
+          "kind": "require-call",
+          "original": "./declaration"
+        },
+        {
+          "path": "node_modules/postcss/lib/input.js",
+          "kind": "require-call",
+          "original": "./input"
+        },
+        {
+          "path": "node_modules/postcss/lib/previous-map.js",
+          "kind": "require-call",
+          "original": "./previous-map"
+        },
+        {
+          "path": "node_modules/postcss/lib/root.js",
+          "kind": "require-call",
+          "original": "./root"
+        },
+        {
+          "path": "node_modules/postcss/lib/rule.js",
+          "kind": "require-call",
+          "original": "./rule"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/map-generator.js": {
+      "bytes": 10031,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "(disabled):node_modules/source-map-js/source-map.js",
+          "kind": "require-call",
+          "original": "source-map-js"
+        },
+        {
+          "path": "url",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node_modules/postcss/lib/input.js",
+          "kind": "require-call",
+          "original": "./input"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/tokenize.js": {
+      "bytes": 6538,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/parser.js": {
+      "bytes": 14846,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/at-rule.js",
+          "kind": "require-call",
+          "original": "./at-rule"
+        },
+        {
+          "path": "node_modules/postcss/lib/comment.js",
+          "kind": "require-call",
+          "original": "./comment"
+        },
+        {
+          "path": "node_modules/postcss/lib/declaration.js",
+          "kind": "require-call",
+          "original": "./declaration"
+        },
+        {
+          "path": "node_modules/postcss/lib/root.js",
+          "kind": "require-call",
+          "original": "./root"
+        },
+        {
+          "path": "node_modules/postcss/lib/rule.js",
+          "kind": "require-call",
+          "original": "./rule"
+        },
+        {
+          "path": "node_modules/postcss/lib/tokenize.js",
+          "kind": "require-call",
+          "original": "./tokenize"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/parse.js": {
+      "bytes": 1147,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        },
+        {
+          "path": "node_modules/postcss/lib/input.js",
+          "kind": "require-call",
+          "original": "./input"
+        },
+        {
+          "path": "node_modules/postcss/lib/parser.js",
+          "kind": "require-call",
+          "original": "./parser"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/warning.js": {
+      "bytes": 739,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/result.js": {
+      "bytes": 738,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/warning.js",
+          "kind": "require-call",
+          "original": "./warning"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/warn-once.js": {
+      "bytes": 256,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/lazy-result.js": {
+      "bytes": 13562,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        },
+        {
+          "path": "node_modules/postcss/lib/document.js",
+          "kind": "require-call",
+          "original": "./document"
+        },
+        {
+          "path": "node_modules/postcss/lib/map-generator.js",
+          "kind": "require-call",
+          "original": "./map-generator"
+        },
+        {
+          "path": "node_modules/postcss/lib/parse.js",
+          "kind": "require-call",
+          "original": "./parse"
+        },
+        {
+          "path": "node_modules/postcss/lib/result.js",
+          "kind": "require-call",
+          "original": "./result"
+        },
+        {
+          "path": "node_modules/postcss/lib/root.js",
+          "kind": "require-call",
+          "original": "./root"
+        },
+        {
+          "path": "node_modules/postcss/lib/stringify.js",
+          "kind": "require-call",
+          "original": "./stringify"
+        },
+        {
+          "path": "node_modules/postcss/lib/symbols.js",
+          "kind": "require-call",
+          "original": "./symbols"
+        },
+        {
+          "path": "node_modules/postcss/lib/warn-once.js",
+          "kind": "require-call",
+          "original": "./warn-once"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/no-work-result.js": {
+      "bytes": 2621,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/map-generator.js",
+          "kind": "require-call",
+          "original": "./map-generator"
+        },
+        {
+          "path": "node_modules/postcss/lib/parse.js",
+          "kind": "require-call",
+          "original": "./parse"
+        },
+        {
+          "path": "node_modules/postcss/lib/result.js",
+          "kind": "require-call",
+          "original": "./result"
+        },
+        {
+          "path": "node_modules/postcss/lib/stringify.js",
+          "kind": "require-call",
+          "original": "./stringify"
+        },
+        {
+          "path": "node_modules/postcss/lib/warn-once.js",
+          "kind": "require-call",
+          "original": "./warn-once"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/processor.js": {
+      "bytes": 1738,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/document.js",
+          "kind": "require-call",
+          "original": "./document"
+        },
+        {
+          "path": "node_modules/postcss/lib/lazy-result.js",
+          "kind": "require-call",
+          "original": "./lazy-result"
+        },
+        {
+          "path": "node_modules/postcss/lib/no-work-result.js",
+          "kind": "require-call",
+          "original": "./no-work-result"
+        },
+        {
+          "path": "node_modules/postcss/lib/root.js",
+          "kind": "require-call",
+          "original": "./root"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/postcss.js": {
+      "bytes": 2898,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/at-rule.js",
+          "kind": "require-call",
+          "original": "./at-rule"
+        },
+        {
+          "path": "node_modules/postcss/lib/comment.js",
+          "kind": "require-call",
+          "original": "./comment"
+        },
+        {
+          "path": "node_modules/postcss/lib/container.js",
+          "kind": "require-call",
+          "original": "./container"
+        },
+        {
+          "path": "node_modules/postcss/lib/css-syntax-error.js",
+          "kind": "require-call",
+          "original": "./css-syntax-error"
+        },
+        {
+          "path": "node_modules/postcss/lib/declaration.js",
+          "kind": "require-call",
+          "original": "./declaration"
+        },
+        {
+          "path": "node_modules/postcss/lib/document.js",
+          "kind": "require-call",
+          "original": "./document"
+        },
+        {
+          "path": "node_modules/postcss/lib/fromJSON.js",
+          "kind": "require-call",
+          "original": "./fromJSON"
+        },
+        {
+          "path": "node_modules/postcss/lib/input.js",
+          "kind": "require-call",
+          "original": "./input"
+        },
+        {
+          "path": "node_modules/postcss/lib/lazy-result.js",
+          "kind": "require-call",
+          "original": "./lazy-result"
+        },
+        {
+          "path": "node_modules/postcss/lib/list.js",
+          "kind": "require-call",
+          "original": "./list"
+        },
+        {
+          "path": "node_modules/postcss/lib/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "node_modules/postcss/lib/parse.js",
+          "kind": "require-call",
+          "original": "./parse"
+        },
+        {
+          "path": "node_modules/postcss/lib/processor.js",
+          "kind": "require-call",
+          "original": "./processor"
+        },
+        {
+          "path": "node_modules/postcss/lib/result.js",
+          "kind": "require-call",
+          "original": "./result.js"
+        },
+        {
+          "path": "node_modules/postcss/lib/root.js",
+          "kind": "require-call",
+          "original": "./root"
+        },
+        {
+          "path": "node_modules/postcss/lib/rule.js",
+          "kind": "require-call",
+          "original": "./rule"
+        },
+        {
+          "path": "node_modules/postcss/lib/stringify.js",
+          "kind": "require-call",
+          "original": "./stringify"
+        },
+        {
+          "path": "node_modules/postcss/lib/warning.js",
+          "kind": "require-call",
+          "original": "./warning"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/postcss/lib/postcss.mjs": {
+      "bytes": 980,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/postcss.js",
+          "kind": "import-statement",
+          "original": "./postcss.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/assets/default-styles/00_smart-mp.css": {
+      "bytes": 1586,
+      "imports": []
+    },
+    "src/assets/default-styles/01_layout.css": {
+      "bytes": 865,
+      "imports": []
+    },
+    "src/assets/default-styles/02_icons.css": {
+      "bytes": 5962,
+      "imports": []
+    },
+    "src/assets/default-styles/03_typography.css": {
+      "bytes": 977,
+      "imports": []
+    },
+    "src/assets/default-styles/04_paragragh.css": {
+      "bytes": 1142,
+      "imports": []
+    },
+    "src/assets/default-styles/05_strong.css": {
+      "bytes": 853,
+      "imports": []
+    },
+    "src/assets/default-styles/06_em.css": {
+      "bytes": 852,
+      "imports": []
+    },
+    "src/assets/default-styles/07_u.css": {
+      "bytes": 1301,
+      "imports": []
+    },
+    "src/assets/default-styles/08_del.css": {
+      "bytes": 1276,
+      "imports": []
+    },
+    "src/assets/default-styles/09_codespan.css": {
+      "bytes": 810,
+      "imports": []
+    },
+    "src/assets/default-styles/10_heading.css": {
+      "bytes": 1827,
+      "imports": []
+    },
+    "src/assets/default-styles/11_h1.css": {
+      "bytes": 3631,
+      "imports": []
+    },
+    "src/assets/default-styles/12_h2.css": {
+      "bytes": 3625,
+      "imports": []
+    },
+    "src/assets/default-styles/13_h3.css": {
+      "bytes": 3627,
+      "imports": []
+    },
+    "src/assets/default-styles/14_h4.css": {
+      "bytes": 3629,
+      "imports": []
+    },
+    "src/assets/default-styles/15_h5.css": {
+      "bytes": 3627,
+      "imports": []
+    },
+    "src/assets/default-styles/16_h6.css": {
+      "bytes": 3625,
+      "imports": []
+    },
+    "src/assets/default-styles/20_image.css": {
+      "bytes": 2874,
+      "imports": []
+    },
+    "src/assets/default-styles/21_list.css": {
+      "bytes": 1221,
+      "imports": []
+    },
+    "src/assets/default-styles/23_footnote.css": {
+      "bytes": 2283,
+      "imports": []
+    },
+    "src/assets/default-styles/24_table.css": {
+      "bytes": 3530,
+      "imports": []
+    },
+    "src/assets/default-styles/25_code.css": {
+      "bytes": 5736,
+      "imports": []
+    },
+    "src/assets/default-styles/26_blockquote.css": {
+      "bytes": 1600,
+      "imports": []
+    },
+    "src/assets/default-styles/27_links.css": {
+      "bytes": 532,
+      "imports": []
+    },
+    "src/assets/default-styles/30_callout.css": {
+      "bytes": 6807,
+      "imports": []
+    },
+    "src/assets/default-styles/31_admonition.css": {
+      "bytes": 2544,
+      "imports": []
+    },
+    "src/assets/default-styles/32_math.css": {
+      "bytes": 1794,
+      "imports": []
+    },
+    "src/assets/default-styles/33_mermaid.css": {
+      "bytes": 373,
+      "imports": []
+    },
+    "src/assets/default-styles/34_chart.css": {
+      "bytes": 217,
+      "imports": []
+    },
+    "src/assets/default-styles/35_icon.css": {
+      "bytes": 305,
+      "imports": []
+    },
+    "src/assets/default-styles/40_summary.css": {
+      "bytes": 492,
+      "imports": []
+    },
+    "src/assets/default-styles/50_profile.css": {
+      "bytes": 2020,
+      "imports": []
+    },
+    "src/assets/default-styles/100_article.css": {
+      "bytes": 9229,
+      "imports": []
+    },
+    "src/theme/CssMerger.ts": {
+      "bytes": 23824,
+      "imports": [
+        {
+          "path": "node_modules/postcss/lib/postcss.mjs",
+          "kind": "import-statement",
+          "original": "postcss"
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "../utils/logger"
+        },
+        {
+          "path": "src/assets/default-styles/00_smart-mp.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/00_smart-mp.css"
+        },
+        {
+          "path": "src/assets/default-styles/01_layout.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/01_layout.css"
+        },
+        {
+          "path": "src/assets/default-styles/02_icons.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/02_icons.css"
+        },
+        {
+          "path": "src/assets/default-styles/03_typography.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/03_typography.css"
+        },
+        {
+          "path": "src/assets/default-styles/04_paragragh.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/04_paragragh.css"
+        },
+        {
+          "path": "src/assets/default-styles/05_strong.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/05_strong.css"
+        },
+        {
+          "path": "src/assets/default-styles/06_em.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/06_em.css"
+        },
+        {
+          "path": "src/assets/default-styles/07_u.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/07_u.css"
+        },
+        {
+          "path": "src/assets/default-styles/08_del.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/08_del.css"
+        },
+        {
+          "path": "src/assets/default-styles/09_codespan.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/09_codespan.css"
+        },
+        {
+          "path": "src/assets/default-styles/10_heading.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/10_heading.css"
+        },
+        {
+          "path": "src/assets/default-styles/11_h1.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/11_h1.css"
+        },
+        {
+          "path": "src/assets/default-styles/12_h2.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/12_h2.css"
+        },
+        {
+          "path": "src/assets/default-styles/13_h3.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/13_h3.css"
+        },
+        {
+          "path": "src/assets/default-styles/14_h4.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/14_h4.css"
+        },
+        {
+          "path": "src/assets/default-styles/15_h5.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/15_h5.css"
+        },
+        {
+          "path": "src/assets/default-styles/16_h6.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/16_h6.css"
+        },
+        {
+          "path": "src/assets/default-styles/20_image.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/20_image.css"
+        },
+        {
+          "path": "src/assets/default-styles/21_list.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/21_list.css"
+        },
+        {
+          "path": "src/assets/default-styles/23_footnote.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/23_footnote.css"
+        },
+        {
+          "path": "src/assets/default-styles/24_table.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/24_table.css"
+        },
+        {
+          "path": "src/assets/default-styles/25_code.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/25_code.css"
+        },
+        {
+          "path": "src/assets/default-styles/26_blockquote.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/26_blockquote.css"
+        },
+        {
+          "path": "src/assets/default-styles/27_links.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/27_links.css"
+        },
+        {
+          "path": "src/assets/default-styles/30_callout.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/30_callout.css"
+        },
+        {
+          "path": "src/assets/default-styles/31_admonition.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/31_admonition.css"
+        },
+        {
+          "path": "src/assets/default-styles/32_math.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/32_math.css"
+        },
+        {
+          "path": "src/assets/default-styles/33_mermaid.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/33_mermaid.css"
+        },
+        {
+          "path": "src/assets/default-styles/34_chart.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/34_chart.css"
+        },
+        {
+          "path": "src/assets/default-styles/35_icon.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/35_icon.css"
+        },
+        {
+          "path": "src/assets/default-styles/40_summary.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/40_summary.css"
+        },
+        {
+          "path": "src/assets/default-styles/50_profile.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/50_profile.css"
+        },
+        {
+          "path": "src/assets/default-styles/100_article.css",
+          "kind": "import-statement",
+          "original": "../assets/default-styles/100_article.css"
+        },
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/indexeddb.ts": {
+      "bytes": 3656,
+      "imports": [
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "./logger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/theme/css-cache.ts": {
+      "bytes": 10159,
+      "imports": [
+        {
+          "path": "src/utils/indexeddb.ts",
+          "kind": "import-statement",
+          "original": "../utils/indexeddb"
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "../utils/logger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/theme/variables.ts": {
+      "bytes": 2751,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/theme/presets.ts": {
+      "bytes": 3100,
+      "imports": [
+        {
+          "path": "src/theme/variables.ts",
+          "kind": "import-statement",
+          "original": "./variables"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/theme/theme-manager.ts": {
+      "bytes": 12741,
+      "imports": [
+        {
+          "path": "node_modules/gray-matter/index.js",
+          "kind": "import-statement",
+          "original": "gray-matter"
+        },
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "postcss",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "src/main",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "../utils/logger"
+        },
+        {
+          "path": "src/theme/CssMerger.ts",
+          "kind": "import-statement",
+          "original": "./CssMerger"
+        },
+        {
+          "path": "src/theme/css-cache.ts",
+          "kind": "import-statement",
+          "original": "./css-cache"
+        },
+        {
+          "path": "src/theme/presets.ts",
+          "kind": "import-statement",
+          "original": "./presets"
+        }
+      ],
+      "format": "esm"
+    },
     "src/theme/theme-selector.ts": {
-      "bytes": 2666,
+      "bytes": 3365,
       "imports": [
         {
           "path": "obsidian",
@@ -11064,8 +11053,13 @@
       ],
       "format": "esm"
     },
+    "src/utils/article-stats.ts": {
+      "bytes": 2295,
+      "imports": [],
+      "format": "esm"
+    },
     "src/views/previewer.ts": {
-      "bytes": 55619,
+      "bytes": 61566,
       "imports": [
         {
           "path": "@codemirror/view",
@@ -11158,9 +11152,221 @@
           "external": true
         },
         {
+          "path": "src/utils/article-stats.ts",
+          "kind": "import-statement",
+          "original": "../utils/article-stats"
+        },
+        {
           "path": "src/utils/logger.ts",
           "kind": "import-statement",
           "original": "src/utils/logger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/section-ids.ts": {
+      "bytes": 690,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/settings/sections/license-section.ts": {
+      "bytes": 6633,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/smart-mp-setting.ts": {
+      "bytes": 6826,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/utils.ts",
+          "kind": "import-statement",
+          "original": "src/utils/utils"
+        },
+        {
+          "path": "./llm-types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "src/utils/logger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/llm-types.ts": {
+      "bytes": 791,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/settings/assistant-defaults.ts": {
+      "bytes": 4485,
+      "imports": [
+        {
+          "path": "./smart-mp-setting",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/migrate.ts": {
+      "bytes": 6732,
+      "imports": [
+        {
+          "path": "src/settings/smart-mp-setting.ts",
+          "kind": "import-statement",
+          "original": "./smart-mp-setting"
+        },
+        {
+          "path": "src/settings/llm-types.ts",
+          "kind": "import-statement",
+          "original": "./llm-types"
+        },
+        {
+          "path": "src/settings/assistant-defaults.ts",
+          "kind": "import-statement",
+          "original": "./assistant-defaults"
+        },
+        {
+          "path": "src/utils/crypto-helper.ts",
+          "kind": "import-statement",
+          "original": "../utils/crypto-helper"
+        },
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "../lang/i18n"
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "../utils/logger"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/assets/mp-web-images.ts": {
+      "bytes": 126965,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/settings/sections/wechat-section.ts": {
+      "bytes": 15842,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "src/utils/logger"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        },
+        {
+          "path": "../smart-mp-setting",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/migrate.ts",
+          "kind": "import-statement",
+          "original": "../migrate"
+        },
+        {
+          "path": "src/assets/mp-web-images.ts",
+          "kind": "import-statement",
+          "original": "../../assets/mp-web-images"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/general-section.ts": {
+      "bytes": 5199,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/folder-suggest.ts": {
+      "bytes": 832,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
         }
       ],
       "format": "esm"
@@ -11629,7 +11835,7 @@
       "format": "esm"
     },
     "src/theme/theme-extractor.ts": {
-      "bytes": 36929,
+      "bytes": 37099,
       "imports": [
         {
           "path": "obsidian",
@@ -11686,6 +11892,99 @@
           "path": "src/lang/i18n.ts",
           "kind": "import-statement",
           "original": "../lang/i18n"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/appearance-section.ts": {
+      "bytes": 8582,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "src/main",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/theme/theme-manager.ts",
+          "kind": "import-statement",
+          "original": "src/theme/theme-manager"
+        },
+        {
+          "path": "src/utils/folder-suggest.ts",
+          "kind": "import-statement",
+          "original": "src/utils/folder-suggest"
+        },
+        {
+          "path": "src/modals/theme-clone-modal.ts",
+          "kind": "import-statement",
+          "original": "src/modals/theme-clone-modal"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/security-section.ts": {
+      "bytes": 1859,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "src/wechat-api/wechat-client.ts",
+          "kind": "import-statement",
+          "original": "src/wechat-api/wechat-client"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/llm-presets.ts": {
+      "bytes": 5623,
+      "imports": [
+        {
+          "path": "src/settings/llm-types.ts",
+          "kind": "import-statement",
+          "original": "./llm-types"
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
         }
       ],
       "format": "esm"
@@ -13480,8 +13779,137 @@
       ],
       "format": "esm"
     },
+    "src/utils/llm-probe.ts": {
+      "bytes": 1416,
+      "imports": [
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "./logger"
+        },
+        {
+          "path": "node_modules/openai/index.mjs",
+          "kind": "dynamic-import",
+          "original": "openai"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/llm-section.ts": {
+      "bytes": 19034,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        },
+        {
+          "path": "../llm-types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/llm-presets.ts",
+          "kind": "import-statement",
+          "original": "../llm-presets"
+        },
+        {
+          "path": "src/modals/confirm-modal.ts",
+          "kind": "import-statement",
+          "original": "src/modals/confirm-modal"
+        },
+        {
+          "path": "src/utils/llm-probe.ts",
+          "kind": "import-statement",
+          "original": "src/utils/llm-probe"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/ai-draw-section.ts": {
+      "bytes": 6767,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        },
+        {
+          "path": "../smart-mp-setting",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/settings/sections/assistant-section.ts": {
+      "bytes": 12647,
+      "imports": [
+        {
+          "path": "obsidian",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lang/i18n.ts",
+          "kind": "import-statement",
+          "original": "src/lang/i18n"
+        },
+        {
+          "path": "../setting-tab",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/settings/section-ids.ts",
+          "kind": "import-statement",
+          "original": "../section-ids"
+        },
+        {
+          "path": "src/settings/assistant-defaults.ts",
+          "kind": "import-statement",
+          "original": "../assistant-defaults"
+        },
+        {
+          "path": "src/modals/confirm-modal.ts",
+          "kind": "import-statement",
+          "original": "src/modals/confirm-modal"
+        }
+      ],
+      "format": "esm"
+    },
     "src/settings/setting-tab.ts": {
-      "bytes": 79113,
+      "bytes": 5087,
       "imports": [
         {
           "path": "obsidian",
@@ -13494,34 +13922,9 @@
           "external": true
         },
         {
-          "path": "src/theme/theme-manager.ts",
-          "kind": "import-statement",
-          "original": "src/theme/theme-manager"
-        },
-        {
           "path": "src/lang/i18n.ts",
           "kind": "import-statement",
           "original": "src/lang/i18n"
-        },
-        {
-          "path": "src/utils/folder-suggest.ts",
-          "kind": "import-statement",
-          "original": "src/utils/folder-suggest"
-        },
-        {
-          "path": "src/settings/mp-web-images.ts",
-          "kind": "import-statement",
-          "original": "./mp-web-images"
-        },
-        {
-          "path": "./smart-mp-setting",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/settings/llm-types.ts",
-          "kind": "import-statement",
-          "original": "./llm-types"
         },
         {
           "path": "src/views/previewer.ts",
@@ -13529,34 +13932,49 @@
           "original": "../views/previewer"
         },
         {
-          "path": "../utils/crypto-helper",
+          "path": "src/settings/section-ids.ts",
           "kind": "import-statement",
-          "external": true
+          "original": "./section-ids"
         },
         {
-          "path": "src/modals/theme-clone-modal.ts",
+          "path": "src/settings/sections/license-section.ts",
           "kind": "import-statement",
-          "original": "../modals/theme-clone-modal"
+          "original": "./sections/license-section"
         },
         {
-          "path": "src/utils/logger.ts",
+          "path": "src/settings/sections/wechat-section.ts",
           "kind": "import-statement",
-          "original": "src/utils/logger"
+          "original": "./sections/wechat-section"
         },
         {
-          "path": "src/wechat-api/wechat-client.ts",
-          "kind": "dynamic-import",
-          "original": "src/wechat-api/wechat-client"
+          "path": "src/settings/sections/general-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/general-section"
         },
         {
-          "path": "node_modules/openai/index.mjs",
-          "kind": "dynamic-import",
-          "original": "openai"
+          "path": "src/settings/sections/appearance-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/appearance-section"
         },
         {
-          "path": "node_modules/openai/index.mjs",
-          "kind": "dynamic-import",
-          "original": "openai"
+          "path": "src/settings/sections/security-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/security-section"
+        },
+        {
+          "path": "src/settings/sections/llm-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/llm-section"
+        },
+        {
+          "path": "src/settings/sections/ai-draw-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/ai-draw-section"
+        },
+        {
+          "path": "src/settings/sections/assistant-section.ts",
+          "kind": "import-statement",
+          "original": "./sections/assistant-section"
         }
       ],
       "format": "esm"
@@ -13832,32 +14250,6 @@
       ],
       "format": "esm"
     },
-    "src/settings/smart-mp-setting.ts": {
-      "bytes": 5262,
-      "imports": [
-        {
-          "path": "obsidian",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/utils/utils.ts",
-          "kind": "import-statement",
-          "original": "src/utils/utils"
-        },
-        {
-          "path": "./llm-types",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/utils/logger.ts",
-          "kind": "import-statement",
-          "original": "src/utils/logger"
-        }
-      ],
-      "format": "esm"
-    },
     "node_modules/whatwg-fetch/fetch.js": {
       "bytes": 18007,
       "imports": [],
@@ -13900,8 +14292,12 @@
       ],
       "format": "esm"
     },
+    "src/utils/prompt.json": {
+      "bytes": 9502,
+      "imports": []
+    },
     "src/utils/ai-base-client.ts": {
-      "bytes": 6222,
+      "bytes": 9782,
       "imports": [
         {
           "path": "src/main",
@@ -13927,12 +14323,17 @@
           "path": "../types/types",
           "kind": "import-statement",
           "external": true
+        },
+        {
+          "path": "src/utils/prompt.json",
+          "kind": "import-statement",
+          "original": "./prompt.json"
         }
       ],
       "format": "esm"
     },
     "src/utils/ollama-client.ts": {
-      "bytes": 3786,
+      "bytes": 5058,
       "imports": [
         {
           "path": "node_modules/ollama/dist/index.mjs",
@@ -13982,10 +14383,6 @@
       ],
       "format": "esm"
     },
-    "src/utils/prompt.json": {
-      "bytes": 9502,
-      "imports": []
-    },
     "src/utils/fetch.ts": {
       "bytes": 3150,
       "imports": [
@@ -14003,7 +14400,7 @@
       "format": "esm"
     },
     "src/utils/stream-sse.ts": {
-      "bytes": 3061,
+      "bytes": 3446,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -14014,7 +14411,7 @@
       "format": "esm"
     },
     "src/utils/openAI-client.ts": {
-      "bytes": 4731,
+      "bytes": 5976,
       "imports": [
         {
           "path": "node_modules/openai/index.mjs",
@@ -14040,11 +14437,6 @@
           "path": "../types/types",
           "kind": "import-statement",
           "external": true
-        },
-        {
-          "path": "src/utils/prompt.json",
-          "kind": "import-statement",
-          "original": "./prompt.json"
         },
         {
           "path": "./ai-client",
@@ -14116,7 +14508,7 @@
       "format": "esm"
     },
     "src/utils/ai-client.ts": {
-      "bytes": 5756,
+      "bytes": 6155,
       "imports": [
         {
           "path": "src/lang/i18n.ts",
@@ -14178,7 +14570,7 @@
       "format": "esm"
     },
     "src/settings/account-switcher.ts": {
-      "bytes": 1430,
+      "bytes": 1524,
       "imports": [
         {
           "path": "obsidian",
@@ -14199,7 +14591,7 @@
       "format": "esm"
     },
     "src/views/material-panel.ts": {
-      "bytes": 10169,
+      "bytes": 10566,
       "imports": [
         {
           "path": "obsidian",
@@ -14296,35 +14688,35 @@
       "imports": [],
       "format": "esm"
     },
-    "src/icons.ts": {
-      "bytes": 154830,
-      "imports": [],
-      "format": "esm"
-    },
-    "src/settings/migrate.ts": {
-      "bytes": 3983,
+    "src/theme/hot-reloader.ts": {
+      "bytes": 2823,
       "imports": [
-        {
-          "path": "./smart-mp-setting",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "src/settings/llm-types.ts",
-          "kind": "import-statement",
-          "original": "./llm-types"
-        },
         {
           "path": "obsidian",
           "kind": "import-statement",
           "external": true
         },
         {
-          "path": "src/lang/i18n.ts",
+          "path": "src/main",
           "kind": "import-statement",
-          "original": "../lang/i18n"
+          "external": true
+        },
+        {
+          "path": "src/theme/theme-manager.ts",
+          "kind": "import-statement",
+          "original": "./theme-manager"
+        },
+        {
+          "path": "src/utils/logger.ts",
+          "kind": "import-statement",
+          "original": "src/utils/logger"
         }
       ],
+      "format": "esm"
+    },
+    "src/icons.ts": {
+      "bytes": 154830,
+      "imports": [],
       "format": "esm"
     },
     "packages/hw-auth-client/dist/storage.js": {
@@ -14469,7 +14861,7 @@
       "format": "esm"
     },
     "src/services/account-service.ts": {
-      "bytes": 3965,
+      "bytes": 4720,
       "imports": [
         {
           "path": "obsidian",
@@ -14516,7 +14908,7 @@
       "format": "esm"
     },
     "src/core/command-manager.ts": {
-      "bytes": 10923,
+      "bytes": 14323,
       "imports": [
         {
           "path": "obsidian",
@@ -14557,6 +14949,11 @@
           "path": "src/views/previewer.ts",
           "kind": "import-statement",
           "original": "../views/previewer"
+        },
+        {
+          "path": "src/utils/cjk-punctuation.ts",
+          "kind": "import-statement",
+          "original": "../utils/cjk-punctuation"
         }
       ],
       "format": "esm"
@@ -14712,7 +15109,7 @@
       "format": "esm"
     },
     "src/main.ts": {
-      "bytes": 21699,
+      "bytes": 22475,
       "imports": [
         {
           "path": "obsidian",
@@ -14840,9 +15237,9 @@
           "original": "./views/spinner"
         },
         {
-          "path": "./theme/hot-reloader",
+          "path": "src/theme/hot-reloader.ts",
           "kind": "import-statement",
-          "external": true
+          "original": "./theme/hot-reloader"
         },
         {
           "path": "src/theme/theme-manager.ts",
@@ -14978,11 +15375,6 @@
         },
         {
           "path": "url",
-          "kind": "require-call",
-          "external": true
-        },
-        {
-          "path": "obsidian",
           "kind": "require-call",
           "external": true
         },
@@ -15182,6 +15574,56 @@
           "external": true
         },
         {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "obsidian",
+          "kind": "require-call",
+          "external": true
+        },
+        {
           "path": "fs",
           "kind": "require-call",
           "external": true
@@ -15292,7 +15734,7 @@
           "bytesInOutput": 188
         },
         "node_modules/mensch/lib/lexer.js": {
-          "bytesInOutput": 4803
+          "bytesInOutput": 4801
         },
         "node_modules/mensch/lib/parser.js": {
           "bytesInOutput": 1892
@@ -15421,7 +15863,7 @@
           "bytesInOutput": 2175
         },
         "node_modules/web-resource-inliner/src/html.js": {
-          "bytesInOutput": 3986
+          "bytesInOutput": 3978
         },
         "node_modules/web-resource-inliner/src/inline.js": {
           "bytesInOutput": 84
@@ -15721,7 +16163,7 @@
           "bytesInOutput": 768
         },
         "node_modules/juice/lib/inline.js": {
-          "bytesInOutput": 7562
+          "bytesInOutput": 7554
         },
         "node_modules/juice/client.js": {
           "bytesInOutput": 307
@@ -15730,16 +16172,19 @@
           "bytesInOutput": 887
         },
         "node_modules/i18next/dist/esm/i18next.js": {
-          "bytesInOutput": 45229
+          "bytesInOutput": 45223
         },
         "src/lang/locales/en-us.json": {
-          "bytesInOutput": 19766
+          "bytesInOutput": 23960
         },
         "src/lang/locales/zh-cn.json": {
-          "bytesInOutput": 28074
+          "bytesInOutput": 34521
         },
         "src/lang/i18n.ts": {
           "bytesInOutput": 518
+        },
+        "node_modules/spark-md5/spark-md5.js": {
+          "bytesInOutput": 8558
         },
         "node_modules/kind-of/index.js": {
           "bytesInOutput": 2362
@@ -15873,113 +16318,11 @@
         "node_modules/gray-matter/index.js": {
           "bytesInOutput": 1522
         },
-        "node_modules/picocolors/picocolors.browser.js": {
-          "bytesInOutput": 627
-        },
-        "(disabled):node_modules/postcss/lib/terminal-highlight": {
-          "bytesInOutput": 17
-        },
-        "node_modules/postcss/lib/css-syntax-error.js": {
-          "bytesInOutput": 1588
-        },
-        "node_modules/postcss/lib/stringifier.js": {
-          "bytesInOutput": 4285
-        },
-        "node_modules/postcss/lib/stringify.js": {
-          "bytesInOutput": 117
-        },
-        "node_modules/postcss/lib/symbols.js": {
-          "bytesInOutput": 99
-        },
-        "node_modules/postcss/lib/node.js": {
-          "bytesInOutput": 4963
-        },
-        "node_modules/postcss/lib/comment.js": {
-          "bytesInOutput": 143
-        },
-        "node_modules/postcss/lib/declaration.js": {
-          "bytesInOutput": 300
-        },
-        "node_modules/postcss/lib/container.js": {
-          "bytesInOutput": 5372
-        },
-        "node_modules/postcss/lib/at-rule.js": {
-          "bytesInOutput": 314
-        },
-        "node_modules/postcss/lib/document.js": {
-          "bytesInOutput": 297
-        },
-        "node_modules/nanoid/non-secure/index.cjs": {
-          "bytesInOutput": 303
-        },
-        "(disabled):node_modules/source-map-js/source-map.js": {
-          "bytesInOutput": 17
-        },
-        "node_modules/postcss/lib/previous-map.js": {
-          "bytesInOutput": 2322
-        },
-        "node_modules/postcss/lib/input.js": {
-          "bytesInOutput": 3255
-        },
-        "node_modules/postcss/lib/root.js": {
-          "bytesInOutput": 682
-        },
-        "node_modules/postcss/lib/list.js": {
-          "bytesInOutput": 437
-        },
-        "node_modules/postcss/lib/rule.js": {
-          "bytesInOutput": 383
-        },
-        "node_modules/postcss/lib/fromJSON.js": {
-          "bytesInOutput": 699
-        },
-        "node_modules/postcss/lib/map-generator.js": {
-          "bytesInOutput": 5826
-        },
-        "node_modules/postcss/lib/tokenize.js": {
-          "bytesInOutput": 2513
-        },
-        "node_modules/postcss/lib/parser.js": {
-          "bytesInOutput": 7405
-        },
-        "node_modules/postcss/lib/parse.js": {
-          "bytesInOutput": 210
-        },
-        "node_modules/postcss/lib/warning.js": {
-          "bytesInOutput": 475
-        },
-        "node_modules/postcss/lib/result.js": {
-          "bytesInOutput": 473
-        },
-        "node_modules/postcss/lib/warn-once.js": {
-          "bytesInOutput": 146
-        },
-        "node_modules/postcss/lib/lazy-result.js": {
-          "bytesInOutput": 6483
-        },
-        "node_modules/postcss/lib/no-work-result.js": {
-          "bytesInOutput": 1282
-        },
-        "node_modules/postcss/lib/processor.js": {
-          "bytesInOutput": 781
-        },
-        "node_modules/postcss/lib/postcss.js": {
-          "bytesInOutput": 1319
-        },
-        "node_modules/spark-md5/spark-md5.js": {
-          "bytesInOutput": 8558
-        },
-        "src/wechat-api/error-code.ts": {
-          "bytesInOutput": 15409
-        },
-        "src/wechat-api/wechat-client.ts": {
-          "bytesInOutput": 8509
-        },
         "src/render/dom-to-image-more.js": {
-          "bytesInOutput": 17291
+          "bytesInOutput": 17366
         },
         "node_modules/highlight.js/lib/core.js": {
-          "bytesInOutput": 21022
+          "bytesInOutput": 21019
         },
         "node_modules/mathjax-full/js/core/DOMAdaptor.js": {
           "bytesInOutput": 2001
@@ -16204,7 +16547,7 @@
           "bytesInOutput": 3069
         },
         "node_modules/mathjax-full/js/input/tex/NodeUtil.js": {
-          "bytesInOutput": 3385
+          "bytesInOutput": 3374
         },
         "node_modules/mathjax-full/js/input/tex/FilterUtil.js": {
           "bytesInOutput": 4763
@@ -16213,7 +16556,7 @@
           "bytesInOutput": 783
         },
         "node_modules/mathjax-full/js/input/tex/ParseUtil.js": {
-          "bytesInOutput": 8791
+          "bytesInOutput": 8808
         },
         "node_modules/mathjax-full/js/input/tex/Stack.js": {
           "bytesInOutput": 2383
@@ -16477,7 +16820,7 @@
           "bytesInOutput": 1997
         },
         "node_modules/mathjax-full/js/output/common/OutputJax.js": {
-          "bytesInOutput": 9639
+          "bytesInOutput": 9633
         },
         "node_modules/mathjax-full/js/core/Tree/WrapperFactory.js": {
           "bytesInOutput": 1437
@@ -16498,7 +16841,7 @@
           "bytesInOutput": 11526
         },
         "node_modules/mathjax-full/js/output/svg/Wrapper.js": {
-          "bytesInOutput": 9105
+          "bytesInOutput": 9103
         },
         "node_modules/mathjax-full/js/output/common/Wrappers/math.js": {
           "bytesInOutput": 862
@@ -16839,6 +17182,99 @@
         "node_modules/mathjax-full/js/output/svg.js": {
           "bytesInOutput": 5979
         },
+        "node_modules/picocolors/picocolors.browser.js": {
+          "bytesInOutput": 627
+        },
+        "(disabled):node_modules/postcss/lib/terminal-highlight": {
+          "bytesInOutput": 17
+        },
+        "node_modules/postcss/lib/css-syntax-error.js": {
+          "bytesInOutput": 1588
+        },
+        "node_modules/postcss/lib/stringifier.js": {
+          "bytesInOutput": 4285
+        },
+        "node_modules/postcss/lib/stringify.js": {
+          "bytesInOutput": 117
+        },
+        "node_modules/postcss/lib/symbols.js": {
+          "bytesInOutput": 99
+        },
+        "node_modules/postcss/lib/node.js": {
+          "bytesInOutput": 4963
+        },
+        "node_modules/postcss/lib/comment.js": {
+          "bytesInOutput": 143
+        },
+        "node_modules/postcss/lib/declaration.js": {
+          "bytesInOutput": 300
+        },
+        "node_modules/postcss/lib/container.js": {
+          "bytesInOutput": 5372
+        },
+        "node_modules/postcss/lib/at-rule.js": {
+          "bytesInOutput": 314
+        },
+        "node_modules/postcss/lib/document.js": {
+          "bytesInOutput": 297
+        },
+        "node_modules/nanoid/non-secure/index.cjs": {
+          "bytesInOutput": 303
+        },
+        "(disabled):node_modules/source-map-js/source-map.js": {
+          "bytesInOutput": 17
+        },
+        "node_modules/postcss/lib/previous-map.js": {
+          "bytesInOutput": 2322
+        },
+        "node_modules/postcss/lib/input.js": {
+          "bytesInOutput": 3255
+        },
+        "node_modules/postcss/lib/root.js": {
+          "bytesInOutput": 682
+        },
+        "node_modules/postcss/lib/list.js": {
+          "bytesInOutput": 437
+        },
+        "node_modules/postcss/lib/rule.js": {
+          "bytesInOutput": 383
+        },
+        "node_modules/postcss/lib/fromJSON.js": {
+          "bytesInOutput": 699
+        },
+        "node_modules/postcss/lib/map-generator.js": {
+          "bytesInOutput": 5826
+        },
+        "node_modules/postcss/lib/tokenize.js": {
+          "bytesInOutput": 2513
+        },
+        "node_modules/postcss/lib/parser.js": {
+          "bytesInOutput": 7405
+        },
+        "node_modules/postcss/lib/parse.js": {
+          "bytesInOutput": 210
+        },
+        "node_modules/postcss/lib/warning.js": {
+          "bytesInOutput": 475
+        },
+        "node_modules/postcss/lib/result.js": {
+          "bytesInOutput": 473
+        },
+        "node_modules/postcss/lib/warn-once.js": {
+          "bytesInOutput": 146
+        },
+        "node_modules/postcss/lib/lazy-result.js": {
+          "bytesInOutput": 6483
+        },
+        "node_modules/postcss/lib/no-work-result.js": {
+          "bytesInOutput": 1282
+        },
+        "node_modules/postcss/lib/processor.js": {
+          "bytesInOutput": 781
+        },
+        "node_modules/postcss/lib/postcss.js": {
+          "bytesInOutput": 1319
+        },
         "node_modules/openai/internal/qs/formats.mjs": {
           "bytesInOutput": 118
         },
@@ -16846,7 +17282,7 @@
           "bytesInOutput": 1244
         },
         "node_modules/openai/internal/qs/stringify.mjs": {
-          "bytesInOutput": 5115
+          "bytesInOutput": 5113
         },
         "node_modules/openai/internal/qs/index.mjs": {
           "bytesInOutput": 26
@@ -16954,7 +17390,7 @@
           "bytesInOutput": 2670
         },
         "node_modules/openai/lib/ChatCompletionStream.mjs": {
-          "bytesInOutput": 10230
+          "bytesInOutput": 10223
         },
         "node_modules/openai/lib/ChatCompletionStreamingRunner.mjs": {
           "bytesInOutput": 485
@@ -17086,61 +17522,61 @@
           "bytesInOutput": 2799
         },
         "node_modules/diff/libesm/diff/character.js": {
-          "bytesInOutput": 100
+          "bytesInOutput": 101
         },
         "node_modules/diff/libesm/util/string.js": {
           "bytesInOutput": 1262
         },
         "node_modules/diff/libesm/diff/word.js": {
-          "bytesInOutput": 2008
+          "bytesInOutput": 2012
         },
         "node_modules/diff/libesm/util/params.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/diff/line.js": {
-          "bytesInOutput": 612
+          "bytesInOutput": 613
         },
         "node_modules/diff/libesm/diff/sentence.js": {
-          "bytesInOutput": 370
+          "bytesInOutput": 371
         },
         "node_modules/diff/libesm/diff/css.js": {
-          "bytesInOutput": 105
+          "bytesInOutput": 106
         },
         "node_modules/diff/libesm/diff/json.js": {
-          "bytesInOutput": 975
+          "bytesInOutput": 976
         },
         "node_modules/diff/libesm/diff/array.js": {
-          "bytesInOutput": 131
+          "bytesInOutput": 132
         },
         "node_modules/diff/libesm/patch/line-endings.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/patch/parse.js": {
           "bytesInOutput": 17
         },
         "node_modules/diff/libesm/util/distance-iterator.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/patch/apply.js": {
-          "bytesInOutput": 36
+          "bytesInOutput": 39
         },
         "node_modules/diff/libesm/patch/reverse.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/patch/create.js": {
-          "bytesInOutput": 21
+          "bytesInOutput": 22
         },
         "node_modules/diff/libesm/convert/dmp.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/convert/xml.js": {
-          "bytesInOutput": 17
+          "bytesInOutput": 18
         },
         "node_modules/diff/libesm/index.js": {
-          "bytesInOutput": 86
+          "bytesInOutput": 97
         },
         "src/utils/stream-sse.ts": {
-          "bytesInOutput": 1204
+          "bytesInOutput": 1349
         },
         "packages/hw-auth-client/dist/storage.js": {
           "bytesInOutput": 1690
@@ -17149,22 +17585,22 @@
           "bytesInOutput": 18905
         },
         "packages/hw-auth-client/dist/client.js": {
-          "bytesInOutput": 4034
+          "bytesInOutput": 4036
         },
         "packages/hw-auth-client/dist/index.js": {
-          "bytesInOutput": 335
+          "bytesInOutput": 337
         },
         "src/modals/streaming-diff-modal.ts": {
           "bytesInOutput": 7200
         },
         "src/main.ts": {
-          "bytesInOutput": 11668
+          "bytesInOutput": 11646
         },
         "src/utils/crypto-helper.ts": {
-          "bytesInOutput": 1904
+          "bytesInOutput": 1970
         },
         "src/assets/assets-manager.ts": {
-          "bytesInOutput": 7087
+          "bytesInOutput": 7128
         },
         "src/utils/utils.ts": {
           "bytesInOutput": 15196
@@ -17176,7 +17612,7 @@
           "bytesInOutput": 906
         },
         "src/modals/confirm-publish-modal.ts": {
-          "bytesInOutput": 1076
+          "bytesInOutput": 2217
         },
         "src/assets/resource-manager.ts": {
           "bytesInOutput": 1805
@@ -17191,7 +17627,205 @@
           "bytesInOutput": 603
         },
         "src/settings/setting-tab.ts": {
-          "bytesInOutput": 52152
+          "bytesInOutput": 1663
+        },
+        "src/views/previewer.ts": {
+          "bytesInOutput": 30107
+        },
+        "src/render/post-render.ts": {
+          "bytesInOutput": 10237
+        },
+        "src/render/wechat-render.ts": {
+          "bytesInOutput": 8547
+        },
+        "node_modules/marked/lib/marked.esm.js": {
+          "bytesInOutput": 39152
+        },
+        "src/wechat-api/wechat-client.ts": {
+          "bytesInOutput": 9581
+        },
+        "src/wechat-api/error-code.ts": {
+          "bytesInOutput": 15393
+        },
+        "src/render/marked-extensions/extension.ts": {
+          "bytesInOutput": 342
+        },
+        "src/render/marked-extensions/blockquote.ts": {
+          "bytesInOutput": 3606
+        },
+        "src/render/marked-extensions/code.ts": {
+          "bytesInOutput": 16405
+        },
+        "src/render/markdown-render.ts": {
+          "bytesInOutput": 1993
+        },
+        "node_modules/highlight.js/es/core.js": {
+          "bytesInOutput": 36
+        },
+        "node_modules/highlight.js/es/languages/bash.js": {
+          "bytesInOutput": 3135
+        },
+        "node_modules/highlight.js/es/languages/c.js": {
+          "bytesInOutput": 4034
+        },
+        "node_modules/highlight.js/es/languages/cpp.js": {
+          "bytesInOutput": 5906
+        },
+        "node_modules/highlight.js/es/languages/csharp.js": {
+          "bytesInOutput": 4008
+        },
+        "node_modules/highlight.js/es/languages/css.js": {
+          "bytesInOutput": 13204
+        },
+        "node_modules/highlight.js/es/languages/diff.js": {
+          "bytesInOutput": 483
+        },
+        "node_modules/highlight.js/es/languages/dockerfile.js": {
+          "bytesInOutput": 385
+        },
+        "node_modules/highlight.js/es/languages/go.js": {
+          "bytesInOutput": 1383
+        },
+        "node_modules/highlight.js/es/languages/graphql.js": {
+          "bytesInOutput": 693
+        },
+        "node_modules/highlight.js/es/languages/ini.js": {
+          "bytesInOutput": 922
+        },
+        "node_modules/highlight.js/es/languages/java.js": {
+          "bytesInOutput": 2614
+        },
+        "node_modules/highlight.js/es/languages/javascript.js": {
+          "bytesInOutput": 6477
+        },
+        "node_modules/highlight.js/es/languages/json.js": {
+          "bytesInOutput": 392
+        },
+        "node_modules/highlight.js/es/languages/kotlin.js": {
+          "bytesInOutput": 3311
+        },
+        "node_modules/highlight.js/es/languages/less.js": {
+          "bytesInOutput": 14215
+        },
+        "node_modules/highlight.js/es/languages/lua.js": {
+          "bytesInOutput": 1845
+        },
+        "node_modules/highlight.js/es/languages/makefile.js": {
+          "bytesInOutput": 1025
+        },
+        "node_modules/highlight.js/es/languages/markdown.js": {
+          "bytesInOutput": 2055
+        },
+        "node_modules/highlight.js/es/languages/matlab.js": {
+          "bytesInOutput": 2212
+        },
+        "node_modules/highlight.js/es/languages/objectivec.js": {
+          "bytesInOutput": 2799
+        },
+        "node_modules/highlight.js/es/languages/perl.js": {
+          "bytesInOutput": 4634
+        },
+        "node_modules/highlight.js/es/languages/php.js": {
+          "bytesInOutput": 6303
+        },
+        "node_modules/highlight.js/es/languages/plaintext.js": {
+          "bytesInOutput": 85
+        },
+        "node_modules/highlight.js/es/languages/python.js": {
+          "bytesInOutput": 3422
+        },
+        "node_modules/highlight.js/es/languages/r.js": {
+          "bytesInOutput": 2886
+        },
+        "node_modules/highlight.js/es/languages/ruby.js": {
+          "bytesInOutput": 3907
+        },
+        "node_modules/highlight.js/es/languages/rust.js": {
+          "bytesInOutput": 2855
+        },
+        "node_modules/highlight.js/es/languages/scss.js": {
+          "bytesInOutput": 14304
+        },
+        "node_modules/highlight.js/es/languages/shell.js": {
+          "bytesInOutput": 207
+        },
+        "node_modules/highlight.js/es/languages/sql.js": {
+          "bytesInOutput": 6465
+        },
+        "node_modules/highlight.js/es/languages/swift.js": {
+          "bytesInOutput": 8227
+        },
+        "node_modules/highlight.js/es/languages/typescript.js": {
+          "bytesInOutput": 7744
+        },
+        "node_modules/highlight.js/es/languages/vbnet.js": {
+          "bytesInOutput": 2594
+        },
+        "node_modules/highlight.js/es/languages/xml.js": {
+          "bytesInOutput": 1878
+        },
+        "node_modules/highlight.js/es/languages/yaml.js": {
+          "bytesInOutput": 1847
+        },
+        "src/render/hljs-languages.ts": {
+          "bytesInOutput": 1296
+        },
+        "src/render/marked-extensions/codespan.ts": {
+          "bytesInOutput": 939
+        },
+        "src/render/marked-extensions/embed.ts": {
+          "bytesInOutput": 9747
+        },
+        "src/render/marked-extensions/heading.ts": {
+          "bytesInOutput": 493
+        },
+        "src/render/marked-extensions/iconize.ts": {
+          "bytesInOutput": 944
+        },
+        "src/render/mathjax.ts": {
+          "bytesInOutput": 686
+        },
+        "src/render/marked-extensions/math.ts": {
+          "bytesInOutput": 1901
+        },
+        "src/render/marked-extensions/remix-icon.ts": {
+          "bytesInOutput": 644
+        },
+        "src/render/marked-extensions/table.ts": {
+          "bytesInOutput": 1192
+        },
+        "src/render/marked-extensions/footnote.ts": {
+          "bytesInOutput": 2096
+        },
+        "src/render/marked-extensions/links.ts": {
+          "bytesInOutput": 1405
+        },
+        "src/render/marked-extensions/summary.ts": {
+          "bytesInOutput": 851
+        },
+        "src/render/marked-extensions/image.ts": {
+          "bytesInOutput": 3134
+        },
+        "src/render/marked-extensions/highlight.ts": {
+          "bytesInOutput": 397
+        },
+        "src/utils/code-block-mapper.ts": {
+          "bytesInOutput": 1945
+        },
+        "src/utils/cjk-punctuation.ts": {
+          "bytesInOutput": 5164
+        },
+        "src/views/mp-article-header.ts": {
+          "bytesInOutput": 12582
+        },
+        "src/assets/draft-manager.ts": {
+          "bytesInOutput": 2329
+        },
+        "src/utils/urls.ts": {
+          "bytesInOutput": 727
+        },
+        "src/modals/title-suggest-modal.ts": {
+          "bytesInOutput": 2022
         },
         "src/theme/theme-manager.ts": {
           "bytesInOutput": 6532
@@ -17200,7 +17834,7 @@
           "bytesInOutput": 575
         },
         "src/theme/CssMerger.ts": {
-          "bytesInOutput": 8621
+          "bytesInOutput": 8665
         },
         "src/assets/default-styles/00_smart-mp.css": {
           "bytesInOutput": 1699
@@ -17313,215 +17947,53 @@
         "src/theme/presets.ts": {
           "bytesInOutput": 1358
         },
-        "src/utils/folder-suggest.ts": {
-          "bytesInOutput": 395
-        },
-        "src/settings/mp-web-images.ts": {
-          "bytesInOutput": 126936
-        },
-        "src/views/previewer.ts": {
-          "bytesInOutput": 26999
-        },
-        "src/render/post-render.ts": {
-          "bytesInOutput": 9795
-        },
-        "src/render/wechat-render.ts": {
-          "bytesInOutput": 8434
-        },
-        "node_modules/marked/lib/marked.esm.js": {
-          "bytesInOutput": 39152
-        },
-        "src/render/marked-extensions/extension.ts": {
-          "bytesInOutput": 342
-        },
-        "src/render/marked-extensions/blockquote.ts": {
-          "bytesInOutput": 3606
-        },
-        "src/render/marked-extensions/code.ts": {
-          "bytesInOutput": 12052
-        },
-        "src/render/markdown-render.ts": {
-          "bytesInOutput": 1982
-        },
-        "node_modules/highlight.js/es/core.js": {
-          "bytesInOutput": 36
-        },
-        "node_modules/highlight.js/es/languages/bash.js": {
-          "bytesInOutput": 3135
-        },
-        "node_modules/highlight.js/es/languages/c.js": {
-          "bytesInOutput": 4034
-        },
-        "node_modules/highlight.js/es/languages/cpp.js": {
-          "bytesInOutput": 5906
-        },
-        "node_modules/highlight.js/es/languages/csharp.js": {
-          "bytesInOutput": 4008
-        },
-        "node_modules/highlight.js/es/languages/css.js": {
-          "bytesInOutput": 13204
-        },
-        "node_modules/highlight.js/es/languages/diff.js": {
-          "bytesInOutput": 483
-        },
-        "node_modules/highlight.js/es/languages/dockerfile.js": {
-          "bytesInOutput": 385
-        },
-        "node_modules/highlight.js/es/languages/go.js": {
-          "bytesInOutput": 1383
-        },
-        "node_modules/highlight.js/es/languages/graphql.js": {
-          "bytesInOutput": 693
-        },
-        "node_modules/highlight.js/es/languages/ini.js": {
-          "bytesInOutput": 922
-        },
-        "node_modules/highlight.js/es/languages/java.js": {
-          "bytesInOutput": 2614
-        },
-        "node_modules/highlight.js/es/languages/javascript.js": {
-          "bytesInOutput": 6479
-        },
-        "node_modules/highlight.js/es/languages/json.js": {
-          "bytesInOutput": 392
-        },
-        "node_modules/highlight.js/es/languages/kotlin.js": {
-          "bytesInOutput": 3311
-        },
-        "node_modules/highlight.js/es/languages/less.js": {
-          "bytesInOutput": 14215
-        },
-        "node_modules/highlight.js/es/languages/lua.js": {
-          "bytesInOutput": 1845
-        },
-        "node_modules/highlight.js/es/languages/makefile.js": {
-          "bytesInOutput": 1025
-        },
-        "node_modules/highlight.js/es/languages/markdown.js": {
-          "bytesInOutput": 2055
-        },
-        "node_modules/highlight.js/es/languages/matlab.js": {
-          "bytesInOutput": 2212
-        },
-        "node_modules/highlight.js/es/languages/objectivec.js": {
-          "bytesInOutput": 2799
-        },
-        "node_modules/highlight.js/es/languages/perl.js": {
-          "bytesInOutput": 4634
-        },
-        "node_modules/highlight.js/es/languages/php.js": {
-          "bytesInOutput": 6312
-        },
-        "node_modules/highlight.js/es/languages/plaintext.js": {
-          "bytesInOutput": 85
-        },
-        "node_modules/highlight.js/es/languages/python.js": {
-          "bytesInOutput": 3422
-        },
-        "node_modules/highlight.js/es/languages/r.js": {
-          "bytesInOutput": 2886
-        },
-        "node_modules/highlight.js/es/languages/ruby.js": {
-          "bytesInOutput": 3907
-        },
-        "node_modules/highlight.js/es/languages/rust.js": {
-          "bytesInOutput": 2855
-        },
-        "node_modules/highlight.js/es/languages/scss.js": {
-          "bytesInOutput": 14304
-        },
-        "node_modules/highlight.js/es/languages/shell.js": {
-          "bytesInOutput": 207
-        },
-        "node_modules/highlight.js/es/languages/sql.js": {
-          "bytesInOutput": 6465
-        },
-        "node_modules/highlight.js/es/languages/swift.js": {
-          "bytesInOutput": 8228
-        },
-        "node_modules/highlight.js/es/languages/typescript.js": {
-          "bytesInOutput": 7746
-        },
-        "node_modules/highlight.js/es/languages/vbnet.js": {
-          "bytesInOutput": 2594
-        },
-        "node_modules/highlight.js/es/languages/xml.js": {
-          "bytesInOutput": 1878
-        },
-        "node_modules/highlight.js/es/languages/yaml.js": {
-          "bytesInOutput": 1847
-        },
-        "src/render/hljs-languages.ts": {
-          "bytesInOutput": 1296
-        },
-        "src/render/marked-extensions/codespan.ts": {
-          "bytesInOutput": 939
-        },
-        "src/render/marked-extensions/embed.ts": {
-          "bytesInOutput": 9747
-        },
-        "src/render/marked-extensions/heading.ts": {
-          "bytesInOutput": 493
-        },
-        "src/render/marked-extensions/iconize.ts": {
-          "bytesInOutput": 944
-        },
-        "src/render/mathjax.ts": {
-          "bytesInOutput": 686
-        },
-        "src/render/marked-extensions/math.ts": {
-          "bytesInOutput": 1901
-        },
-        "src/render/marked-extensions/remix-icon.ts": {
-          "bytesInOutput": 644
-        },
-        "src/render/marked-extensions/table.ts": {
-          "bytesInOutput": 1192
-        },
-        "src/render/marked-extensions/footnote.ts": {
-          "bytesInOutput": 2075
-        },
-        "src/render/marked-extensions/links.ts": {
-          "bytesInOutput": 1405
-        },
-        "src/render/marked-extensions/summary.ts": {
-          "bytesInOutput": 851
-        },
-        "src/render/marked-extensions/image.ts": {
-          "bytesInOutput": 3134
-        },
-        "src/render/marked-extensions/highlight.ts": {
-          "bytesInOutput": 397
-        },
-        "src/utils/code-block-mapper.ts": {
-          "bytesInOutput": 1945
-        },
-        "src/views/mp-article-header.ts": {
-          "bytesInOutput": 12426
-        },
-        "src/assets/draft-manager.ts": {
-          "bytesInOutput": 2329
-        },
-        "src/utils/urls.ts": {
-          "bytesInOutput": 727
-        },
-        "src/modals/title-suggest-modal.ts": {
-          "bytesInOutput": 2022
-        },
         "src/theme/theme-selector.ts": {
-          "bytesInOutput": 1398
+          "bytesInOutput": 1588
         },
         "src/render/scroll-sync-extension.ts": {
-          "bytesInOutput": 1803
+          "bytesInOutput": 1865
         },
         "src/utils/scroll-sync-config.ts": {
           "bytesInOutput": 2671
+        },
+        "src/utils/article-stats.ts": {
+          "bytesInOutput": 621
+        },
+        "src/settings/section-ids.ts": {
+          "bytesInOutput": 271
+        },
+        "src/settings/sections/license-section.ts": {
+          "bytesInOutput": 3099
+        },
+        "src/settings/sections/wechat-section.ts": {
+          "bytesInOutput": 6720
+        },
+        "src/settings/smart-mp-setting.ts": {
+          "bytesInOutput": 1138
+        },
+        "src/settings/assistant-defaults.ts": {
+          "bytesInOutput": 5080
+        },
+        "src/settings/migrate.ts": {
+          "bytesInOutput": 2003
+        },
+        "src/assets/mp-web-images.ts": {
+          "bytesInOutput": 126936
+        },
+        "src/settings/sections/general-section.ts": {
+          "bytesInOutput": 2996
+        },
+        "src/settings/sections/appearance-section.ts": {
+          "bytesInOutput": 3944
+        },
+        "src/utils/folder-suggest.ts": {
+          "bytesInOutput": 395
         },
         "src/modals/theme-clone-modal.ts": {
           "bytesInOutput": 2705
         },
         "src/theme/theme-extractor.ts": {
-          "bytesInOutput": 13637
+          "bytesInOutput": 13667
         },
         "node_modules/cheerio/dist/browser/static.js": {
           "bytesInOutput": 1328
@@ -17595,38 +18067,53 @@
         "node_modules/cheerio/dist/browser/load-parse.js": {
           "bytesInOutput": 116
         },
+        "src/settings/sections/security-section.ts": {
+          "bytesInOutput": 850
+        },
+        "src/settings/sections/llm-section.ts": {
+          "bytesInOutput": 9030
+        },
+        "src/settings/llm-presets.ts": {
+          "bytesInOutput": 3058
+        },
+        "src/utils/llm-probe.ts": {
+          "bytesInOutput": 426
+        },
+        "src/settings/sections/ai-draw-section.ts": {
+          "bytesInOutput": 3023
+        },
+        "src/settings/sections/assistant-section.ts": {
+          "bytesInOutput": 5253
+        },
         "src/modals/diff-modal.ts": {
           "bytesInOutput": 1483
         },
-        "src/settings/smart-mp-setting.ts": {
-          "bytesInOutput": 400
-        },
         "src/utils/ai-client.ts": {
-          "bytesInOutput": 2450
+          "bytesInOutput": 2466
         },
         "node_modules/ollama/dist/index.mjs": {
           "bytesInOutput": 599
         },
         "node_modules/whatwg-fetch/fetch.js": {
-          "bytesInOutput": 10142
+          "bytesInOutput": 10160
         },
         "node_modules/ollama/dist/browser.mjs": {
-          "bytesInOutput": 5700
+          "bytesInOutput": 5703
         },
         "src/utils/ollama-client.ts": {
-          "bytesInOutput": 1792
-        },
-        "src/utils/ai-base-client.ts": {
-          "bytesInOutput": 3711
-        },
-        "src/utils/openAI-client.ts": {
-          "bytesInOutput": 2032
+          "bytesInOutput": 2277
         },
         "src/utils/prompt.json": {
-          "bytesInOutput": 13172
+          "bytesInOutput": 13173
+        },
+        "src/utils/ai-base-client.ts": {
+          "bytesInOutput": 4893
+        },
+        "src/utils/openAI-client.ts": {
+          "bytesInOutput": 2765
         },
         "src/utils/fetch.ts": {
-          "bytesInOutput": 1651
+          "bytesInOutput": 1654
         },
         "src/utils/qwen-image-client.ts": {
           "bytesInOutput": 2646
@@ -17638,10 +18125,10 @@
           "bytesInOutput": 1968
         },
         "src/settings/account-switcher.ts": {
-          "bytesInOutput": 665
+          "bytesInOutput": 708
         },
         "src/views/material-panel.ts": {
-          "bytesInOutput": 5743
+          "bytesInOutput": 6085
         },
         "src/views/floating-toolbar.ts": {
           "bytesInOutput": 2872
@@ -17649,44 +18136,44 @@
         "src/views/spinner.ts": {
           "bytesInOutput": 577
         },
-        "src/icons.ts": {
-          "bytesInOutput": 154806
+        "src/theme/hot-reloader.ts": {
+          "bytesInOutput": 1164
         },
-        "src/settings/migrate.ts": {
-          "bytesInOutput": 1605
+        "src/icons.ts": {
+          "bytesInOutput": 154807
         },
         "src/services/auth-service.ts": {
-          "bytesInOutput": 2827
+          "bytesInOutput": 2830
         },
         "src/utils/ip-address.ts": {
-          "bytesInOutput": 317
+          "bytesInOutput": 320
         },
         "src/services/ip-service.ts": {
-          "bytesInOutput": 433
+          "bytesInOutput": 434
         },
         "src/services/account-service.ts": {
-          "bytesInOutput": 2074
+          "bytesInOutput": 2309
         },
         "src/core/command-manager.ts": {
-          "bytesInOutput": 6577
+          "bytesInOutput": 8562
         },
         "src/utils/proofread.ts": {
-          "bytesInOutput": 3025
+          "bytesInOutput": 3031
         },
         "src/services/ai-feature-manager.ts": {
           "bytesInOutput": 8286
         },
         "src/utils/error-handler.ts": {
-          "bytesInOutput": 723
+          "bytesInOutput": 725
         },
         "src/utils/error-types.ts": {
           "bytesInOutput": 646
         },
         "src/modals/synonyms-modal.ts": {
-          "bytesInOutput": 1421
+          "bytesInOutput": 1423
         }
       },
-      "bytes": 3883010
+      "bytes": 3911076
     }
   }
 }

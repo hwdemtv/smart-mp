@@ -45,51 +45,57 @@ export class ObsidianMarkdownRenderer {
         this.container.empty();
         this.container.show();
         this.rendering = true
-        if (this.mdv) {
-            this.mdv.unload();
-        }
-        // await this.loadComponents(view)
-        this.previewEl = createDiv()
-        this.markdownBody = this.previewEl.createDiv()
-        this.mdv = new MarkdownRenderChild(this.markdownBody)
-        this.view.addChild(this.mdv)
-        this.container.appendChild(this.previewEl)
-        this.path = path
-        const markdown = content ?? await this.app.vault.adapter.read(path)
-        await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.mdv
-            // this.app.workspace.getActiveViewOfType(MarkdownView)!
-            // || this.app.workspace.activeLeaf?.view
-            // || this.mdv //new MarkdownRenderChild(this.el)
-        )
+        // [Fix] 整个渲染流程包进 try/finally：此前 MarkdownRenderer.render 抛错时
+        // rendering 永久卡在 true，queryElement 永远返回 null，之后所有
+        // Mermaid/Excalidraw/Callout 查询静默失败，直到插件重载
         try {
-            const waiters: Promise<void>[] = [];
-            if (/^\s*>+\s*\[!/m.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
+            if (this.mdv) {
+                this.mdv.unload();
             }
-            if (/```\s*mermaid/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg, .block-language-mermaid svg", 5000));
-            }
-            if (/!\[\[.*?\.excalidraw.*?\]\]/i.test(markdown)) {
-                waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
-            }
+            // await this.loadComponents(view)
+            this.previewEl = createDiv()
+            this.markdownBody = this.previewEl.createDiv()
+            this.mdv = new MarkdownRenderChild(this.markdownBody)
+            this.view.addChild(this.mdv)
+            this.container.appendChild(this.previewEl)
+            this.path = path
+            const markdown = content ?? await this.app.vault.adapter.read(path)
+            await MarkdownRenderer.render(this.app, markdown, this.markdownBody, path, this.mdv
+                // this.app.workspace.getActiveViewOfType(MarkdownView)!
+                // || this.app.workspace.activeLeaf?.view
+                // || this.mdv //new MarkdownRenderChild(this.el)
+            )
+            try {
+                const waiters: Promise<void>[] = [];
+                if (/^\s*>+\s*\[!/m.test(markdown)) {
+                    waiters.push(this.waitForSelector(this.previewEl, ".callout", 5000));
+                }
+                if (/```\s*mermaid/i.test(markdown)) {
+                    waiters.push(this.waitForSelector(this.previewEl, ".mermaid svg, .block-language-mermaid svg", 5000));
+                }
+                if (/!\[\[.*?\.excalidraw.*\]\]/i.test(markdown)) {
+                    waiters.push(this.waitForSelector(this.previewEl, ".excalidraw-svg, .excalidraw", 5000));
+                }
 
-            // General buffer wait only if we waited on dynamic content
-            if (waiters.length > 0) {
-                // Slight buffer for rendering stability if we had complex elements
-                waiters.push(new Promise(resolve => setTimeout(resolve, 100)));
-            } else {
-                // No complex elements - minimal buffer
-                waiters.push(new Promise(resolve => setTimeout(resolve, 50)));
-            }
+                // General buffer wait only if we waited on dynamic content
+                if (waiters.length > 0) {
+                    // Slight buffer for rendering stability if we had complex elements
+                    waiters.push(new Promise(resolve => setTimeout(resolve, 100)));
+                } else {
+                    // No complex elements - minimal buffer
+                    waiters.push(new Promise(resolve => setTimeout(resolve, 50)));
+                }
 
-            if (waiters.length) {
-                await Promise.all(waiters);
+                if (waiters.length) {
+                    await Promise.all(waiters);
+                }
+            } catch (err) {
+                Logger.warn("MarkdownRender", "部分插件渲染超时（非致命）", err);
             }
-        } catch (err) {
-            Logger.warn("MarkdownRender", "部分插件渲染超时（非致命）", err);
+        } finally {
+            this.rendering = false
         }
-        this.rendering = false
-        // this.container.hide() 
+        // this.container.hide()
     }
     public queryElement(index: number, query: string) {
         if (this.previewEl === undefined || !this.previewEl) {

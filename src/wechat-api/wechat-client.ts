@@ -30,7 +30,7 @@ const CENTER_TOKEN_SERVERS = [
 	"https://api.weixin.qq.com/cgi-bin" // fallback to official
 ];
 
-// 中心令牌缓存
+// 中心令牌缓存（按 appId 区分：多账户切换时 token 不能共用）
 interface TokenCache {
 	token: string;
 	expiresAt: number;
@@ -61,7 +61,7 @@ export class WechatClient {
 	private static instance: WechatClient;
 	private plugin: SmartMPPlugin;
 	readonly baseUrl: string = "https://api.weixin.qq.com/cgi-bin";
-	private centerTokenCache: TokenCache | null = null;
+	private centerTokenCache: Map<string, TokenCache> = new Map();
 
 	private constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
@@ -81,11 +81,14 @@ export class WechatClient {
 	 * 从中心令牌服务器获取 access_token
 	 * 支持多服务器容灾
 	 */
-	public async requestToken(appId: string, appSecret: string, retryCount = 0): Promise<string | null> {
+	public async requestToken(appId: string, appSecret: string): Promise<string | null> {
 		// 检查缓存是否有效 (提前 5 分钟刷新)
-		if (this.centerTokenCache && this.centerTokenCache.expiresAt > Date.now() + 5 * 60 * 1000) {
+		// [Fix] 缓存按 appId 区分：多账户模式下切换账户后，
+		// 此前会继续用 A 账户的 token 调 B 账户 API（必然 40001）
+		const cached = this.centerTokenCache.get(appId);
+		if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
 			Logger.debug('WechatClient', 'Using cached center token');
-			return this.centerTokenCache.token;
+			return cached.token;
 		}
 
 		// 尝试从反代服务器获取 token
@@ -105,10 +108,10 @@ export class WechatClient {
 
 				if (access_token) {
 					// 缓存 token
-					this.centerTokenCache = {
+					this.centerTokenCache.set(appId, {
 						token: access_token,
 						expiresAt: Date.now() + (Number(expires_in) || 7200) * 1000
-					};
+					});
 
 					Logger.debug('WechatClient', `Center token obtained, expires in ${expires_in}s`);
 					return access_token;
@@ -127,9 +130,30 @@ export class WechatClient {
 
 	/**
 	 * 清除中心令牌缓存
+	 * @param appId 指定 appId 时只清除该账户；不传则全部清空
 	 */
-	public clearCenterTokenCache(): void {
-		this.centerTokenCache = null;
+	public clearCenterTokenCache(appId?: string): void {
+		if (appId) {
+			this.centerTokenCache.delete(appId);
+		} else {
+			this.centerTokenCache.clear();
+		}
+	}
+
+	/**
+	 * 使账户的 access_token 失效（用于 40001/42001 后强制刷新）
+	 */
+	public invalidateToken(accountName?: string): void {
+		const account = this.plugin.getMPAccountByName(
+			accountName || this.plugin.settings.selectedMPAccount
+		);
+		if (account) {
+			account.access_token = "";
+			account.lastRefreshTime = 0;
+			if (account.appId) {
+				this.clearCenterTokenCache(account.appId);
+			}
+		}
 	}
 
 	/**
@@ -183,10 +207,13 @@ export class WechatClient {
 			if (resData.errcode !== undefined && resData.errcode !== 0) {
 				// 处理令牌过期或无效 (40001, 42001)
 				if ((resData.errcode === 40001 || resData.errcode === 42001) && !isRetry) {
-					Logger.warn('WechatClient', `Token invalid (${resData.errcode}), retrying...`);
+					Logger.warn('WechatClient', `Token invalid (${resData.errcode}), invalidating cached token and retrying...`);
+					// [Fix] 必须先作废本地缓存的失效 token：此前只是重调一次，
+					// refreshAccessToken 命中本地未过期缓存又返回同一个 token，重试形同虚设
+					this.invalidateToken(accountName);
 					return this.callWechatApiRaw(endpoint, method, body, accountName, true);
 				}
-				
+
 				Logger.error('WechatClient', `API Error: ${resData.errcode} - ${resData.errmsg}`, { endpoint });
 				// 不自动弹 Notice，让调用方决定如何处理
 				return resData; // 返回完整响应，包含错误码
@@ -230,10 +257,12 @@ export class WechatClient {
 			if (resData.errcode !== undefined && resData.errcode !== 0) {
 				// 处理令牌过期或无效 (40001, 42001)
 				if ((resData.errcode === 40001 || resData.errcode === 42001) && !isRetry) {
-					Logger.warn('WechatClient', `Token invalid (${resData.errcode}), retrying...`);
+					Logger.warn('WechatClient', `Token invalid (${resData.errcode}), invalidating cached token and retrying...`);
+					// [Fix] 同 callWechatApiRaw：先作废失效 token，重试才会真正重新获取
+					this.invalidateToken(accountName);
 					return this.callWechatApi(endpoint, method, body, accountName, true);
 				}
-				
+
 				Logger.error('WechatClient', `API Error: ${resData.errcode} - ${resData.errmsg}`, { endpoint });
 				new Notice(`${$t("wechat-api.error") || '微信接口错误'}: ${getErrorMessage(resData.errcode)}`, 0);
 				return false;
@@ -569,11 +598,72 @@ export class WechatClient {
 		);
 	}
 
-	public async getTemporaryMaterial(media_id: string, accountName?: string) {
+	/**
+	 * [新增] 更新已有草稿（/draft/update）
+	 * 解决改稿工作流断点：此前每次修改都新建草稿，草稿箱堆积重复项。
+	 * 注意微信该接口的 articles 是单个文章对象（非数组）。
+	 */
+	public async updateDraft(
+		mediaId: string,
+		localDraft: LocalDraftItem,
+		data: string,
+		onThumbMediaIdExpired?: () => Promise<string | undefined>
+	): Promise<string | false> {
+		Logger.debug("updateDraft", `Updating draft: ${mediaId} - ${localDraft.title}`);
+
+		const buildArticle = async () => this.formatArticle(
+			{ title: localDraft.title, content: data, digest: localDraft.digest },
+			localDraft
+		);
+
+		let resData = await this.callWechatApiRaw<WechatBaseResponse>(
+			"/draft/update",
+			"POST",
+			{ media_id: mediaId, index: 0, articles: await buildArticle() }
+		);
+
+		// 封面素材失效（40007）：重传封面后重试一次
+		if (resData && resData.errcode === 40007 && onThumbMediaIdExpired) {
+			Logger.warn("updateDraft", "thumb_media_id invalid (40007), re-uploading cover...");
+			const newThumbMediaId = await onThumbMediaIdExpired();
+			if (newThumbMediaId) {
+				localDraft.thumb_media_id = newThumbMediaId;
+				resData = await this.callWechatApiRaw<WechatBaseResponse>(
+					"/draft/update",
+					"POST",
+					{ media_id: mediaId, index: 0, articles: await buildArticle() }
+				);
+			}
+		}
+
+		if (!resData || (resData.errcode !== undefined && resData.errcode !== 0)) {
+			return false;
+		}
+		new Notice($t("wechat-api.update-draft-success") ?? "草稿更新成功！");
+		return mediaId;
+	}
+
+	/**
+	 * [新增] 查询发布状态（/freepublish/get）
+	 * publish_state: 0 成功 / 1 发布中 / 2 原始失败 / 3 常规失败 / 4 被撤回
+	 */
+	public async getPublishStatus(publish_id: string, accountName: string = "") {
 		return this.callWechatApi<any>(
-			"/media/get",
+			"/freepublish/get",
+			"POST",
+			{ publish_id },
+			accountName || this.plugin.settings.selectedMPAccount
+		);
+	}
+
+	public async getTemporaryMaterial(media_id: string, accountName?: string) {
+		// [Fix] /media/get 要求 media_id 在 query string 上。
+		// 此前误把参数字符串当 body 传给 GET 请求（body 会被忽略，
+		// URL 上只有 access_token），该接口从未正确工作过
+		return this.callWechatApi<any>(
+			`/media/get?media_id=${encodeURIComponent(media_id)}`,
 			"GET",
-			`media_id=${media_id}`, // GET parameters
+			undefined,
 			accountName
 		);
 	}

@@ -33,6 +33,7 @@ import { DeepSeekResult } from "./types/types";
 import {
 	getSmartMPSetting,
 	saveSmartMPSetting,
+	DEFAULT_SETTINGS,
 	SmartMPSetting,
 } from "./settings/smart-mp-setting";
 import { AiClient } from "./utils/ai-client";
@@ -44,7 +45,7 @@ import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "./views/previewer";
 import { FloatingToolbar } from "./views/floating-toolbar";
 import { WechatClient } from "./wechat-api/wechat-client";
-import { syncLineField, scrollSyncPlugin, scrollSyncStyles, initScrollSyncStyle } from "./render/scroll-sync-extension";
+import { syncLineField, scrollSyncPlugin, scrollSyncStyles, initScrollSyncStyle, removeDynamicCSS } from "./render/scroll-sync-extension";
 import { Spinner } from "./views/spinner";
 import { ThemeHotReloader } from "./theme/hot-reloader";
 import { ThemeManager } from "./theme/theme-manager";
@@ -57,44 +58,6 @@ import { IPService } from "src/services/ip-service";
 import { AccountService } from "src/services/account-service";
 import { CommandManager } from "src/core/command-manager";
 import { AIFeatureManager } from "src/services/ai-feature-manager";
-
-const DEFAULT_SETTINGS: SmartMPSetting = {
-	mpAccounts: [],
-	ipAddress: "",
-	css_styles_folder: "smart-mp-css-styles",
-	codeLineNumber: true,
-	codeTheme: "github",
-	showCodeMacHeader: true,
-	fontSize: "15px",
-	firstLineIndent: false,
-	linkFootnotes: true,
-	showImageCaptions: false,
-	showArticleStats: false,
-	embedArticleStats: false,
-	hrStyle: "dots",
-	customHrText: "· · ·",
-	accountDataPath: "smart-mp-accounts",
-	useCenterToken: false,
-	chatAccounts: [],
-	drawAccounts: [],
-	realTimeRender: true,
-	realTimeRenderDelay: 500,
-	scrollSync: true,
-	enableStrictSecurityMode: true,
-	enableFloatingToolbar: true,
-	chatSetting: {
-		temperature: 0.7,
-		max_tokens: 2048,
-		top_p: 1,
-		frequency_penalty: 0,
-		presence_penalty: 0,
-	},
-	// 滚动同步增强设置
-	scrollSyncPrecision: 'balanced',
-	scrollHighlightPreset: 'gold',
-	enableCodeBlockLineMapping: false,
-	scrollSyncMode: 'precise',
-};
 
 export default class SmartMPPlugin extends Plugin {
 	settings: SmartMPSetting;
@@ -166,6 +129,10 @@ export default class SmartMPPlugin extends Plugin {
 	}, 3000);
 
 	private async persistSettings(): Promise<void> {
+		// [Fix] 保存前强制解密：懒解密未触发时内存中仍是密文，直接再加密
+		// 会产生双重加密，之后解密得到乱码，密钥被静默永久损坏
+		await this.ensureDecrypted();
+
 		const settingsCopy: SmartMPSetting = JSON.parse(JSON.stringify(this.settings));
 		delete settingsCopy._id;
 		delete settingsCopy._rev;
@@ -181,10 +148,29 @@ export default class SmartMPPlugin extends Plugin {
 		for (const acc of settingsCopy.drawAccounts) {
 			if (acc.apiKey) acc.apiKey = await CryptoHelper.encrypt(acc.apiKey, key);
 		}
+		// [Fix] llmProviders 此前从不加密：解密进内存后明文落盘，与旧字段策略不一致
+		for (const provider of settingsCopy.llmProviders || []) {
+			if (provider.apiKey) provider.apiKey = await CryptoHelper.encrypt(provider.apiKey, key);
+		}
+		// [Fix] proPassword/proToken 此前明文落盘，与其余敏感字段策略不一致
+		if (settingsCopy.proPassword) {
+			settingsCopy.proPassword = await CryptoHelper.encrypt(settingsCopy.proPassword, key);
+		}
+		if (settingsCopy.proToken) {
+			settingsCopy.proToken = await CryptoHelper.encrypt(settingsCopy.proToken, key);
+		}
 
 		// this.trimSettings(); // Trim only makes sense for raw input, here we are saving
 		await saveSmartMPSetting(this, settingsCopy);
 		await this.saveThemeFolder();
+	}
+
+	/**
+	 * 立即持久化（绕过 saveSettings 的 3s 防抖）。
+	 * 供导入设置等一次性重要操作使用，避免防抖窗口内崩溃导致数据丢失。
+	 */
+	async saveSettingsNow(): Promise<void> {
+		await this.persistSettings();
 	}
 
 	// proofService: ProofService;
@@ -258,19 +244,35 @@ export default class SmartMPPlugin extends Plugin {
 		await Promise.all([
 			// MP Accounts
 			...this.settings.mpAccounts.map(async (acc) => {
-				if (acc.appSecret) acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
+				if (acc.appSecret && CryptoHelper.isEncrypted(acc.appSecret)) {
+					acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
+				}
 			}),
 			// LLM Providers (New Architecture)
 			...(this.settings.llmProviders || []).map(async (provider) => {
-				if (provider.apiKey) provider.apiKey = await CryptoHelper.decrypt(provider.apiKey, key);
+				if (provider.apiKey && CryptoHelper.isEncrypted(provider.apiKey)) {
+					provider.apiKey = await CryptoHelper.decrypt(provider.apiKey, key);
+				}
 			}),
 			// Legacy accounts (Compatibility)
 			...this.settings.chatAccounts.map(async (acc) => {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				if (acc.apiKey && CryptoHelper.isEncrypted(acc.apiKey)) {
+					acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				}
 			}),
 			...this.settings.drawAccounts.map(async (acc) => {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				if (acc.apiKey && CryptoHelper.isEncrypted(acc.apiKey)) {
+					acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				}
 			}),
+			(async () => {
+				if (this.settings.proPassword && CryptoHelper.isEncrypted(this.settings.proPassword)) {
+					this.settings.proPassword = await CryptoHelper.decrypt(this.settings.proPassword, key);
+				}
+				if (this.settings.proToken && CryptoHelper.isEncrypted(this.settings.proToken)) {
+					this.settings.proToken = await CryptoHelper.decrypt(this.settings.proToken, key);
+				}
+			})(),
 		]);
 
 		this._isDecrypted = true;
@@ -304,8 +306,10 @@ export default class SmartMPPlugin extends Plugin {
 				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
 			});
 			// Save immediately to apply new AES encryption
+			// [Fix] 迁移后内存中已是明文，先置标记再持久化，
+			// 避免 persistSettings 内的 ensureDecrypted 重复处理
+			this._isDecrypted = true;
 			await this.persistSettings();
-			this._isDecrypted = true; // Migrated content is already plain text in memory
 		} else {
 			// DO NOT DECRYPT HERE. Will be done lazily via ensureDecrypted()
 			this._isDecrypted = false;
@@ -525,6 +529,11 @@ export default class SmartMPPlugin extends Plugin {
 		// Editor extensions
 		this.registerEditorExtension([syncLineField, scrollSyncPlugin, scrollSyncStyles]);
 		initScrollSyncStyle(this.settings.scrollHighlightPreset as any);
+
+		// [Fix] 接线主题热更新：ThemeHotReloader 此前只声明未实例化，
+		// 'theme-reloaded' 消息永远无人发送，编辑主题 CSS 预览不会刷新
+		this.themeHotReloader = new ThemeHotReloader(this);
+		this.themeHotReloader.startWatching();
 	}
 
 	private registerFloatingToolbarEvents(): void {
@@ -578,10 +587,17 @@ export default class SmartMPPlugin extends Plugin {
 		if (this.editorChangeListener) {
 			this.app.workspace.offref(this.editorChangeListener);
 		}
-		// this.spinnerEl.remove();
-		// this.spinnerEl.remove();
-		this.spinner.unload();
+		// [Fix] spinner 在 rAF 回调中创建，插件在首帧前被禁用时可能尚未初始化，
+		// 无保护会抛 TypeError 中断后续清理
+		this.spinner?.unload();
 		if (this.themeHotReloader) this.themeHotReloader.stopWatching();
+
+		// [Fix] flush 防抖保存：3 秒防抖窗口内禁用插件/退出 Obsidian 会丢失未落盘的设置改动。
+		// saveSmartMPSetting 内部有"未变化则跳过写入"检查，无条件落盘是安全的
+		void this.persistSettings();
+
+		// [Fix] 清理滚动同步注入到文档的动态样式
+		removeDynamicCSS();
 
 		// Clean up static instances
 		ThemeManager.onPluginUnload();
@@ -600,8 +616,6 @@ export default class SmartMPPlugin extends Plugin {
 				leaf.detach();
 			}
 		});
-		this.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW).forEach((leaf) => leaf.detach());
-		this.app.workspace.getLeavesOfType(VIEW_TYPE_MP_MATERIAL).forEach((leaf) => leaf.detach());
 	}
 
 

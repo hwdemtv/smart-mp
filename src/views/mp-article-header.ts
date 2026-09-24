@@ -29,6 +29,12 @@ export class MPArticleHeader {
 		}
 	}
 
+	/** 释放本组件注册的全部监听器（视图关闭时调用） */
+	destroy(): void {
+		this.disposers.forEach(d => d());
+		this.disposers = [];
+	}
+
 	private plugin: SmartMPPlugin;
 	private cover_image: string | null;
 	private coverFrame: HTMLElement;
@@ -42,44 +48,54 @@ export class MPArticleHeader {
 	private _needOpenComment: ToggleComponent;
 	private _onlyFansCanComment: ToggleComponent;
 	private imageGenerateModal: ImageGenerateModal | undefined;
+	/** messageService 注销函数，视图关闭时清理，防止旧实例继续响应消息 */
+	private disposers: (() => void)[] = [];
 	constructor(plugin: SmartMPPlugin, containerEl: HTMLElement) {
 		this.plugin = plugin;
 		this.localDraftmanager = LocalDraftManager.getInstance(plugin);
 		this.BuildUI(containerEl);
-		this.plugin.messageService.registerListener(
-			"wechat-account-changed",
-			(data: string) => {
-				void this.updateLocalDraft();
-			}
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"wechat-account-changed",
+				(data: string) => {
+					void this.updateLocalDraft();
+				}
+			)
 		);
 
-		this.plugin.messageService.registerListener(
-			"active-file-changed",
-			(data: string) => {
-				void this.updateLocalDraft();
-			}
-		);
-		this.plugin.messageService.registerListener(
-			"set-draft-cover-image",
-			(url: string) => {
-				this.cover_image = url;
-				this.setCoverImage(url);
-				if (this.activeLocalDraft) {
-					this.activeLocalDraft.thumb_media_id = undefined;
-					void this.localDraftmanager.setDraft(this.activeLocalDraft);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"active-file-changed",
+				(data: string) => {
+					void this.updateLocalDraft();
 				}
-			}
+			)
 		);
-		this.plugin.messageService.registerListener(
-			"set-image-as-cover",
-			(item: MaterialMeidaItem) => {
-				this.cover_image = item.url;
-				this.setCoverImage(item.url);
-				if (this.activeLocalDraft) {
-					this.activeLocalDraft.thumb_media_id = item.media_id;
-					void this.localDraftmanager.setDraft(this.activeLocalDraft);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"set-draft-cover-image",
+				(url: string) => {
+					this.cover_image = url;
+					this.setCoverImage(url);
+					if (this.activeLocalDraft) {
+						this.activeLocalDraft.thumb_media_id = undefined;
+						void this.localDraftmanager.setDraft(this.activeLocalDraft);
+					}
 				}
-			}
+			)
+		);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"set-image-as-cover",
+				(item: MaterialMeidaItem) => {
+					this.cover_image = item.url;
+					this.setCoverImage(item.url);
+					if (this.activeLocalDraft) {
+						this.activeLocalDraft.thumb_media_id = item.media_id;
+						void this.localDraftmanager.setDraft(this.activeLocalDraft);
+					}
+				}
+			)
 		);
 
 		this.imageGenerateModal = new ImageGenerateModal(

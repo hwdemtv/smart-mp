@@ -288,7 +288,11 @@ export class CSSMerger {
 		// Check Static Cache
 		if (CSSMerger.BASE_STATE_CACHE) {
 			Logger.debug('CssMerger', 'Base State Cache hit!');
-			this.rules = new Map(CSSMerger.BASE_STATE_CACHE.rules);
+			// [Fix] 深拷贝：此前 new Map(cache.rules) 是浅拷贝，内层声明 Map
+			// 与静态缓存共享，pickRules 的写入会污染 BASE_STATE_CACHE，
+			// 进而影响之后所有主题的合并结果（与 init() 命中路径保持一致）
+			this.rules = new Map();
+			CSSMerger.BASE_STATE_CACHE.rules.forEach((rule, selector) => this.rules.set(selector, new Map(rule)));
 			this.vars = new Map(CSSMerger.BASE_STATE_CACHE.vars);
 			this.keyedRules = new Map(CSSMerger.BASE_STATE_CACHE.keyedRules);
 			this.universalRules = [...CSSMerger.BASE_STATE_CACHE.universalRules];

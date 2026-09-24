@@ -5,6 +5,10 @@ import type SmartMPPlugin from "../main";
 
 export class AccountService {
 	private plugin: SmartMPPlugin;
+	// [Fix] token 刷新的 in-flight 去重：并行上传多张图会同时触发
+	// refreshAccessToken，而微信每次签发新 token 会使旧 token 失效，
+	// 并发刷新会互相顶掉（40001）。相同账户的并发请求应共享同一次刷新
+	private refreshInFlight: Map<string, Promise<string | boolean | null>> = new Map();
 
 	constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
@@ -39,6 +43,18 @@ export class AccountService {
 	}
 
 	async refreshAccessToken(accountName: string | undefined): Promise<string | boolean | null> {
+		const key = accountName || "";
+		const inFlight = this.refreshInFlight.get(key);
+		if (inFlight) return inFlight;
+
+		const task = this.doRefreshAccessToken(accountName).finally(() => {
+			this.refreshInFlight.delete(key);
+		});
+		this.refreshInFlight.set(key, task);
+		return task;
+	}
+
+	private async doRefreshAccessToken(accountName: string | undefined): Promise<string | boolean | null> {
 		await this.plugin.ensureDecrypted();
 		if (this.plugin.settings.useCenterToken) {
 			const account = this.getMPAccountByName(accountName);

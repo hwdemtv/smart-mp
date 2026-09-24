@@ -30,10 +30,17 @@ export class AiClient {
 		this.instance = undefined as any;
 	}
 
-	private async getClient(): Promise<IAIClient> {
+	/**
+	 * 获取底层协议客户端。
+	 * @param overrideProviderId 按助手路由时指定的 provider id：
+	 * [Fix] 此前 generateCustom 的 providerId 参数被丢弃，永远按全局选中
+	 * provider 路由协议与凭据；现在按目标 provider 的类型选择 OpenAI/Ollama 协议
+	 */
+	private async getClient(overrideProviderId?: string): Promise<IAIClient> {
 		await this.plugin.ensureDecrypted();
 
-		const provider = this.plugin.settings.llmProviders?.find(p => p.id === this.plugin.settings.selectedLLMProviderId);
+		const targetId = overrideProviderId ?? this.plugin.settings.selectedLLMProviderId;
+		const provider = this.plugin.settings.llmProviders?.find(p => p.id === targetId);
 		if (!provider) {
 			throw new Error($t("settings.no-chat-account-selected"));
 		}
@@ -124,7 +131,7 @@ export class AiClient {
 	}
 
 	public async generateCustom(promptTemplate: string, content: string, providerId?: string, modelId?: string): Promise<string> {
-		return (await this.getClient()).generateCustom(promptTemplate, content, providerId, modelId);
+		return (await this.getClient(providerId)).generateCustom(promptTemplate, content, providerId, modelId);
 	}
 
 	public async generateCoverImageFromText(prompt: string, negative_prompt: string = "", size: string = "1440*613"): Promise<string> {

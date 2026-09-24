@@ -1,7 +1,7 @@
 /**
  * Theme Selector
  */
-import { DropdownComponent, TFile } from "obsidian";
+import { DropdownComponent, EventRef, TFile } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { ThemeManager } from "./theme-manager";
 import { $t } from "src/lang/i18n";
@@ -10,13 +10,18 @@ export class ThemeSelector {
     private plugin: SmartMPPlugin;
     private _themeDropdown: DropdownComponent;
     private _themeManager: ThemeManager
+    /** messageService 注销函数与 vault 事件引用，视图关闭时清理 */
+    private disposers: (() => void)[] = [];
+    private themeWatchRefs: EventRef[] = [];
 
     constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
         this._themeManager = ThemeManager.getInstance(plugin)
-		this.plugin.messageService.registerListener('custom-theme-folder-changed', () => {
-			void this.updateThemeOptions()
-		})
+		this.disposers.push(
+			this.plugin.messageService.registerListener('custom-theme-folder-changed', () => {
+				void this.updateThemeOptions()
+			})
+		)
     }
     public async dropdown(themDropdown: DropdownComponent) {
         this._themeDropdown = themDropdown;
@@ -50,28 +55,34 @@ export class ThemeSelector {
         }
     }
     public startWatchThemes() {
-        this.plugin.registerEvent(
+        // [Fix] 保存 EventRef 供 stopWatchThemes 注销：此前用 plugin.registerEvent，
+        // 每次打开预览视图都叠加 4 个 vault 监听器，视图关闭后回调仍操作已 detach 的下拉框
+        this.stopWatchThemes();
+        this.themeWatchRefs.push(
             this.plugin.app.vault.on('rename', (file: TFile) => {
                 this.onThemeChange(file)
-            })
-        );
-        this.plugin.registerEvent(
+            }),
             this.plugin.app.vault.on('modify', (file: TFile) => {
                 this.onThemeChange(file)
-
-            })
-        );
-
-        this.plugin.registerEvent(
+            }),
             this.plugin.app.vault.on('create', (file: TFile) => {
                 this.onThemeChange(file)
-            })
-        );
-
-        this.plugin.registerEvent(
+            }),
             this.plugin.app.vault.on('delete', (file: TFile) => {
                 this.onThemeChange(file)
             })
         );
+    }
+
+    public stopWatchThemes() {
+        this.themeWatchRefs.forEach(ref => this.plugin.app.vault.offref(ref));
+        this.themeWatchRefs = [];
+    }
+
+    /** 释放本组件注册的全部监听器（视图关闭时调用） */
+    public destroy() {
+        this.stopWatchThemes();
+        this.disposers.forEach(d => d());
+        this.disposers = [];
     }
 }

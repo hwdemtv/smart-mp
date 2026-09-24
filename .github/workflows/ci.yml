@@ -22,7 +22,7 @@ jobs:
         run: npm install
       
       - name: Run ESLint
-        run: npm run lint || echo "ESLint issues found"
+        run: npm run lint
 
   # 微信《公众平台编辑器插件开发规范》内容结构验证：
   # 固定基准文章全管线导出 → 官方 CLI（wechatjs/verify-article-structure-spec）+ 补充条款静态检查

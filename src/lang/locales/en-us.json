@@ -31,6 +31,7 @@
     "latex": "SmartMP: Generate LaTeX Formula",
     "summary": "SmartMP: Generate Article Summary",
     "headline": "SmartMP: Generate Viral Headline",
+    "normalize-punctuation": "SmartMP: Normalize punctuation (half-width to full-width in CJK context)",
     "insert-mode": {
       "replace": "🔄 Replace Selected Text",
       "append": "➕ Append After Selection",
@@ -57,7 +58,10 @@
     "open-material-view": "Material management",
     "open-previewer": "Article render previewer",
     "image-generation-failed": "Image generation failed.",
-    "toggle-scroll-sync": "Toggle scroll sync"
+    "toggle-scroll-sync": "Toggle scroll sync",
+    "copy-article": "Copy article to clipboard (rich text)",
+    "send-to-draft-box": "Send article to WeChat draft box",
+    "export-html": "Export article as HTML file"
   },
   "modals": {
     "cancel": "Cancel",
@@ -87,7 +91,11 @@
       "message": "Are you sure you want to publish this article?",
       "success": "Published successfully",
       "title": "Confirm publish",
-      "warning": "Publishing outside of WeChat MP may not be as efficient and some features might not work as expected (e.g., tags, pushing to public accounts)."
+      "warning": "Publishing outside of WeChat MP may not be as efficient and some features might not work as expected (e.g., tags, pushing to public accounts).",
+      "status-success": "Published successfully!",
+      "status-success-url": "Published! Opening article link",
+      "status-failed": "Publish failed (article {0} rejected)",
+      "status-pending": "Still under review; check the WeChat console later"
     },
     "diff": {
       "title": "AI Modification Comparison (Diff View)",
@@ -178,6 +186,18 @@
       "sync-mode-options": {
         "precise": "🎯 Precise Anchor (Line-based)",
         "proportional": "🌊 Smooth Proportional (Percentage-based)"
+      },
+      "precision-options": {
+        "precise": "🎯 Precise (2px)",
+        "balanced": "⚖️ Balanced (5px) [Recommended]",
+        "performance": "🚀 Performance (15px)"
+      },
+      "highlight-options": {
+        "gold": "🌟 Gold",
+        "blue": "💙 Blue",
+        "green": "💚 Green",
+        "purple": "💜 Purple",
+        "minimal": "🌙 Minimal (transparent)"
       }
     },
     "import-export-smart-mp-account": "Import/Export Account Information",
@@ -205,6 +225,12 @@
       "summary": "Summary",
       "dynamic-assistants": "Custom Assistant Management",
       "add-assistant": "Add Custom Assistant",
+      "mp-title-template": "MP Title Optimizer",
+      "add-mp-templates": "Add MP Templates",
+      "add-mp-templates-desc": "Add title optimizer, opening hook and engagement ending assistants",
+      "mp-templates-added": "Added {{0}} MP assistant templates",
+      "mp-hook-template": "MP Opening Hook",
+      "mp-end-template": "MP Engagement Ending",
       "assistant-name": "Assistant Name",
       "assistant-name-desc": "Name shown in the context menu",
       "assistant-prompt": "Instruction Template",
@@ -240,6 +266,7 @@
     "select-account": "Select account",
     "select-wechat-mp-account": "Select WeChat MP account",
     "settings-exported": "Settings exported successfully.",
+    "export-contains-secrets": "⚠️ The exported file contains plaintext AppSecret / API keys / activation code. Store it safely and never share it.",
     "settings-exporting-failed": "Failed to export settings.",
     "settings-imported-error": "Error importing settings.",
     "settings-imported-failed": "Failed to import settings.",
@@ -260,7 +287,22 @@
       "current-device": "Current Device",
       "current-device-desc": "Your device hardware ID is used as authentication credential",
       "activation-code": "Activation Code",
-      "activation-code-desc": "Enter activation code to unlock Pro features, supports binding multiple devices"
+      "activation-code-placeholder": "Enter activation code",
+      "toggle-password-visibility": "Show/hide activation code",
+      "activation-code-desc": "Enter activation code to unlock Pro features, supports binding multiple devices",
+      "unbind-btn": "Unbind",
+      "verify-online-btn": "Verify Online",
+      "verifying": "Verifying...",
+      "pro-active-badge": "✓ Pro Active",
+      "pro-active-info": "All features unlocked, center token relay supported",
+      "free-badge": "Free",
+      "free-info": "WeChat API restricted (IP whitelist required)",
+      "benefits-title": "SmartMP Pro Benefits (¥69/year):",
+      "benefit-center-token": "Center token server: sync without a public IP",
+      "benefit-support": "Priority support: 1-on-1 issue resolution",
+      "benefit-updates": "Lifetime updates: all future local features included",
+      "benefit-roaming": "Multi-device roaming: up to 3 personal devices",
+      "get-activation-code": "🎫 Get Activation Code"
     },
     "ai-chat-section": {
       "model-select-desc": "Select the provider and model for this assistant (leave empty to use global default)"
@@ -286,8 +328,31 @@
       "unnamed-provider": "Unnamed Provider",
       "fetch-models": "Fetch Models from API",
       "model-id-header": "Model ID",
-      "model-name-header": "Display Name"
-    }
+      "model-name-header": "Display Name",
+      "test-connection-btn": "🔗 Test",
+      "testing": "⏳...",
+      "add-model": "Add Model",
+      "use-global-default": "-- Use global default --",
+      "delete-provider": "Delete Provider",
+      "toggle-model": "Enable/Disable"
+    },
+    "normalize-punctuation": "Punctuation normalization",
+    "normalize-punctuation-desc": "Convert half-width punctuation to full-width in CJK context when rendering (code blocks, URLs and paths are protected)",
+    "font-size": "Body font size",
+    "font-size-desc": "15-16px recommended for WeChat",
+    "first-line-indent": "First-line indent",
+    "code-theme": "Code highlight theme",
+    "code-line-number": "Show line numbers in code blocks",
+    "show-code-mac-header": "Mac-style code block header",
+    "wechat-compat-preview": "WeChat-compatible preview",
+    "wechat-compat-preview-desc": "Filter CSS unsupported by the WeChat editor at preview time, so what you see is what WeChat preserves (turn off to see the full browser rendering, which may differ on WeChat)",
+    "sections.license": "🔐 License",
+    "sections.wechat": "📱 Accounts",
+    "sections.general": "⚙️ General & Interaction",
+    "sections.appearance": "🎨 Appearance & Layout",
+    "sections.security": "🛡️ Advanced",
+    "app-secret-placeholder": "Enter AppSecret",
+    "failed-to-connect-wechat-server": "Failed to connect to WeChat server"
   },
   "utils": {
     "missing-api-configuration": "Missing API configuration.",
@@ -348,9 +413,11 @@
       "smart-mp-previewer": "SmartMP previewer",
       "article-stats": "~{0} words / Est. {1} min read",
       "scroll-sync-on": "Scroll sync: ON",
-      "scroll-sync-off": "Scroll sync: OFF"
+      "scroll-sync-off": "Scroll sync: OFF",
+      "not-open": "Please open the preview panel first"
     },
     "send-mass-message": "Send mass message",
+    "mass-send-confirm": "Send '{0}' to ALL followers? This cannot be undone!",
     "theme-manager": {
       "default-theme": "Default theme",
       "download-predefined-custom-themes": "Download predefined custom themes",
@@ -369,7 +436,8 @@
     "video-size-exceeds-10m": "Video size exceeds 10MB limit",
     "voice-size-exceeds-2m": "Voice size exceeds 2MB limit",
     "send-article-to-draft-box-successfully": "Article sent to draft box successfully.",
-    "uploading-material-type": "uploading material {0}"
+    "uploading-material-type": "uploading material {0}",
+    "update-draft-success": "Draft updated successfully!"
   },
   "streaming-diff-modal": {
     "title": "AI Modification Comparison (Streaming)",
@@ -441,7 +509,9 @@
       "select-text-to-translate": "Please select text to translate",
       "select-text-to-convert": "Please select text to convert",
       "select-text-to-summarize": "Please select text to summarize",
-      "article-content-too-short": "Article content too short to generate title"
+      "article-content-too-short": "Article content too short to generate title",
+      "no-punctuation-changes": "No punctuation needs normalization",
+      "open-file-in-editor-first": "Please open this file in the editor first"
     },
     "previewer": {
       "preparing-clipboard": "Preparing clipboard content...",
@@ -451,7 +521,12 @@
       "processing-article": "Starting to process article...",
       "cannot-get-draft-info": "Cannot get current draft info",
       "send-draft-failed": "Failed to send draft, please check console error log",
-      "send-draft-success": "Sent to draft box successfully!"
+      "send-draft-success": "Sent to draft box successfully!",
+      "content-over-limit": "Article exceeds WeChat limits ({0}KB / {1} chars; max ~400KB / 20000 chars). Please split the article or use \"Copy to clipboard\".",
+      "update-draft-confirm": "A previous draft exists for this article. OK = update it; Cancel = create a new draft",
+      "preparing-export": "Preparing export...",
+      "exported": "Exported successfully",
+      "exported-to-vault": "Exported to vault root"
     },
     "article": {
       "digest-truncated": "Description max 120 characters, automatically truncated",
@@ -462,7 +537,11 @@
     "settings": {
       "template-exists": "Template already exists, no need to add again",
       "base-url-required": "Base URL is required",
-      "license-key-required": "Activation code cannot be empty"
+      "license-key-required": "Activation code cannot be empty",
+      "llm-test-success": "✅ Connected! Found {{0}} models",
+      "llm-test-failed": "❌ Connection failed: {{0}}",
+      "llm-fetch-success": "✅ Fetched! Added {{0}} models",
+      "llm-fetch-failed": "❌ Fetch failed: {{0}}"
     },
     "theme": {
       "clone-invalid-url": "Please enter a valid WeChat article URL",

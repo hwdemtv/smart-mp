@@ -179,15 +179,20 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
             const blockParent = svg.closest('.block-math') || svg.closest('mjx-container[display="true"]');
             const inlineParent = svg.closest('.inline-math') || svg.closest('mjx-container[display="false"]');
 
+            // [Fix] svgParent 必须在整个函数作用域可见：后续 replaceWith 需要用它
+            // 解包 mjx-container（微信不支持该标签）。此前 const parent 声明在
+            // else 块内，块外引用实际解析到全局 window.parent（永远不是 Element），
+            // 解包逻辑从未执行过
+            const svgParent: Element | null = svg.parentElement;
+
             if (blockParent) {
                 isInlineMath = false;
             } else if (inlineParent) {
                 isInlineMath = true;
             } else {
                 // 如果都有没找到，尝试检查直接父级的 display 属性 (MathJax 默认行为)
-                const parent = svg.parentElement;
-                if (parent) {
-                    const displayAttr = parent.getAttribute('display');
+                if (svgParent) {
+                    const displayAttr = svgParent.getAttribute('display');
                     if (displayAttr === 'true') {
                         isInlineMath = false;
                     }
@@ -291,8 +296,8 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                     img.setAttribute('style', `max-width: 90%; height: auto; display: block; margin: 1em auto;`);
                 }
 
-                if (parent && parent instanceof Element && parent.tagName.toLowerCase() === 'mjx-container') {
-                    parent.replaceWith(img);
+                if (svgParent && svgParent instanceof Element && svgParent.tagName.toLowerCase() === 'mjx-container') {
+                    svgParent.replaceWith(img);
                 } else {
                     svg.replaceWith(img);
                 }
@@ -333,8 +338,8 @@ export async function uploadSVGs(root: HTMLElement, wechatClient: WechatClient) 
                     }
 
                     // [Fix] Unwrap mjx-container (MathJax wrapper) as WeChat doesn't support it
-                    if (parent && parent instanceof Element && parent.tagName.toLowerCase() === 'mjx-container') {
-                        parent.replaceWith(img);
+                    if (svgParent && svgParent instanceof Element && svgParent.tagName.toLowerCase() === 'mjx-container') {
+                        svgParent.replaceWith(img);
                     } else {
                         svg.replaceWith(img);
                     }
@@ -445,22 +450,39 @@ export async function uploadURLImage(root: HTMLElement, wechatClient: WechatClie
         if (blob === undefined) {
             Logger.error('PostRender', '[uploadURLImage] Failed to get blob for:', img.src);
             return
-
-        } else {
-
-            await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
-                if (res && res.url) {
-                    img.src = res.url;
-                    img.setAttribute('data-upload-processed', 'true');
-                    img.setAttribute('data-uploaded', 'true');
-                    img.setAttribute('data-uploaded', 'true');
-                } else {
-                    Logger.error('PostRender', `[uploadURLImage] Upload failed for:`, img.src);
-                }
-            }).catch(err => {
-                Logger.error('PostRender', `[uploadURLImage] Upload exception for: ${img.src}`, err);
-            })
         }
+
+        // [Fix] 普通图片上传去重：按内容 md5 缓存微信 URL（SVG 早已用同机制）。
+        // 此前每次发布都重复上传同一批图，既慢又占用素材库配额
+        const buf = new Uint8Array(await blob.arrayBuffer());
+        let binary = '';
+        const CHUNK = 0x8000; // 分块避免 String.fromCharCode 栈溢出
+        for (let i = 0; i < buf.length; i += CHUNK) {
+            binary += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+        }
+        const cacheKey = 'img:' + SparkMD5.hash(binary);
+        const cachedUrl = imageCache.get(cacheKey);
+        if (cachedUrl) {
+            Logger.debug('PostRender', '[uploadURLImage] Cache hit, skip upload:', img.src);
+            img.src = cachedUrl;
+            img.setAttribute('data-upload-processed', 'true');
+            img.setAttribute('data-uploaded', 'true');
+            return;
+        }
+
+        await wechatClient.uploadMaterial(blob, imageFileName(blob.type)).then(res => {
+            if (res && res.url) {
+                img.src = res.url;
+                img.setAttribute('data-upload-processed', 'true');
+                img.setAttribute('data-uploaded', 'true');
+                imageCache.set(cacheKey, res.url);
+                saveImageCache();
+            } else {
+                Logger.error('PostRender', `[uploadURLImage] Upload failed for:`, img.src);
+            }
+        }).catch(err => {
+            Logger.error('PostRender', `[uploadURLImage] Upload exception for: ${img.src}`, err);
+        })
     })
     await Promise.all(uploadPromises)
 }
@@ -520,24 +542,31 @@ export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClie
     })
 
     const uploadPromises = videos.map(async (video) => {
-        let blob: Blob | undefined
-        if (video.src.includes('://mmbiz.qpic.cn/')) {
-            return;
-        }
-        else if (video.src.startsWith('data:image/')) {
-            blob = dataURLtoBlob(video.src);
-        } else {
-            blob = await fetchImageBlob(video.src)
-        }
+        // [Fix] 单个视频失败只跳过该视频：此前 fetch/上传抛错会让 Promise.all
+        // 整体 reject，剩余视频全部不处理
+        try {
+            let blob: Blob | undefined
+            if (video.src.includes('://mmbiz.qpic.cn/')) {
+                return;
+            }
+            else if (video.src.startsWith('data:')) {
+                // [Fix] 视频的 data URI 前缀是 data:video/，此前误判成 data:image/
+                // 导致 data URI 视频走错分支
+                blob = dataURLtoBlob(video.src);
+            } else {
+                blob = await fetchImageBlob(video.src)
+            }
 
-        if (blob === undefined) {
-            return
-
-        } else {
+            if (blob === undefined) {
+                return
+            }
 
             await wechatClient.uploadMaterial(blob, imageFileName(blob.type), 'video').then(async res => {
                 if (res) {
-                    const video_info = await wechatClient.getMaterialById(res.media_id)
+                    const video_info = await wechatClient.getMaterialById(res.media_id).catch(err => {
+                        Logger.error('PostRender', `[uploadURLVideo] Failed to get video info:`, err);
+                        return undefined;
+                    });
                     if (video_info && video_info.url) {
                         video.src = video_info.url
                     }
@@ -545,6 +574,8 @@ export async function uploadURLVideo(root: HTMLElement, wechatClient: WechatClie
                     Logger.error('PostRender', `upload video failed.`);
                 }
             })
+        } catch (error) {
+            Logger.error('PostRender', `[uploadURLVideo] Failed to process video: ${video.src}`, error);
         }
     })
     await Promise.all(uploadPromises)

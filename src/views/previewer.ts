@@ -30,7 +30,7 @@ import {
 	uploadURLVideo,
 	convertAssetsToDataURLs
 } from "src/render/post-render";
-import { serializeChildren, cleanHtmlForWechat, inlineCssWithJuice, stripUnsupportedCssFromHtml, stripCssVarReferences } from "src/utils/utils";
+import { serializeChildren, cleanHtmlForWechat, inlineCssWithJuice, stripUnsupportedCssFromHtml, stripCssVarReferences, filterWechatUnsupportedCssProps } from "src/utils/utils";
 import { WechatRender } from "src/render/wechat-render";
 import { ObsidianMarkdownRenderer } from "src/render/markdown-render";
 import { ResourceManager } from "../assets/resource-manager";
@@ -46,6 +46,7 @@ import {
 	SyncPrecisionPreset
 } from "../utils/scroll-sync-config";
 import { LocalDraftItem, LocalDraftManager } from "../assets/draft-manager";
+import { ArticleStats } from "../utils/article-stats";
 import Logger from "src/utils/logger";
 
 export const VIEW_TYPE_SMART_MP_PREVIEW = "smart-mp-article-preview";
@@ -236,6 +237,10 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	isMobileView: boolean = false;
 	renderPreviewer!: HTMLElement;
 	private editorScrollListener: ((event: Event) => void) | null = null;
+	/** 当前绑定滚动监听的编辑器 scrollDOM（移除时必须用同一元素引用） */
+	private boundEditorScrollDom: HTMLElement | null = null;
+	/** messageService 监听器的注销函数，视图关闭时清理，防止旧实例继续响应消息 */
+	private messageDisposers: (() => void)[] = [];
 	public scrollSyncButton: ExtraButtonComponent | null = null;
 	private articleStats: HTMLElement;
 	private currentArticleStats = { totalWords: 0, readingTime: 0 };
@@ -304,6 +309,32 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const root = this.articleDiv.firstElementChild as HTMLElement | null;
 		if (root) {
 			await ThemeManager.getInstance(this.plugin).applyTheme(root);
+			// [微信兼容预览] 主题热切换后同样过滤，保持与渲染路径一致
+			this.applyWeChatCompatPreview(root);
+		}
+	}
+
+	/**
+	 * [新增] 微信兼容预览：在预览 DOM 上直接过滤微信不支持的 CSS 属性。
+	 * 让预览显示"微信会保留的子集"而非"浏览器能渲染的全部"，
+	 * 消除"预览正常、发出去排版散掉"的断层（与导出管线
+	 * stripUnsupportedCssFromHtml 使用同一过滤逻辑 filterWechatUnsupportedCssProps）。
+	 */
+	private applyWeChatCompatPreview(root: HTMLElement): void {
+		if (this.plugin.settings.wechatCompatPreview === false) return;
+		let stripped = 0;
+		const process = (el: HTMLElement) => {
+			const style = el.getAttribute('style');
+			if (!style) return;
+			const filtered = filterWechatUnsupportedCssProps(style);
+			if (filtered !== style) stripped++;
+			if (filtered) el.setAttribute('style', filtered);
+			else el.removeAttribute('style');
+		};
+		process(root);
+		root.querySelectorAll<HTMLElement>('[style]').forEach(process);
+		if (stripped > 0) {
+			Logger.debug("Previewer", `[微信兼容预览] 剥离了 ${stripped} 个元素上微信不支持的样式属性`);
 		}
 	}
 
@@ -312,19 +343,24 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.startListen();
 
 		this.themeSelector.startWatchThemes();
-		this.plugin.messageService.registerListener(
-			"custom-theme-changed",
-			(theme: string) => {
-				// Instant theme preview - no debounce for immediate feedback
-				void this.applyCustomThemeChange(theme);
-			}
+		this.messageDisposers.push(
+			this.plugin.messageService.registerListener(
+				"custom-theme-changed",
+				(theme: string) => {
+					// Instant theme preview - no debounce for immediate feedback
+					if (!this.isViewActive()) return; // 已关闭/隐藏的旧实例不得写当前文件
+					void this.applyCustomThemeChange(theme);
+				}
+			)
 		);
-		this.plugin.messageService.registerListener(
-			"theme-reloaded",
-			() => {
-				Logger.debug("Previewer", "Hot reload triggered");
-				void this.renderDraft();
-			}
+		this.messageDisposers.push(
+			this.plugin.messageService.registerListener(
+				"theme-reloaded",
+				() => {
+					Logger.debug("Previewer", "Hot reload triggered");
+					void this.renderDraft();
+				}
+			)
 		);
 		this.plugin.messageService.sendMessage("active-file-changed", null);
 		void this.loadComponents();
@@ -435,34 +471,7 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 					.setIcon("clipboard-copy")
 					.setTooltip($t("views.previewer.copy-article-to-clipboard"))
 					.onClick(() => {
-						void (async () => {
-							const notice = new Notice($t("notice.previewer.preparing-clipboard") ?? "正在准备剪贴板内容...", 0);
-							try {
-								// User requested to skip image upload for clipboard copy
-								const result = await this.processArticleForExport(notice, false);
-								if (!result) {
-									notice.hide();
-									return;
-								}
-
-								// 创建剪贴板项目
-								const clipboardItem = new ClipboardItem({
-									'text/html': new Blob([result.html], { type: 'text/html' }),
-									'text/plain': new Blob([result.text], { type: 'text/plain' }),
-								});
-
-								// 写入剪贴板
-								await navigator.clipboard.write([clipboardItem]);
-								notice.hide(); // ✅ Hide the progress notice on success
-								new Notice(
-									$t("views.previewer.article-copied-to-clipboard")
-								);
-							} catch (error) {
-								notice.hide();
-								Logger.error("Previewer", "复制到剪贴板失败:", error);
-								new Notice(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
-							}
-						})();
+						void this.copyArticleToClipboard();
 					});
 			})
 			.addExtraButton((button) => {
@@ -619,11 +628,109 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 	async checkCoverImage() {
 		return this.draftHeader.checkCoverImage();
 	}
+
+	/** [新增] 复制文章到剪贴板（富文本，预览按钮与命令共用） */
+	async copyArticleToClipboard(): Promise<void> {
+		const notice = new Notice($t("notice.previewer.preparing-clipboard") ?? "正在准备剪贴板内容...", 0);
+		try {
+			// User requested to skip image upload for clipboard copy
+			const result = await this.processArticleForExport(notice, false);
+			if (!result) {
+				notice.hide();
+				return;
+			}
+
+			// 创建剪贴板项目
+			const clipboardItem = new ClipboardItem({
+				'text/html': new Blob([result.html], { type: 'text/html' }),
+				'text/plain': new Blob([result.text], { type: 'text/plain' }),
+			});
+
+			// 写入剪贴板
+			await navigator.clipboard.write([clipboardItem]);
+			notice.hide(); // ✅ Hide the progress notice on success
+			new Notice(
+				$t("views.previewer.article-copied-to-clipboard")
+			);
+		} catch (error) {
+			notice.hide();
+			Logger.error("Previewer", "复制到剪贴板失败:", error);
+			new Notice(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
+	/** [新增] 导出文章为独立 HTML 文件（复用剪贴板管线，图片 base64 内嵌） */
+	async exportHtml(): Promise<void> {
+		const notice = new Notice($t("notice.previewer.preparing-export") ?? "正在准备导出内容...", 0);
+		try {
+			const result = await this.processArticleForExport(notice, false);
+			if (!result) return;
+
+			const title = this.draftHeader?.getActiveLocalDraft()?.title
+				|| this.plugin.app.workspace.getActiveFile()?.basename
+				|| "article";
+			const safeTitle = title.replace(/[\\/:*?"<>|]/g, "_");
+			const doc = [
+				'<!DOCTYPE html>',
+				'<html lang="zh-CN">',
+				'<head>',
+				'<meta charset="UTF-8">',
+				'<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+				`<title>${safeTitle}</title>`,
+				'</head>',
+				'<body style="max-width:768px;margin:0 auto;padding:16px;">',
+				result.html,
+				'</body>',
+				'</html>',
+			].join("\n");
+
+			const suggestedName = `${safeTitle}.html`;
+			try {
+				// 优先系统保存对话框（桌面端 Chromium 支持）
+				const handle = await (window as any).showSaveFilePicker({
+					suggestedName,
+					types: [{ description: "HTML", accept: { "text/html": [".html"] } }],
+				});
+				const writable = await handle.createWritable();
+				await writable.write(doc);
+				await writable.close();
+				new Notice($t("notice.previewer.exported") ?? "导出成功", 3000);
+			} catch (e) {
+				if ((e as any)?.name === "AbortError") return; // 用户取消
+				// 回退：写入 vault 根目录
+				let path = suggestedName;
+				if (await this.plugin.app.vault.adapter.exists(path)) {
+					path = `${safeTitle}-${Date.now()}.html`;
+				}
+				await this.plugin.app.vault.adapter.write(path, doc);
+				new Notice(($t("notice.previewer.exported-to-vault") ?? "已导出到仓库根目录") + `: ${path}`, 5000);
+			}
+		} catch (error) {
+			Logger.error("Previewer", "导出失败:", error);
+			new Notice(`导出失败: ${error instanceof Error ? error.message : String(error)}`);
+		} finally {
+			notice.hide();
+		}
+	}
+
 	async sendArticleToDraftBox() {
 		const notice = new Notice($t("notice.previewer.processing-article") ?? "开始处理文章...", 0);
 		try {
 			const result = await this.processArticleForExport(notice);
 			if (!result) {
+				return;
+			}
+
+			// [接线] 内容超限检测：微信图文正文约 2 万字符/1MB 上限，
+			// 超限发送必然失败，提前拦截并给出分篇/复制建议
+			const htmlSize = ArticleStats.estimateSize(result.html);
+			const charCount = (result.text || "").length;
+			if (htmlSize > ArticleStats.MAX_SIZE || charCount > 20000) {
+				new Notice(
+					$t("notice.previewer.content-over-limit", [String(Math.round(htmlSize / 1024)), String(charCount)])
+						?? `文章超出微信限制（${Math.round(htmlSize / 1024)}KB / ${charCount} 字符，上限约 400KB / 20000 字符）。请拆分文章或使用「一键复制」。`,
+					8000
+				);
 				return;
 			}
 
@@ -635,17 +742,29 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 				return;
 			}
 
-			const media_id = await this.wechatClient.sendArticleToDraftBox(
-				activeDraft,
-				result.html,
-				async () => {
-					// 当 thumb_media_id 失效时，重新上传封面图
-					if (activeDraft.cover_image_url) {
-						return await this.draftHeader.reuploadCoverImage(activeDraft);
-					}
-					return undefined;
+			// [新增] 草稿更新闭环：本文章曾发送过（last_draft_id 存在）时，
+			// 询问是更新原草稿还是新建，避免每次改稿在草稿箱堆积重复项
+			let updateMediaId: string | undefined;
+			if (activeDraft.last_draft_id) {
+				updateMediaId = await this.plugin.confirm(
+					$t("notice.previewer.update-draft-confirm") ?? "本文已有历史草稿。确定 = 更新该草稿；取消 = 新建草稿"
+				) ? activeDraft.last_draft_id : undefined;
+			}
+
+			const coverRetry = async () => {
+				// 当 thumb_media_id 失效时，重新上传封面图
+				if (activeDraft.cover_image_url) {
+					return await this.draftHeader.reuploadCoverImage(activeDraft);
 				}
-			);
+				return undefined;
+			};
+
+			let media_id: string | false | undefined;
+			if (updateMediaId) {
+				media_id = await this.wechatClient.updateDraft(updateMediaId, activeDraft, result.html, coverRetry);
+			} else {
+				media_id = await this.wechatClient.sendArticleToDraftBox(activeDraft, result.html, coverRetry);
+			}
 
 			if (!media_id) {
 				new Notice($t("notice.previewer.send-draft-failed") ?? '发送草稿失败，请检查控制台错误日志', 5000);
@@ -791,6 +910,9 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 			} catch (themeError) {
 				Logger.error("Previewer", `[Task #${taskId}] Theme apply failed (falling back):`, themeError);
 			}
+
+			// [微信兼容预览] 主题内联样式写入后、挂载前过滤微信不支持的 CSS（离屏无闪烁）
+			this.applyWeChatCompatPreview(articleSection);
 
 			// Update preview stats logic 
 			this.updateArticleStats();
@@ -1235,9 +1357,11 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 
 		this.setupScrollSync();
 
-		this.plugin.messageService.registerListener("render-active-note", () => {
-			void this.renderDraft();
-		});
+		this.messageDisposers.push(
+			this.plugin.messageService.registerListener("render-active-note", () => {
+				void this.renderDraft();
+			})
+		);
 	}
 
 
@@ -1328,8 +1452,8 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const preset = (this.plugin.settings.scrollSyncPrecision as SyncPrecisionPreset) || 'balanced';
 		this.precisionController = SyncPrecisionController.fromPreset(preset);
 
-		// 1. 移除旧监听器
-		this.stopScrollListeners(editorScrollDom, previewScrollDom);
+		// 1. 移除旧监听器（用绑定时记录的 DOM 引用）
+		this.stopScrollListeners();
 
 		// 2. 设置 ResizeObserver 监听窗口变化（性能优化）
 		this.setupResizeObserver();
@@ -1355,12 +1479,18 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		};
 
 		editorScrollDom.addEventListener("scroll", this.editorScrollListener);
+		// [Fix] 记录实际绑定的 DOM 引用：移除监听必须用同一元素。
+		// 此前 stopScrollListeners 用的是（新）传入的 DOM，切换 markdown
+		// leaf 后旧编辑器上的监听器永久残留，形成幽灵同步
+		this.boundEditorScrollDom = editorScrollDom;
 	}
 
-	private stopScrollListeners(editorScrollDom: HTMLElement, previewScrollDom: HTMLElement) {
-		if (this.editorScrollListener) {
-			editorScrollDom.removeEventListener("scroll", this.editorScrollListener);
+	private stopScrollListeners() {
+		// [Fix] 始终从绑定时记录的 DOM 上移除
+		if (this.editorScrollListener && this.boundEditorScrollDom) {
+			this.boundEditorScrollDom.removeEventListener("scroll", this.editorScrollListener);
 		}
+		this.boundEditorScrollDom = null;
 		// 清理预览侧高亮
 		if (this.lastHighlightedEl) {
 			this.lastHighlightedEl.classList.remove('smart-mp-sync-line-highlight');
@@ -1638,22 +1768,19 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		this.cachedAnchors = [];
 		this.anchorsCacheValid = false;
 
-		// 移除监听器
-		const editor = this.getMarkdownView()?.editor;
-		// 访问 CodeMirror 6 内部 DOM 的类型定义
-		interface CM6Editor extends Editor {
-			cm?: {
-				scrollDOM: HTMLElement;
-			};
-		}
-		const editorScrollDom = (editor as CM6Editor)?.cm?.scrollDOM;
-		const previewScrollDom = this.renderDiv;
-
-		if (editorScrollDom && previewScrollDom) {
-			this.stopScrollListeners(editorScrollDom, previewScrollDom);
-		}
-
+		// [Fix] 用绑定时记录的 DOM 引用移除滚动监听：
+		// onClose 时 getMarkdownView 返回的是"当前"视图，未必是当初绑定的编辑器
+		this.stopScrollListeners();
 		this.editorScrollListener = null;
+
+		// [Fix] 注销 messageService 监听器：视图关闭后旧实例仍在接收消息，
+		// 会继续对当前活动文件写 frontmatter（幽灵写入）
+		this.messageDisposers.forEach((d) => d());
+		this.messageDisposers = [];
+
+		// [Fix] 清理子组件注册的监听器
+		this.themeSelector?.destroy();
+		this.draftHeader?.destroy();
 
 		// 清理事件引用
 		this.listeners.forEach((e) => this.app.workspace.offref(e));

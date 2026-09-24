@@ -33,15 +33,15 @@ export class Footnote extends SmartMPMarkedExtension {
         return Promise.resolve();
     }
 
-    postprocess(dom: HTMLElement): Promise<HTMLElement> {
+    async postprocess(dom: HTMLElement): Promise<HTMLElement> {
         // Render footnote list at the bottom if any footnotes were collected
         if (this.footnoteOrder.length > 0) {
-            this.renderFootnoteList(dom);
+            await this.renderFootnoteList(dom);
         }
-        return Promise.resolve(dom);
+        return dom;
     }
 
-    private renderFootnoteList(dom: HTMLElement) {
+    private async renderFootnoteList(dom: HTMLElement) {
         // Remove existing footnote list to prevent duplication
         dom.querySelectorAll('.smart-mp-footnotes').forEach(el => el.remove());
 
@@ -63,7 +63,9 @@ export class Footnote extends SmartMPMarkedExtension {
         const ol = footnotesContainer.createEl('ol');
 
         // Render in order of appearance
-        this.footnoteOrder.forEach((id, index) => {
+        // [Fix] 改用 for...of 以支持 await（forEach 回调无法等待异步 parseInline）
+        for (let index = 0; index < this.footnoteOrder.length; index++) {
+            const id = this.footnoteOrder[index];
             const footnote = this.footnotes.get(id);
             if (footnote) {
                 const li = ol.createEl('li', {
@@ -76,15 +78,15 @@ export class Footnote extends SmartMPMarkedExtension {
 
                 // Content
                 const content = li.createEl('span', { cls: 'footnote-content' });
-                // Use marked to parse inline markdown (e.g. **bold**, *italic*)
-                // await this.marked.parseInline() might be needed if async
-                // But parseInline can be sync. Let's cast or handle promise.
-                // Since we are in an async postprocess, we can await.
-                const renderedText = this.marked.parseInline(cleanText);
-                if (renderedText instanceof Promise) {
-                    renderedText.then(html => SafeHTML.setSafeHTML(content, html));
-                } else {
-                    SafeHTML.setSafeHTML(content, renderedText);
+                // [Fix] 必须等待 parseInline 完成后再返回 postprocess：
+                // 其他扩展注册了 async: true 后 parseInline 返回 Promise，
+                // 此前 fire-and-forget 导致调用方立即读 innerHTML 时脚注内容为空，
+                // 且 rejection 无人处理
+                try {
+                    const renderedText = await this.marked.parseInline(cleanText);
+                    SafeHTML.setSafeHTML(content, renderedText as string);
+                } catch (err) {
+                    content.textContent = cleanText;
                 }
 
                 // Back reference link - REMOVED as per user request (useless in WeChat)
@@ -94,7 +96,7 @@ export class Footnote extends SmartMPMarkedExtension {
                 // });
                 // backref.innerHTML = '&#8617;';
             }
-        });
+        }
 
         // Append to DOM
         dom.appendChild(footnotesContainer);

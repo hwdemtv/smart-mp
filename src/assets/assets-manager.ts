@@ -49,12 +49,14 @@ export class AssetsManager {
 
     private static instance: AssetsManager;
     private plugin: SmartMPPlugin;
+    /** 初始磁盘加载的 Promise，持久化前必须等待它完成 */
+    private loadPromise: Promise<void>;
     private constructor(app: App, plugin: SmartMPPlugin) {
         this.app = app;
         this.plugin = plugin;
         this.assets = new Map();
         this.used = new Map();
-        this.loadFromDisk();
+        this.loadPromise = this.loadFromDisk();
 
         this.plugin.messageService.registerListener('wechat-account-changed', (data: string) => {
             void this.loadMaterial(data);
@@ -74,9 +76,6 @@ export class AssetsManager {
         this.plugin.messageService.registerListener('publish-draft-item', (item: DraftItem) => {
             this.confirmPublish(item);
         });
-        this.plugin.messageService.registerListener('delete-media-item', (item: MaterialItem) => {
-            this.confirmDelete(item);
-        });
 
     }
 
@@ -94,6 +93,9 @@ export class AssetsManager {
         if (!this.dirty) return;
         this.dirty = false;
         try {
+            // [Fix] 等待初始加载完成：构造函数中的 loadFromDisk 是异步的，
+            // 若尚未完成就持久化，会用空的 itemStore 覆盖磁盘上的素材索引
+            await this.loadPromise;
             const data = (await this.plugin.loadData()) || {};
             data['wechat-assets'] = Object.fromEntries(this.itemStore);
             await this.plugin.saveData(data);
@@ -168,6 +170,8 @@ export class AssetsManager {
             const res = await this.plugin.wechatClient.getBatchMaterial(accountName, 'news', offset, MAX_COUNT);
             if (!res) break;
             const { item, total_count, item_count } = res;
+            // [Fix] item_count 为 0 或 item 缺失时强制退出：offset 不增长会无限循环连打 API
+            if (!Array.isArray(item) || !item_count) break;
             list.push(...item);
             total = total_count
             offset += item_count;
@@ -192,6 +196,8 @@ export class AssetsManager {
             const res = await this.plugin.wechatClient.getBatchDraftList(accountName, offset, MAX_COUNT);
             if (!res) break;
             const { item, total_count, item_count } = res;
+            // [Fix] item_count 为 0 或 item 缺失时强制退出，防止无限循环
+            if (!Array.isArray(item) || !item_count) break;
             draftList.push(...item);
             total = total_count
             offset += item_count;
@@ -225,6 +231,8 @@ export class AssetsManager {
             const res = await this.plugin.wechatClient.getBatchMaterial(accountName, type, offset, MAX_COUNT);
             if (!res) break;
             const { item, total_count, item_count } = res;
+            // [Fix] item_count 为 0 或 item 缺失时强制退出，防止无限循环
+            if (!Array.isArray(item) || !item_count) break;
             list.push(...item);
             total = total_count
             offset += item_count;

@@ -7,6 +7,7 @@ import { SynonymsModal } from "../modals/synonyms-modal";
 import { MarkdownView } from "obsidian";
 import { proofreadText } from "../utils/proofread";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "../views/previewer";
+import { normalizeTextForChinesePunctuation } from "../utils/cjk-punctuation";
 
 /**
  * CommandManager 负责插件所有命令和右键菜单的注册与管理
@@ -18,6 +19,12 @@ export class CommandManager {
 		this.plugin = plugin;
 	}
 
+	/** 获取当前打开的预览面板实例（供命令复用面板内功能） */
+	private getPreviewPanel(): PreviewPanel | null {
+		const leaf = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW)[0];
+		return leaf && leaf.view instanceof PreviewPanel ? leaf.view : null;
+	}
+
 	/**
 	 * 注册所有内置命令
 	 */
@@ -26,6 +33,7 @@ export class CommandManager {
 		this.plugin.addCommand({
 			id: "open-previewer",
 			name: $t("main.open-previewer"),
+			hotkeys: [{ modifiers: ["Mod", "Alt"], key: "p" }],
 			callback: () => {
 				void this.plugin.activateView();
 			},
@@ -61,6 +69,73 @@ export class CommandManager {
 
 		// 4. AI 助手命令
 		this.registerAICommands();
+
+		// 5. 规范全文标点（此前 cjk-punctuation.ts 完整实现但零入口）
+		this.plugin.addCommand({
+			id: "normalize-punctuation",
+			name: $t("commands.normalize-punctuation"),
+			editorCallback: (editor: Editor) => {
+				const original = editor.getValue();
+				// 代码块与行内代码不参与归一化，其余部分按 CJK 语境转换
+				const parts = original.split(/(```[\s\S]*?```|`[^`\n]*`)/g);
+				const normalized = parts
+					.map((part, i) => (i % 2 === 1 ? part : normalizeTextForChinesePunctuation(part)))
+					.join("");
+				if (normalized === original) {
+					new Notice($t("notice.main.no-punctuation-changes") ?? "未发现需要规范的标点");
+					return;
+				}
+				// 全选后走 DiffModal 预览差异，确认后整体替换（不直接改文件）
+				const lastLine = editor.lastLine();
+				editor.setSelection({ line: 0, ch: 0 }, { line: lastLine, ch: editor.getLine(lastLine).length });
+				this.plugin.showDiffModal(editor, original, normalized);
+			},
+		});
+
+		// 6. 复制文章到剪贴板（复用预览面板的富文本管线）
+		this.plugin.addCommand({
+			id: "copy-article",
+			name: $t("main.copy-article"),
+			hotkeys: [{ modifiers: ["Mod", "Alt"], key: "c" }],
+			callback: () => {
+				const panel = this.getPreviewPanel();
+				if (!panel) {
+					new Notice($t("views.previewer.not-open") ?? "请先打开预览面板");
+					return;
+				}
+				void panel.copyArticleToClipboard();
+			},
+		});
+
+		// 7. 发送文章到草稿箱
+		this.plugin.addCommand({
+			id: "send-to-draft-box",
+			name: $t("main.send-to-draft-box"),
+			hotkeys: [{ modifiers: ["Mod", "Alt"], key: "s" }],
+			callback: () => {
+				const panel = this.getPreviewPanel();
+				if (!panel) {
+					new Notice($t("views.previewer.not-open") ?? "请先打开预览面板");
+					return;
+				}
+				void panel.sendArticleToDraftBox();
+			},
+		});
+
+		// 8. 导出为 HTML 文件（此前导出管线存在但无落盘出口）
+		this.plugin.addCommand({
+			id: "export-html",
+			name: $t("main.export-html"),
+			hotkeys: [{ modifiers: ["Mod", "Alt"], key: "e" }],
+			callback: () => {
+				const panel = this.getPreviewPanel();
+				if (!panel) {
+					new Notice($t("views.previewer.not-open") ?? "请先打开预览面板");
+					return;
+				}
+				void panel.exportHtml();
+			},
+		});
 	}
 
 	/**
@@ -70,6 +145,7 @@ export class CommandManager {
 		this.plugin.addCommand({
 			id: "mp-polish",
 			name: $t("commands.polish"),
+			hotkeys: [{ modifiers: ["Mod", "Alt"], key: "l" }],
 			editorCallback: async (editor: Editor) => {
 				const content = editor.getSelection();
 				if (!content) {
@@ -269,17 +345,24 @@ export class CommandManager {
 	 * 渲染空选中时的子菜单
 	 */
 	private renderEmptySelectionSubmenu(subMenu: Menu, file: TFile) {
-		subMenu.addItem((subItem) => {
+		subMenu.addItem((subItem: MenuItem) => {
 			subItem
 				.setTitle($t("main.polish"))
 				.setIcon("user-pen")
 				.onClick(() => {
 					void (async () => {
-						const content = await this.plugin.app.vault.read(file);
-						const polished = await this.plugin.polishContent(content);
-						if (polished) {
-							await this.plugin.app.vault.modify(file, polished);
+						// [Fix] 整篇润色此前直接 vault.modify 覆盖原文、无 diff 确认，
+						// 有数据丢失风险；改走流式 Diff 弹窗，确认后才写入
+						const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+						const editor = view?.editor;
+						if (!editor || view?.file?.path !== file.path) {
+							new Notice($t("notice.main.open-file-in-editor-first") ?? "请在编辑器中打开该文件后再润色");
+							return;
 						}
+						const content = editor.getValue();
+						const lastLine = editor.lastLine();
+						editor.setSelection({ line: 0, ch: 0 }, { line: lastLine, ch: editor.getLine(lastLine).length });
+						await this.plugin.polishContentWithStreaming(editor, content);
 					})();
 				});
 		});
