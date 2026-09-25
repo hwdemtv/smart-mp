@@ -2311,7 +2311,7 @@
       "format": "cjs"
     },
     "src/utils/utils.ts": {
-      "bytes": 42769,
+      "bytes": 43769,
       "imports": [
         {
           "path": "obsidian",
@@ -2342,11 +2342,11 @@
       "format": "esm"
     },
     "src/lang/locales/en-us.json": {
-      "bytes": 27733,
+      "bytes": 28293,
       "imports": []
     },
     "src/lang/locales/zh-cn.json": {
-      "bytes": 27251,
+      "bytes": 27811,
       "imports": []
     },
     "src/lang/i18n.ts": {
@@ -2563,7 +2563,7 @@
       "format": "cjs"
     },
     "src/render/post-render.ts": {
-      "bytes": 31706,
+      "bytes": 31912,
       "imports": [
         {
           "path": "src/lang/i18n.ts",
@@ -3849,7 +3849,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/code.ts": {
-      "bytes": 28546,
+      "bytes": 29358,
       "imports": [
         {
           "path": "marked",
@@ -3921,7 +3921,7 @@
       "format": "esm"
     },
     "src/render/marked-extensions/embed.ts": {
-      "bytes": 20035,
+      "bytes": 20076,
       "imports": [
         {
           "path": "marked",
@@ -9451,43 +9451,43 @@
       "format": "cjs"
     },
     "src/render/mathjax.ts": {
-      "bytes": 1552,
+      "bytes": 4232,
       "imports": [
         {
           "path": "node_modules/mathjax-full/js/adaptors/liteAdaptor.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/adaptors/liteAdaptor"
         },
         {
           "path": "node_modules/mathjax-full/js/handlers/html.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/handlers/html"
         },
         {
           "path": "node_modules/mathjax-full/js/input/tex.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/input/tex"
         },
         {
           "path": "node_modules/mathjax-full/js/input/tex/AllPackages.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/input/tex/AllPackages"
         },
         {
           "path": "node_modules/mathjax-full/js/mathjax.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/mathjax"
         },
         {
           "path": "node_modules/mathjax-full/js/output/svg.js",
-          "kind": "dynamic-import",
+          "kind": "import-statement",
           "original": "mathjax-full/js/output/svg"
         }
       ],
       "format": "esm"
     },
     "src/render/marked-extensions/math.ts": {
-      "bytes": 5601,
+      "bytes": 6566,
       "imports": [
         {
           "path": "src/render/mathjax.ts",
@@ -9700,12 +9700,12 @@
       "format": "esm"
     },
     "src/utils/cjk-punctuation.ts": {
-      "bytes": 13157,
+      "bytes": 13532,
       "imports": [],
       "format": "esm"
     },
     "src/render/wechat-render.ts": {
-      "bytes": 22797,
+      "bytes": 22803,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -10589,7 +10589,7 @@
       "imports": []
     },
     "src/assets/default-styles/01_layout.css": {
-      "bytes": 865,
+      "bytes": 1391,
       "imports": []
     },
     "src/assets/default-styles/02_icons.css": {
@@ -10653,7 +10653,7 @@
       "imports": []
     },
     "src/assets/default-styles/20_image.css": {
-      "bytes": 2874,
+      "bytes": 3823,
       "imports": []
     },
     "src/assets/default-styles/21_list.css": {
@@ -10705,7 +10705,7 @@
       "imports": []
     },
     "src/assets/default-styles/40_summary.css": {
-      "bytes": 492,
+      "bytes": 978,
       "imports": []
     },
     "src/assets/default-styles/50_profile.css": {
@@ -11059,7 +11059,7 @@
       "format": "esm"
     },
     "src/views/previewer.ts": {
-      "bytes": 61566,
+      "bytes": 61257,
       "imports": [
         {
           "path": "@codemirror/view",
@@ -11165,12 +11165,12 @@
       "format": "esm"
     },
     "src/settings/section-ids.ts": {
-      "bytes": 690,
+      "bytes": 707,
       "imports": [],
       "format": "esm"
     },
     "src/settings/sections/license-section.ts": {
-      "bytes": 6633,
+      "bytes": 6794,
       "imports": [
         {
           "path": "obsidian",
@@ -11227,7 +11227,7 @@
       "format": "esm"
     },
     "src/settings/assistant-defaults.ts": {
-      "bytes": 4485,
+      "bytes": 4554,
       "imports": [
         {
           "path": "./smart-mp-setting",
@@ -11289,7 +11289,7 @@
       "format": "esm"
     },
     "src/settings/sections/wechat-section.ts": {
-      "bytes": 15842,
+      "bytes": 16293,
       "imports": [
         {
           "path": "obsidian",
@@ -11335,7 +11335,7 @@
       "format": "esm"
     },
     "src/settings/sections/general-section.ts": {
-      "bytes": 5199,
+      "bytes": 5317,
       "imports": [
         {
           "path": "obsidian",
@@ -11897,7 +11897,7 @@
       "format": "esm"
     },
     "src/settings/sections/appearance-section.ts": {
-      "bytes": 8582,
+      "bytes": 8799,
       "imports": [
         {
           "path": "obsidian",
@@ -11943,7 +11943,7 @@
       "format": "esm"
     },
     "src/settings/sections/security-section.ts": {
-      "bytes": 1859,
+      "bytes": 1912,
       "imports": [
         {
           "path": "obsidian",
@@ -11974,7 +11974,7 @@
       "format": "esm"
     },
     "src/settings/llm-presets.ts": {
-      "bytes": 5623,
+      "bytes": 5793,
       "imports": [
         {
           "path": "src/settings/llm-types.ts",
@@ -13780,7 +13780,7 @@
       "format": "esm"
     },
     "src/utils/llm-probe.ts": {
-      "bytes": 1416,
+      "bytes": 1458,
       "imports": [
         {
           "path": "src/utils/logger.ts",
@@ -13796,7 +13796,7 @@
       "format": "esm"
     },
     "src/settings/sections/llm-section.ts": {
-      "bytes": 19034,
+      "bytes": 19498,
       "imports": [
         {
           "path": "obsidian",
@@ -13842,7 +13842,7 @@
       "format": "esm"
     },
     "src/settings/sections/ai-draw-section.ts": {
-      "bytes": 6767,
+      "bytes": 6965,
       "imports": [
         {
           "path": "obsidian",
@@ -13873,7 +13873,7 @@
       "format": "esm"
     },
     "src/settings/sections/assistant-section.ts": {
-      "bytes": 12647,
+      "bytes": 12949,
       "imports": [
         {
           "path": "obsidian",
@@ -14627,7 +14627,7 @@
       "format": "esm"
     },
     "src/views/material-view.ts": {
-      "bytes": 3603,
+      "bytes": 3579,
       "imports": [
         {
           "path": "obsidian",
@@ -14684,7 +14684,7 @@
       "format": "esm"
     },
     "src/views/spinner.ts": {
-      "bytes": 891,
+      "bytes": 1017,
       "imports": [],
       "format": "esm"
     },
@@ -15109,7 +15109,7 @@
       "format": "esm"
     },
     "src/main.ts": {
-      "bytes": 22475,
+      "bytes": 23109,
       "imports": [
         {
           "path": "obsidian",
@@ -17522,7 +17522,7 @@
           "bytesInOutput": 2799
         },
         "node_modules/diff/libesm/diff/character.js": {
-          "bytesInOutput": 101
+          "bytesInOutput": 104
         },
         "node_modules/diff/libesm/util/string.js": {
           "bytesInOutput": 1262
@@ -17627,16 +17627,16 @@
           "bytesInOutput": 603
         },
         "src/settings/setting-tab.ts": {
-          "bytesInOutput": 1663
+          "bytesInOutput": 1668
         },
         "src/views/previewer.ts": {
-          "bytesInOutput": 30107
+          "bytesInOutput": 29623
         },
         "src/render/post-render.ts": {
-          "bytesInOutput": 10237
+          "bytesInOutput": 10150
         },
         "src/render/wechat-render.ts": {
-          "bytesInOutput": 8547
+          "bytesInOutput": 8633
         },
         "node_modules/marked/lib/marked.esm.js": {
           "bytesInOutput": 39152
@@ -17774,7 +17774,7 @@
           "bytesInOutput": 939
         },
         "src/render/marked-extensions/embed.ts": {
-          "bytesInOutput": 9747
+          "bytesInOutput": 9783
         },
         "src/render/marked-extensions/heading.ts": {
           "bytesInOutput": 493
@@ -17783,10 +17783,10 @@
           "bytesInOutput": 944
         },
         "src/render/mathjax.ts": {
-          "bytesInOutput": 686
+          "bytesInOutput": 915
         },
         "src/render/marked-extensions/math.ts": {
-          "bytesInOutput": 1901
+          "bytesInOutput": 2125
         },
         "src/render/marked-extensions/remix-icon.ts": {
           "bytesInOutput": 644
@@ -17840,7 +17840,7 @@
           "bytesInOutput": 1699
         },
         "src/assets/default-styles/01_layout.css": {
-          "bytesInOutput": 968
+          "bytesInOutput": 1522
         },
         "src/assets/default-styles/02_icons.css": {
           "bytesInOutput": 6019
@@ -17888,7 +17888,7 @@
           "bytesInOutput": 3792
         },
         "src/assets/default-styles/20_image.css": {
-          "bytesInOutput": 3106
+          "bytesInOutput": 4097
         },
         "src/assets/default-styles/21_list.css": {
           "bytesInOutput": 1277
@@ -17927,7 +17927,7 @@
           "bytesInOutput": 336
         },
         "src/assets/default-styles/40_summary.css": {
-          "bytesInOutput": 522
+          "bytesInOutput": 1026
         },
         "src/assets/default-styles/50_profile.css": {
           "bytesInOutput": 2107
@@ -18071,19 +18071,19 @@
           "bytesInOutput": 850
         },
         "src/settings/sections/llm-section.ts": {
-          "bytesInOutput": 9030
+          "bytesInOutput": 9033
         },
         "src/settings/llm-presets.ts": {
           "bytesInOutput": 3058
         },
         "src/utils/llm-probe.ts": {
-          "bytesInOutput": 426
+          "bytesInOutput": 428
         },
         "src/settings/sections/ai-draw-section.ts": {
-          "bytesInOutput": 3023
+          "bytesInOutput": 3024
         },
         "src/settings/sections/assistant-section.ts": {
-          "bytesInOutput": 5253
+          "bytesInOutput": 5254
         },
         "src/modals/diff-modal.ts": {
           "bytesInOutput": 1483
@@ -18122,7 +18122,7 @@
           "bytesInOutput": 326
         },
         "src/views/material-view.ts": {
-          "bytesInOutput": 1968
+          "bytesInOutput": 1973
         },
         "src/settings/account-switcher.ts": {
           "bytesInOutput": 708
@@ -18134,7 +18134,7 @@
           "bytesInOutput": 2872
         },
         "src/views/spinner.ts": {
-          "bytesInOutput": 577
+          "bytesInOutput": 701
         },
         "src/theme/hot-reloader.ts": {
           "bytesInOutput": 1164
@@ -18173,7 +18173,7 @@
           "bytesInOutput": 1423
         }
       },
-      "bytes": 3911076
+      "bytes": 3913273
     }
   }
 }
