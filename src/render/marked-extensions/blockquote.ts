@@ -126,6 +126,20 @@ function getCalloutColors(calloutType: string): { bg: string; text: string } {
 
 
 
+/**
+ * Pre-process ::: fenced container syntax into standard callout blockquotes
+ * e.g., :::note\ntitle\ncontent\n::: → > [!note]\n> title\n> content
+ */
+export function preprocessCalloutContainers(md: string): string {
+	return md.replace(
+		/^:::(\w+)[ \t]*\n([\s\S]*?)\n:::/gm,
+		(_match, type, content) => {
+			const lines = content.split('\n');
+			return `> [!${type.toLowerCase()}]\n> ` + lines.join('\n> ');
+		}
+	);
+}
+
 export class BlockquoteRenderer extends SmartMPMarkedExtension {
 	prepare(): Promise<void> {
 		if (!this.marked) {
@@ -163,17 +177,18 @@ export class BlockquoteRenderer extends SmartMPMarkedExtension {
 
 		// 获取 Callout 类型对应的颜色（内联样式，确保微信兼容）
 		const colors = getCalloutColors(calloutType);
-		// 使用 !important 防止被 CSSMerger 覆盖
-		const containerStyle = `overflow: hidden; border-radius: 4px; margin: 1em 0; padding: 12px 12px 12px 24px; background-color: ${colors.bg} !important;`;
-		const titleStyle = `padding: 0; display: flex; gap: 4px; font-size: inherit; line-height: 1.3; align-items: flex-start; color: ${colors.text} !important;`;
-		const iconStyle = `height: 1em; flex: 0 0 auto; display: flex; align-items: center;`;
+		// 使用 span + inline 布局代替 flex，因为微信会过滤 display:flex/gap/align-items
+		const containerStyle = `overflow: hidden; border-radius: 4px; margin: 1em 0; padding: 12px 12px 12px 24px; background-color: ${colors.bg};`;
+		const titleStyle = `padding: 0; font-size: inherit; line-height: 1.3; color: ${colors.text};`;
+		const iconStyle = `margin-right: 4px;`;
 		const titleInnerStyle = `font-weight: 600; color: inherit;`;
 
-		return `<section class="smart-mp-callout" data-callout="${calloutType}" style="${containerStyle}"><div class="callout-title" style="${titleStyle}"><div class="callout-icon" style="${iconStyle}">${icon}</div><div class="callout-title-inner" style="${titleInnerStyle}">${title}</div></div><div class="callout-content">${body}</div></section>`;
+		return `<section class="smart-mp-callout" data-callout="${calloutType}" style="${containerStyle}"><section class="callout-title" style="${titleStyle}"><span class="callout-icon" style="${iconStyle}">${icon}</span><span class="callout-title-inner" style="${titleInnerStyle}">${title}</span></section><section class="callout-content">${body}</section></section>`;
 	}
 
 
 	markedExtension(): MarkedExtension {
+		const self = this;
 		return {
 			async: true,
 			walkTokens: async (token: Tokens.Generic) => {
@@ -187,20 +202,16 @@ export class BlockquoteRenderer extends SmartMPMarkedExtension {
 				// Only hijack if it's a Callout, otherwise let default blockquote rendering occur
 				const matched = matchCallout(rawText);
 				if (matched) {
-					token.html = await this.rendererCallout(blockquote);
+					(token as any).html = await self.rendererCallout(blockquote);
 				} else {
-					token.html = await this.rendererBlockquote(blockquote);
+					(token as any).html = await self.rendererBlockquote(blockquote);
 				}
 			},
-			extensions: [
-				{
-					name: "blockquote",
-					level: "block",
-					renderer: (token: Tokens.Generic) => {
-						return String(token.html ?? "");
-					},
-				},
-			],
+			renderer: {
+				blockquote: (token: Tokens.Blockquote) => {
+					return String((token as any).html ?? "");
+				}
+			} as any
 		};
 	}
 }

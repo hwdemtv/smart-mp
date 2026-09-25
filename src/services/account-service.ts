@@ -5,12 +5,17 @@ import type SmartMPPlugin from "../main";
 
 export class AccountService {
 	private plugin: SmartMPPlugin;
+	// [Fix] token 刷新的 in-flight 去重：并行上传多张图会同时触发
+	// refreshAccessToken，而微信每次签发新 token 会使旧 token 失效，
+	// 并发刷新会互相顶掉（40001）。相同账户的并发请求应共享同一次刷新
+	private refreshInFlight: Map<string, Promise<string | boolean | null>> = new Map();
 
 	constructor(plugin: SmartMPPlugin) {
 		this.plugin = plugin;
 	}
 
 	async TestAccessToken(accountName: string) {
+		await this.plugin.ensureDecrypted();
 		if (this.plugin.settings.useCenterToken) {
 			const account = this.getMPAccountByName(accountName);
 			if (account === undefined) return false;
@@ -38,6 +43,19 @@ export class AccountService {
 	}
 
 	async refreshAccessToken(accountName: string | undefined): Promise<string | boolean | null> {
+		const key = accountName || "";
+		const inFlight = this.refreshInFlight.get(key);
+		if (inFlight) return inFlight;
+
+		const task = this.doRefreshAccessToken(accountName).finally(() => {
+			this.refreshInFlight.delete(key);
+		});
+		this.refreshInFlight.set(key, task);
+		return task;
+	}
+
+	private async doRefreshAccessToken(accountName: string | undefined): Promise<string | boolean | null> {
+		await this.plugin.ensureDecrypted();
 		if (this.plugin.settings.useCenterToken) {
 			const account = this.getMPAccountByName(accountName);
 			if (account === undefined) return false;
@@ -102,6 +120,9 @@ export class AccountService {
 	}
 
 	getMPAccountByName(accountName: string | undefined) {
+		// Note: This is synchronous, but settings might not be decrypted yet.
+		// However, most callers of this are async or can wait.
+		// For UI display, encrypted strings are fine (masked).
 		return this.plugin.settings.mpAccounts.find(
 			(account) => account.accountName === accountName
 		);

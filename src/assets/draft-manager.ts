@@ -1,26 +1,25 @@
 /**
- * Draft Manager 
- * 
+ * Draft Manager
+ *
  * - manage the local parameters for WeChat Article rendering parameters
  * - support multi-account switch
- * 
+ *
  */
 
 import SmartMPPlugin from "src/main";
-import PouchDB from 'pouchdb';
-import PouchDBFind from 'pouchdb-find';
+import { debounce } from "obsidian";
 import { areObjectsEqual } from "src/utils/utils";
+import Logger from "src/utils/logger";
 import { $t } from "src/lang/i18n";
 import { UrlUtils } from "src/utils/urls";
-PouchDB.plugin(PouchDBFind);
 
 
 
 export type LocalDraftItem = {
     accountName?: string;
-    notePath?: string; //obsidan file path for the note. 
+    notePath?: string; //obsidan file path for the note.
     theme?: string; // the theme selected for rendering. missing will use default theme.
-    cover_image_url?: string; // the cover image url for the article. could be a obsidian file path or url 
+    cover_image_url?: string; // the cover image url for the article. could be a obsidian file path or url
     _id?: string;
     _rev?: string;
     title: string;
@@ -32,25 +31,51 @@ export type LocalDraftItem = {
     show_cover_pic?: number;
     need_open_comment?: number;
     only_fans_can_comment?: number;
-    pic_crop_235_1?: string; //X1_Y1_X2_Y2, 用分隔符_拼接为X1_Y1_X2_Y2  
+    pic_crop_235_1?: string; //X1_Y1_X2_Y2, 用分隔符_拼接为X1_Y1_X2_Y2
     pic_crop_1_1?: string; //X1_Y1_X2_Y2, 用分隔符_拼接为X1_Y1_X2_Y2
     last_draft_url?: string; //	草稿的临时链接
     last_draft_id?: string; //
 
 }
 
-export const initDraftDB = () => {
-    const db = new PouchDB('smart-mp-local-drafts');
-    return db;
-}
 export class LocalDraftManager {
     private plugin: SmartMPPlugin;
-    private db: PouchDB.Database;
+    private drafts: Map<string, LocalDraftItem> = new Map();
+    private dirty = false;
     private static instance: LocalDraftManager;
+
     private constructor(plugin: SmartMPPlugin) {
         this.plugin = plugin;
-        this.db = initDraftDB();
+        this.loadFromDisk();
     }
+
+    private async loadFromDisk(): Promise<void> {
+        try {
+            const data = await this.plugin.loadData();
+            const raw = data?.['local-drafts'] || {};
+            this.drafts = new Map(Object.entries(raw));
+        } catch (e) {
+            Logger.warn('DraftManager', 'Failed to load drafts from disk', e);
+        }
+    }
+
+    private persistDebounced = debounce(async () => {
+        if (!this.dirty) return;
+        this.dirty = false;
+        try {
+            const data = (await this.plugin.loadData()) || {};
+            data['local-drafts'] = Object.fromEntries(this.drafts);
+            await this.plugin.saveData(data);
+        } catch (e) {
+            Logger.error('DraftManager', 'Failed to save drafts', e);
+        }
+    }, 3000);
+
+    private markDirty(): void {
+        this.dirty = true;
+        this.persistDebounced();
+    }
+
     public static getInstance(plugin: SmartMPPlugin): LocalDraftManager {
         if (!LocalDraftManager.instance) {
             LocalDraftManager.instance = new LocalDraftManager(plugin);
@@ -65,7 +90,7 @@ export class LocalDraftManager {
             const f = this.plugin.app.workspace.getActiveFile()
 
             if (f) {
-                draft = await this.getDraft(accountName, f.path)
+                draft = this.getDraft(accountName, f.path)
 
                 // [Sync] Sync Frontmatter to Draft Properties
                 const cache = this.plugin.app.metadataCache.getCache(f.path);
@@ -129,7 +154,7 @@ export class LocalDraftManager {
                                     needSave = true;
                                 }
                             } catch (e) {
-                                console.error("Failed to read cover image", e);
+                                Logger.error("DraftManager", "Failed to read cover image", e);
                             }
                         } else if (String(fmCover).startsWith("http")) {
                             // Remote URL
@@ -149,9 +174,9 @@ export class LocalDraftManager {
 
                 if (needSave) {
                     try {
-                        await this.setDraft(draft);
+                        this.setDraft(draft);
                     } catch (error) {
-                        console.error('Failed to save draft:', error);
+                        Logger.error('DraftManager', 'Failed to save draft', error);
                     }
                 }
             }
@@ -168,69 +193,26 @@ export class LocalDraftManager {
         }
         return false
     }
-    public getDraft(accountName: string, notePath: string): Promise<LocalDraftItem | undefined> {
-        return new Promise((resolve) => {
-            this.db.get(accountName + notePath)
-                .then((doc) => {
-                    resolve(doc as LocalDraftItem)
-                })
-                .catch((err) => {
-                    resolve(undefined)
-                })
-
-        })
+    public getDraft(accountName: string, notePath: string): LocalDraftItem | undefined {
+        const key = accountName + notePath;
+        return this.drafts.get(key);
     }
 
-    public setDraft(doc: LocalDraftItem): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            if (!doc.accountName || !doc.notePath) {
-                return reject(new Error($t('assets.invalid-draft')));
-            }
+    public setDraft(doc: LocalDraftItem): boolean {
+        if (!doc.accountName || !doc.notePath) {
+            throw new Error($t('assets.invalid-draft'));
+        }
 
-            if (!doc._id) {
-                doc._id = doc.accountName + doc.notePath;
-            }
+        const key = doc._id || (doc.accountName + doc.notePath);
+        doc._id = key;
 
-            this.db.get(doc._id)
-                .then(existedDoc => {
-                    const existingDraft = existedDoc as LocalDraftItem;
-                    if (areObjectsEqual(doc, existingDraft)) {
-                        // No changes needed
-                        resolve(true);
-                        return;
-                    }
-                    else {
-                        doc._rev = existedDoc._rev;
-                        return this.db.put(doc)
-                            .then(() => resolve(true))
-                            .catch(error => {
-                                resolve(false);
-                            });
-                    }
-                    // No changes needed
-                    resolve(false);
-                })
-                .catch(error => {
-                    if (error.status === 404) {
-                        // New document
-                        return this.db.put(doc)
-                            .then(() => resolve(true))
-                            .catch(err => {
-                                console.error('Error creating new draft:', err);
-                                const reason =
-                                    err instanceof Error
-                                        ? err
-                                        : new Error(String(err));
-                                reject(reason);
-                            });
-                    }
-                    console.error('Error checking existing draft:', error);
-                    const reason =
-                        error instanceof Error
-                            ? error
-                            : new Error(String(error));
-                    reject(reason);
-                });
-        });
+        const existing = this.drafts.get(key);
+        if (existing && areObjectsEqual(doc, existing)) {
+            return true; // No changes
+        }
+
+        this.drafts.set(key, { ...doc });
+        this.markDirty();
+        return true;
     }
 }

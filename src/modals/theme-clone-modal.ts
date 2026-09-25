@@ -78,7 +78,8 @@ export class ThemeCloneModal extends Modal {
                             this.close();
 
                             // 尝试自动应用新主题（可选，或仅刷新列表）
-                            this.plugin.settings.custom_theme = this.plugin.settings.css_styles_folder + "/" + this.themeName + ".md";
+                            const folder = this.plugin.settings.css_styles_folder.replace(/\/+$/, '');
+                            this.plugin.settings.custom_theme = `${folder}/${this.themeName}.md`;
                             await this.plugin.saveSettings();
 
                         } catch (error) {

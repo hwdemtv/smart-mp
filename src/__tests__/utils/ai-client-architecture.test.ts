@@ -35,7 +35,8 @@ describe('BaseAIClient 基类', () => {
             'constructor',
             'getCurrentProvider',
             'getCurrentModelId',
-            'getPrompt',
+            'buildMessages',
+            'mergeOptions',
             'generateSummary',
             'generateSummaryStream',
             'generateTitle',
@@ -111,11 +112,12 @@ describe('架构设计验证', () => {
         expect(methods).toContain('synonym');
     });
 
-    it('getPrompt 方法应存在', async () => {
+    it('buildMessages 方法应存在（取代旧 getPrompt）', async () => {
         const { BaseAIClient } = await import('../../utils/ai-base-client');
 
         const methods = Object.getOwnPropertyNames(BaseAIClient.prototype);
-        expect(methods).toContain('getPrompt');
+        expect(methods).toContain('buildMessages');
+        expect(methods).toContain('mergeOptions');
     });
 });
 

@@ -60,11 +60,22 @@ export class Table extends SmartMPMarkedExtension {
                         }
 
                         if (!bestMatch) {
-                            return '<section class="table-container"><p>Table content not found</p><section>';
+                            return '<section style="max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch;"><p>Table content not found</p></section>';
                         }
 
                         this.tableIndex++; // Keep incrementing just in case we need fallback
-                        return `<section class="table-container">${serializeElement(bestMatch)}</section>`;
+
+                        // Apply cell alignment from Obsidian DOM
+                        bestMatch.querySelectorAll('th, td').forEach((cell) => {
+                            const align = cell.getAttribute('align');
+                            if (align) {
+                                (cell as HTMLElement).style.textAlign = align;
+                            }
+                        });
+
+                        // Wrap with horizontal scroll container
+                        const tableHtml = serializeElement(bestMatch);
+                        return `<section style="max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch;">${tableHtml}</section>`;
                     }
                 }
             ]

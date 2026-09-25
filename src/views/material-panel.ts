@@ -189,11 +189,17 @@ export class MaterialPanel {
 				item.setTitle($t('views.send-mass-message'))
 					.setIcon('send')
 					.onClick(() => {
-						void this.plugin.wechatClient.massSendAll(
-							draftItem.media_id,
-							this.plugin.settings.selectedMPAccount
-						)
-
+						// [Fix] 群发面向全部粉丝且不可撤回，必须二次确认
+						const draftTitle = draftItem.content?.news_item?.[0]?.title ?? draftItem.media_id;
+						void this.plugin.confirm(
+							$t('views.mass-send-confirm', [draftTitle]) ?? `确定向全部粉丝群发「${draftTitle}」吗？此操作不可撤回！`
+						).then((ok) => {
+							if (!ok) return;
+							void this.plugin.wechatClient.massSendAll(
+								draftItem.media_id,
+								this.plugin.settings.selectedMPAccount
+							);
+						});
 					});
 			});
 		}

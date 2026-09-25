@@ -21,7 +21,6 @@ export class ThemeManager {
 	private cachedCssKey: string | null = null;
 
 	async downloadThemes() {
-		const baseUrlAlter = "https://raw.githubusercontent.com/hwdemtv/smart-mp/main/themes/";
 		const baseUrl = "https://raw.githubusercontent.com/hwdemtv/smart-mp/main/themes/";
 		const saveDir = this.plugin.settings.css_styles_folder || "/smart-mp-custom-css";
 
@@ -30,28 +29,9 @@ export class ThemeManager {
 			await this.plugin.app.vault.createFolder(saveDir);
 		}
 
-		// Check if github is reachable, if not, use gitee
-		let url = baseUrl;
-		void requestUrl(`${baseUrl}themes.json`).then((response) => {
-			if (response.status === 200) {
-				// The URL is valid, use it
-				url = baseUrl;
-				Logger.debug('ThemeManager', `Using GitHub URL: ${url}`);
-			} else {
-				// The URL is not valid, use the alternative URL
-				Logger.debug('ThemeManager', `status error, Using Gitee URL: ${baseUrlAlter}`);
-				url = baseUrlAlter;
-			}
-		}).catch((error) => {
-			// The URL is not valid, use the alternative URL
-			Logger.debug('ThemeManager', `exception, Using Gitee URL: ${baseUrlAlter}`);
-			url = baseUrlAlter;
-		});
-
-
 		try {
 			// Download themes.json
-			const themesResponse = await requestUrl(`${url}themes.json`);
+			const themesResponse = await requestUrl(`${baseUrl}themes.json`);
 			if (themesResponse.status !== 200) {
 				throw new Error($t('views.theme-manager.failed-to-fetch-themes-json-themesrespon', [themesResponse.text]));
 			}
@@ -64,7 +44,7 @@ export class ThemeManager {
 				try {
 
 
-					const fileResponse = await requestUrl(`${url}${theme.file}`);
+					const fileResponse = await requestUrl(`${baseUrl}${theme.file}`);
 					if (fileResponse.status !== 200) {
 						Logger.warn('ThemeManager', `Failed to download ${theme.file}: ${fileResponse.text}`);
 						continue;

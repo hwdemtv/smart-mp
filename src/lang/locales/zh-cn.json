@@ -18,7 +18,10 @@
   "errors": {
     "api-error": "API 调用错误",
     "wechat-error": "微信 API 错误",
-    "render-error": "渲染错误"
+    "render-error": "渲染错误",
+    "network-error": "网络错误",
+    "unexpected-error": "发生意外错误",
+    "unknown-error": "未知错误"
   },
   "commands": {
     "polish": "公众号：润色选中文本",
@@ -28,6 +31,7 @@
     "latex": "公众号：生成 LaTeX 公式",
     "summary": "公众号：生成文章摘要",
     "headline": "公众号：生成爆款标题",
+    "normalize-punctuation": "公众号：规范全文标点（中文语境半角转全角）",
     "insert-mode": {
       "replace": "🔄 替换选中文本",
       "append": "➕ 追加到选中文本后",
@@ -44,20 +48,20 @@
     "please-check-you-appid-and-appsecret": "请检查您的App ID和App Secret。",
     "polish": "润色",
     "polishing": "润色中...",
-    "proof": "校对",
     "proofing": "校对中...",
     "generating-latex": "生成LaTeX",
     "generating-mermaid": "生成Mermaid",
     "text-to-image": "文生图",
-    "to-chinese": "翻译为中文",
-    "to-english": "翻译为英文",
     "translating-to-chinese": "正在翻译为中文...",
     "translating-to-english": "正在翻译为英文...",
     "smart-mp-ai": "SmartMP AI",
     "open-material-view": "素材管理",
     "open-previewer": "文章渲染预览",
     "image-generation-failed": "图片生成失败。",
-    "toggle-scroll-sync": "切换滚动同步"
+    "toggle-scroll-sync": "切换滚动同步",
+    "copy-article": "复制文章到剪贴板（富文本）",
+    "send-to-draft-box": "发送文章到微信草稿箱",
+    "export-html": "导出文章为 HTML 文件"
   },
   "modals": {
     "cancel": "取消",
@@ -87,7 +91,11 @@
       "message": "确定要发布这篇文章吗？",
       "success": "发布成功",
       "title": "确认发布",
-      "warning": "在微信公众号平台外发布可能效率较低，部分功能可能无法正常使用（如标签、推送到公众号等）。"
+      "warning": "在微信公众号平台外发布可能效率较低，部分功能可能无法正常使用（如标签、推送到公众号等）。",
+      "status-success": "发布成功！",
+      "status-success-url": "发布成功！正在打开文章链接",
+      "status-failed": "发布失败（第 {0} 篇未通过审核）",
+      "status-pending": "发布仍在审核中，请稍后在公众号后台查看结果"
     },
     "diff": {
       "title": "AI 修改对比 (Diff View)",
@@ -112,6 +120,8 @@
     "charts-plugin-not-installed": "图表插件未安装。",
     "rendering": "渲染中...",
     "failed-to-parse-custom-css": "定制风格存在CSS语法错误：{0}",
+    "reference-links": "🔗 参考链接",
+    "footnotes": "📝 文章脚注",
     "general-tab": "通用 / 排版",
     "llm-tab": "AI / 大模型"
   },
@@ -176,6 +186,18 @@
       "sync-mode-options": {
         "precise": "🎯 精确锚点 (按行号)",
         "proportional": "🌊 平滑比例 (按百分比)"
+      },
+      "precision-options": {
+        "precise": "🎯 精确模式 (2px)",
+        "balanced": "⚖️ 平衡模式 (5px) [推荐]",
+        "performance": "🚀 性能模式 (15px)"
+      },
+      "highlight-options": {
+        "gold": "🌟 金色 (螺旋金)",
+        "blue": "💙 蓝色",
+        "green": "💚 绿色",
+        "purple": "💜 紫色",
+        "minimal": "🌙 极简 (透明)"
       }
     },
     "import-export-smart-mp-account": "导入/导出账号信息",
@@ -203,6 +225,12 @@
       "summary": "摘要生成 (Summary)",
       "dynamic-assistants": "自定义助手管理",
       "add-assistant": "添加自定义助手",
+      "mp-title-template": "公众号标题优化",
+      "add-mp-templates": "一键添加公众号模板",
+      "add-mp-templates-desc": "添加标题优化、开头钩子、互动结尾助手",
+      "mp-templates-added": "成功添加 {{0}} 个公众号助手模板",
+      "mp-hook-template": "公众号开头钩子",
+      "mp-end-template": "公众号互动结尾",
       "assistant-name": "助手名称",
       "assistant-name-desc": "显示在右键菜单中的名称",
       "assistant-prompt": "指令模板",
@@ -238,6 +266,7 @@
     "select-account": "选择账号",
     "select-wechat-mp-account": "选择微信公众号账号",
     "settings-exported": "设置导出成功。",
+    "export-contains-secrets": "⚠️ 导出文件包含明文的 AppSecret/API Key/激活码，请妥善保管，不要分享给他人。",
     "settings-exporting-failed": "设置导出失败。",
     "settings-imported-error": "设置导入出错。",
     "settings-imported-failed": "设置导入失败。",
@@ -258,8 +287,28 @@
       "current-device": "当前设备",
       "current-device-desc": "您的设备硬件特征码已作为鉴权凭据",
       "activation-code": "激活码",
-      "activation-code-desc": "输入激活码以解锁 Pro 功能，支持同时绑定多台设备"
+      "activation-code-placeholder": "请输入激活码",
+      "toggle-password-visibility": "显示/隐藏激活码",
+      "activation-code-desc": "输入激活码以解锁 Pro 功能，支持同时绑定多台设备",
+      "unbind-btn": "解除绑定",
+      "verify-online-btn": "联网验证",
+      "verifying": "验证中...",
+      "pro-active-badge": "✓ Pro 已激活",
+      "pro-active-info": "已解锁全部功能，支持中心令牌中转服务",
+      "free-badge": "免费版",
+      "free-info": "微信 API 功能受限（需配置 IP 白名单）",
+      "benefits-title": "SmartMP Pro 权益 (¥69/年)：",
+      "benefit-center-token": "中心令牌服务器：无需公网 IP 即可同步",
+      "benefit-support": "优先支持：一对一解决使用问题",
+      "benefit-updates": "永久更新：包含所有未来本地新功能",
+      "benefit-roaming": "多端漫游：支持最多3台个人设备自动漫游验证",
+      "get-activation-code": "🎫 获取激活码"
     },
+    "ai-chat-section": {
+      "model-select-desc": "选择此助手使用的服务商和模型（留空则使用全局默认）"
+    },
+    "migrate-success": "SmartMP: LLM 设置已迁移至新格式。",
+    "restore-assistants-success": "SmartMP: 默认 AI 助手已恢复。",
     "llm-provider": {
       "default-provider": "默认服务商",
       "default-model": "默认模型",
@@ -280,8 +329,30 @@
       "fetch-models": "从 API 获取模型列表",
       "model-id-header": "模型 ID",
       "model-name-header": "显示名称",
-      "model-select-desc": "选择此助手使用的服务商和模型（留空则使用全局默认）"
-    }
+      "test-connection-btn": "🔗 Test",
+      "testing": "⏳...",
+      "add-model": "添加模型",
+      "use-global-default": "-- 使用全局默认 --",
+      "delete-provider": "删除服务商",
+      "toggle-model": "启用/禁用"
+    },
+    "normalize-punctuation": "标点规范化",
+    "normalize-punctuation-desc": "渲染时将中文语境的半角标点转为全角（代码块、URL、文件路径不受影响）",
+    "font-size": "正文字号",
+    "font-size-desc": "公众号建议 15-16px",
+    "first-line-indent": "段落首行缩进",
+    "code-theme": "代码高亮主题",
+    "code-line-number": "代码块显示行号",
+    "show-code-mac-header": "代码块 Mac 风格头部",
+    "wechat-compat-preview": "微信兼容预览",
+    "wechat-compat-preview-desc": "预览时即过滤微信编辑器不支持的 CSS 属性，确保预览效果与公众号实际显示一致（关闭则显示浏览器完整效果，可能与微信端有差异）",
+    "sections.license": "🔐 授权管理 (License)",
+    "sections.wechat": "📱 账号配置 (Account Configuration)",
+    "sections.general": "⚙️ 通用与交互 (General & Interaction)",
+    "sections.appearance": "🎨 外观与排版 (Appearance & Layout)",
+    "sections.security": "🛡️ 高级设置 (Advanced Settings)",
+    "app-secret-placeholder": "请输入 AppSecret",
+    "failed-to-connect-wechat-server": "连接微信服务器失败"
   },
   "utils": {
     "missing-api-configuration": "缺少API配置。",
@@ -306,7 +377,6 @@
       "only-fans-can-comment": "仅粉丝可评论",
       "only-fans-can-comment-description": "仅关注公众号的用户可以评论",
       "open-comments": "开启评论",
-      "title": "文章标题",
       "ai-title-recommendation": "AI 推荐标题",
       "click-to-use": "点击下方标题可直接填入编辑框",
       "edit-title": "编辑最终标题:",
@@ -343,9 +413,11 @@
       "smart-mp-previewer": "SmartMP预览器",
       "article-stats": "约 {0} 字 / 预计阅读 {1} 分钟",
       "scroll-sync-on": "滚动同步：已开启",
-      "scroll-sync-off": "滚动同步：已关闭"
+      "scroll-sync-off": "滚动同步：已关闭",
+      "not-open": "请先打开预览面板"
     },
     "send-mass-message": "群发消息",
+    "mass-send-confirm": "确定向全部粉丝群发「{0}」吗？此操作不可撤回！",
     "theme-manager": {
       "default-theme": "默认主题",
       "download-predefined-custom-themes": "下载定制主题",
@@ -356,6 +428,7 @@
     }
   },
   "wechat-api": {
+    "error": "微信接口错误",
     "center-token-request-failed": "获取中心令牌失败，请检查网络连接或稍后重试",
     "center-token-enabled": "已启用中心令牌服务器",
     "center-token-disabled": "已关闭中心令牌服务器，请确保已配置 IP 白名单",
@@ -364,7 +437,7 @@
     "voice-size-exceeds-2m": "语音大小超过2MB限制",
     "send-article-to-draft-box-successfully": "文章成功发送到草稿箱。",
     "uploading-material-type": "上传素材类型：{0}",
-    "article-content-exceeds-limit": "文章内容超过限制，请手动分割（必须少于2万字符），或使用「一键复制」手动粘贴到公众号编辑器"
+    "update-draft-success": "草稿更新成功！"
   },
   "streaming-diff-modal": {
     "title": "AI 修改对比 (流式模式)",
@@ -436,7 +509,9 @@
       "select-text-to-translate": "请先选中要翻译的文本",
       "select-text-to-convert": "请先选中要转换的文本",
       "select-text-to-summarize": "请先选中要生成摘要的文本",
-      "article-content-too-short": "文章内容太少，无法生成标题"
+      "article-content-too-short": "文章内容太少，无法生成标题",
+      "no-punctuation-changes": "未发现需要规范的标点",
+      "open-file-in-editor-first": "请在编辑器中打开该文件后再润色"
     },
     "previewer": {
       "preparing-clipboard": "正在准备剪贴板内容...",
@@ -446,7 +521,12 @@
       "processing-article": "开始处理文章...",
       "cannot-get-draft-info": "无法获取当前草稿信息",
       "send-draft-failed": "发送草稿失败，请检查控制台错误日志",
-      "send-draft-success": "发送到草稿箱成功！"
+      "send-draft-success": "发送到草稿箱成功！",
+      "content-over-limit": "文章超出微信限制（{0}KB / {1} 字符，上限约 400KB / 20000 字符）。请拆分文章或使用「一键复制」。",
+      "update-draft-confirm": "本文已有历史草稿。确定 = 更新该草稿；取消 = 新建草稿",
+      "preparing-export": "正在准备导出内容...",
+      "exported": "导出成功",
+      "exported-to-vault": "已导出到仓库根目录"
     },
     "article": {
       "digest-truncated": "描述最多 120 个字符，已自动截断",
@@ -458,8 +538,10 @@
       "template-exists": "模板已存在，无需重复添加",
       "base-url-required": "Base URL is required",
       "license-key-required": "激活码不能为空",
-      "migrate-success": "SmartMP: LLM 设置已迁移至新格式。",
-      "restore-assistants-success": "SmartMP: 默认 AI 助手已恢复。"
+      "llm-test-success": "✅ 连接成功！发现 {{0}} 个模型",
+      "llm-test-failed": "❌ 连接失败: {{0}}",
+      "llm-fetch-success": "✅ 获取成功！新增 {{0}} 个模型",
+      "llm-fetch-failed": "❌ 获取失败: {{0}}"
     },
     "theme": {
       "clone-invalid-url": "请输入有效的微信文章链接",

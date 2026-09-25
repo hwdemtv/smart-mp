@@ -10,6 +10,9 @@ export interface StreamRequestOptions {
     messages: any[];
     maxTokens?: number;
     temperature?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
     onChunk: (chunk: string) => void;
     signal?: AbortSignal;
 }
@@ -25,6 +28,9 @@ export async function streamSSE(options: StreamRequestOptions): Promise<string> 
         messages,
         maxTokens = 4096,
         temperature = 0.7,
+        topP,
+        frequencyPenalty,
+        presencePenalty,
         onChunk,
         signal
     } = options;
@@ -40,6 +46,9 @@ export async function streamSSE(options: StreamRequestOptions): Promise<string> 
             messages,
             max_tokens: maxTokens,
             temperature,
+            ...(topP != null ? { top_p: topP } : {}),
+            ...(frequencyPenalty != null ? { frequency_penalty: frequencyPenalty } : {}),
+            ...(presencePenalty != null ? { presence_penalty: presencePenalty } : {}),
             stream: true,
         }),
         signal,

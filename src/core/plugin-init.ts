@@ -62,18 +62,3 @@ export class PluginStateManager {
     }
 }
 
-/**
- * Initialize database connections
- */
-export async function initializeDatabases(): Promise<void> {
-    // Import dynamically to avoid circular dependencies
-    const { initSmartMPDB } = await import('../settings/smart-mp-setting');
-    const { initAssetsDB } = await import('../assets/assets-manager');
-    const { initDraftDB } = await import('../assets/draft-manager');
-
-    await Promise.all([
-        initSmartMPDB(),
-        initAssetsDB(),
-        initDraftDB(),
-    ]);
-}

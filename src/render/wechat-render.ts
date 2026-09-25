@@ -16,7 +16,7 @@ import { Marked, Tokens, RendererObject, RendererThis } from "marked";
 import { Component, TFile } from "obsidian";
 import SmartMPPlugin from "src/main";
 import { WechatClient } from "../wechat-api/wechat-client";
-import { BlockquoteRenderer } from "./marked-extensions/blockquote";
+import { BlockquoteRenderer, preprocessCalloutContainers } from "./marked-extensions/blockquote";
 import { CodeRenderer } from "./marked-extensions/code";
 import { CodespanRenderer } from "./marked-extensions/codespan";
 import { Embed } from "./marked-extensions/embed";
@@ -36,6 +36,7 @@ import { Summary } from "./marked-extensions/summary";
 import { Image } from "./marked-extensions/image";
 import { Highlight } from "./marked-extensions/highlight";
 import { getCodeBlockMapper, processCodeBlockLineNumbers, resetCodeBlockMapper } from "../utils/code-block-mapper";
+import { normalizeRenderedDomPunctuation } from "../utils/cjk-punctuation";
 // import { ListItem } from './marked-extensions/list-item'
 
 const markedOptiones = {
@@ -126,9 +127,13 @@ export class WechatRender {
      */
     public setPreviewRender(previewRender: PreviewRender) {
         this.previewRender = previewRender;
-        // Re-initialize extensions with new context
-        this.extensions = [];
-        this.useExtensions();
+        if (this.extensions.length === 0) {
+            // First time: register extensions on the Marked instance
+            this.useExtensions();
+        } else {
+            // Subsequent calls: just update the previewRender reference on existing extensions
+            this.extensions.forEach(ext => ext.previewRender = previewRender);
+        }
     }
 	addExtension(extension: SmartMPMarkedExtension) {
 		this.extensions.push(extension);
@@ -185,7 +190,8 @@ export class WechatRender {
 	private lineCounter = 0;
 
 	async parse(md: string) {
-		const { data, content } = matter(md);
+		const { data, content: rawContent } = matter(md);
+		const content = preprocessCalloutContainers(rawContent);
 		await Promise.all(this.extensions.map(ext => ext.prepare()));
 
 		// Reset line tracking
@@ -196,9 +202,15 @@ export class WechatRender {
 		resetCodeBlockMapper();
 
 		// Calculate line offsets for content (after frontmatter)
-		// Precise detection of frontmatter lines
-		const fmEndIndex = md.indexOf(content);
-		const frontmatterLines = (md.substring(0, fmEndIndex).match(/\n/g) || []).length;
+		// [Fix] 直接从原文正则计算 frontmatter 行数：preprocessCalloutContainers
+		// 可能改写 content（如 ::: 容器），此前 md.indexOf(content) 会返回 -1，
+		// md.substring(0, -1) 为空串导致行号偏移整体错位（滚动同步失准）；
+		// indexOf 首次匹配也可能命中 frontmatter 中与正文首行相同的文本
+		let frontmatterLines = 0;
+		const fmMatch = md.match(/^---\r?\n[\s\S]*?\r?\n---/);
+		if (fmMatch) {
+			frontmatterLines = (fmMatch[0].match(/\n/g) || []).length + 1;
+		}
 
 		// Use marked lexer to get tokens with positions
 		const tokens = this.marked.lexer(content);
@@ -244,6 +256,11 @@ export class WechatRender {
 		for (let ext of this.extensions) {
 			await ext.postprocess(wrapper);
 		}
+
+		// [接线] CJK 标点归一化：实现早已完备（代码块/URL/路径全保护）但从未接入。
+		// 放在所有扩展处理之后，预览与导出（剪贴板/草稿箱）共用此路径
+		normalizeRenderedDomPunctuation(wrapper, { enabled: this.plugin.settings.normalizePunctuation === true });
+
 		// Return DOM element directly
 		return this.removeEmptyListItems(wrapper);
 	}
@@ -304,13 +321,12 @@ export class WechatRender {
 	 * 为段落内的 <br> 换行点注入行号锚点
 	 * 将 <br> 前后的内容包裹在 <span data-source-line="N"> 中
 	 * 使滚动同步的锚点密度从"每段落一个"提升到"每行一个"
+	 *
+	 * 性能优化：减少 cloneNode 调用，直接移动节点
 	 */
 	private injectIntraLineAnchors(el: HTMLElement, startLine: number) {
 		const brElements = el.querySelectorAll('br');
 		if (brElements.length === 0) return;
-
-		// 收集所有 <br> 节点
-		const brs = Array.from(brElements);
 
 		// 使用 DocumentFragment 重建段落内容
 		const fragment = document.createDocumentFragment();
@@ -318,21 +334,22 @@ export class WechatRender {
 		let currentSpan = document.createElement('span');
 		currentSpan.setAttribute('data-source-line', String(currentLine));
 
-		// 遍历所有子节点
-		const childNodes = Array.from(el.childNodes);
-		for (const node of childNodes) {
+		// 直接遍历子节点（不创建数组副本）
+		while (el.firstChild) {
+			const node = el.firstChild;
+
 			if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
 				// 遇到 <br>：结束当前 span，添加 <br>，开始新 span
 				if (currentSpan.childNodes.length > 0) {
 					fragment.appendChild(currentSpan);
 				}
-				fragment.appendChild(node.cloneNode(true));
+				fragment.appendChild(node); // 直接移动节点，不克隆
 				currentLine++;
 				currentSpan = document.createElement('span');
 				currentSpan.setAttribute('data-source-line', String(currentLine));
 			} else {
-				// 普通节点：追加到当前 span
-				currentSpan.appendChild(node.cloneNode(true));
+				// 普通节点：直接移动到当前 span
+				currentSpan.appendChild(node);
 			}
 		}
 
@@ -341,8 +358,7 @@ export class WechatRender {
 			fragment.appendChild(currentSpan);
 		}
 
-		// 替换段落内容
-		el.innerHTML = '';
+		// 一次性替换内容（避免 innerHTML = '' 触发额外的 reflow）
 		el.appendChild(fragment);
 	}
 
@@ -376,11 +392,25 @@ export class WechatRender {
 		contentOverride?: string
 	): Promise<HTMLElement> {
 		Logger.debug('WechatRender', `Starting parseNote for ${path}`);
-		const content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
+		let content = contentOverride ?? await this.plugin.app.vault.adapter.read(path);
 		
 		if (!content) {
 			Logger.warn('WechatRender', `Content is empty for ${path}. Returning empty div.`);
 			return createDiv({ text: '内容为空', cls: 'smart-mp-empty-notice' });
+		}
+
+		// Strip YAML Frontmatter
+		if (content.startsWith('---')) {
+			const endOfFrontmatter = content.indexOf('---', 3);
+			if (endOfFrontmatter !== -1) {
+				// Check if there is a newline after the closing ---
+				const nextNewLine = content.indexOf('\n', endOfFrontmatter + 3);
+				if (nextNewLine !== -1) {
+					content = content.substring(nextNewLine + 1).trimStart();
+				} else {
+					content = content.substring(endOfFrontmatter + 3).trimStart();
+				}
+			}
 		}
 
 		const hash = this.simpleHash(content);
@@ -390,7 +420,13 @@ export class WechatRender {
 			const cached = this.contentCache.get(path);
 			if (cached && cached.hash === hash) {
 				Logger.debug('WechatRender', `Cache HIT for ${path}`);
-				return await this.postprocess(cached.html);
+				// [Fix] 缓存的是 postprocess 之后的最终 HTML（已含脚注区、参考链接、
+				// 行号锚点）。此前缓存命中会跳过 parse()（不执行 ext.prepare()），
+				// Footnote/Links 等扩展的共享状态还停留在上一篇笔记，导致切回
+				// 缓存命中笔记时脚注列表丢失或显示别的笔记的链接
+				const wrapper = createDiv();
+				wrapper.innerHTML = cached.html;
+				return wrapper;
 			}
 		}
 
@@ -430,7 +466,7 @@ export class WechatRender {
 			Logger.debug('WechatRender', `Complex content detected (Excalidraw: ${needsExcalidraw}, Mermaid: ${needsMermaid}, Table: ${needsTable}, etc.), triggering Obsidian render.`);
 			try {
 				// Render to temp container to initialize previewEl and markdownBody
-				await renderer.render(path, tempContainer, view);
+				await renderer.render(path, tempContainer, view, content);
 				Logger.debug('WechatRender', `Obsidian renderer finished for ${path}.`);
 
 				// Give a small buffer for plugins to react to DOM insertion
@@ -530,11 +566,13 @@ export class WechatRender {
 			htmlString = "<p>(解析后内容为空)</p>";
 		}
 
+		const domElement = await this.postprocess(htmlString);
+
 		// 2. Update Cache
-		this.contentCache.set(path, { hash, html: htmlString });
+		// [Fix] 在 postprocess 之后缓存最终 HTML（见上方缓存命中处的说明）
+		this.contentCache.set(path, { hash, html: domElement.innerHTML });
 		Logger.debug('WechatRender', `Cache updated for ${path}.`);
 
-		const domElement = await this.postprocess(htmlString);
 		// Do not remove tempContainer, keep it for reuse
 		// if (tempContainer.parentNode) {
 		// 	tempContainer.parentNode.removeChild(tempContainer);

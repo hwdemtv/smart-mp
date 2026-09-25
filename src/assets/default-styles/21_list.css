@@ -13,7 +13,7 @@
 	--list-text-indent: 0;
 }
 .smart-mp ol,
-.smart-mp ul:not(.smart-mp .code-section ul) {
+.smart-mp ul {
 	color: var(--list-text-color, #333);
 	/* background-color: var(--list-bg-color, #fff); */
 	padding-left: var(--list-padding-left);
@@ -28,13 +28,13 @@
 .smart-mp ol {
 	list-style-type: var(--list-ol-style, decimal);
 }
-.smart-mp ul:not(.smart-mp .code-section ul) {
+.smart-mp ul {
 	list-style-type: var(--list-ul-style, disc);
 }
 
 
 .smart-mp ol li,
-.smart-mp ul li:not(.smart-mp .code-section ul li) {
+.smart-mp ul li {
 	margin-bottom: var(--list-item-margin-bottom, 3px);
 	line-height: var(--list-line-height, 1.6);
 	padding-left: var(--list-padding-left);

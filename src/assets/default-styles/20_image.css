@@ -16,7 +16,7 @@
 	--image-caption-text-align: center;
 }
 
-.smart-mp img:not(.smart-mp-profile-card img) {
+.smart-mp img {
 	border-radius: var(--image-border-radius);
 	border-width: var(--image-border-width);
 	border-style: var(--image-border-style);

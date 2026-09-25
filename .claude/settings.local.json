@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(cp \"D:/Obsidian插件/smart-mp/main.js\" \"D:/OB仓库/HuWei_Spiral/.obsidian/plugins/smart-mp/\")",
+      "Bash(cp \"D:/Obsidian插件/smart-mp/styles.css\" \"D:/OB仓库/HuWei_Spiral/.obsidian/plugins/smart-mp/\")",
+      "Bash(cp \"D:/Obsidian插件/smart-mp/manifest.json\" \"D:/OB仓库/HuWei_Spiral/.obsidian/plugins/smart-mp/\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm test:*)",
+      "Bash(sed -i 's/createCoverFrame\\(details: HTMLElement\\)/createCoverFrame\\(container: HTMLElement\\)/g' src/views/mp-article-header.ts)",
+      "Bash(sed -i 's/new Setting\\(details\\)/new Setting\\(container\\)/g' src/views/mp-article-header.ts)",
+      "Bash(sed -i 's/details\\\\.createDiv/container.createDiv/g' src/views/mp-article-header.ts)"
+    ]
+  }
+}

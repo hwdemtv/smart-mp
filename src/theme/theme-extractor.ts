@@ -330,7 +330,7 @@ export class ThemeExtractor {
         // 扫描带有颜色的 strong 标签
         $('#js_content strong[style*="color"]').each((i, el) => {
             const style = $(el).attr('style') || '';
-            const colorMatch = style.match(/color:\s*([^;]+)/i);
+            const colorMatch = style.match(/(?<![-\w])color:\s*([^;]+)/i);
             if (colorMatch && colorMatch[1]) {
                 const color = colorMatch[1].trim();
                 // 排除黑白灰
@@ -511,7 +511,7 @@ export class ThemeExtractor {
             }
 
             if (key) {
-                const colorMatch = style.match(/color:\s*([^;]+)/i);
+                const colorMatch = style.match(/(?<![-\w])color:\s*([^;]+)/i);
                 if (colorMatch && colorMatch[1]) {
                     props['color'] = colorMatch[1].trim();
                 }
@@ -630,7 +630,9 @@ export class ThemeExtractor {
         }
 
         // 提取文字颜色
-        const colorMatch = style.match(/color:\s*([^;]+)/i);
+        // [Fix] 负向后行断言排除 background-color:/border-color: 等复合属性，
+        // 此前会错误提取到背景色
+        const colorMatch = style.match(/(?<![-\w])color:\s*([^;]+)/i);
         if (colorMatch) {
             props.color = colorMatch[1].trim();
         }

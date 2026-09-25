@@ -33,11 +33,9 @@ import { DeepSeekResult } from "./types/types";
 import {
 	getSmartMPSetting,
 	saveSmartMPSetting,
+	DEFAULT_SETTINGS,
 	SmartMPSetting,
-	initSmartMPDB
 } from "./settings/smart-mp-setting";
-import { initAssetsDB } from "./assets/assets-manager";
-import { initDraftDB } from "./assets/draft-manager";
 import { AiClient } from "./utils/ai-client";
 import { MessageService } from "./utils/message-service";
 import {
@@ -47,7 +45,7 @@ import { MaterialView, VIEW_TYPE_MP_MATERIAL } from "./views/material-view";
 import { PreviewPanel, VIEW_TYPE_SMART_MP_PREVIEW } from "./views/previewer";
 import { FloatingToolbar } from "./views/floating-toolbar";
 import { WechatClient } from "./wechat-api/wechat-client";
-import { syncLineField, scrollSyncPlugin, scrollSyncStyles, initScrollSyncStyle } from "./render/scroll-sync-extension";
+import { syncLineField, scrollSyncPlugin, scrollSyncStyles, initScrollSyncStyle, removeDynamicCSS } from "./render/scroll-sync-extension";
 import { Spinner } from "./views/spinner";
 import { ThemeHotReloader } from "./theme/hot-reloader";
 import { ThemeManager } from "./theme/theme-manager";
@@ -61,44 +59,6 @@ import { AccountService } from "src/services/account-service";
 import { CommandManager } from "src/core/command-manager";
 import { AIFeatureManager } from "src/services/ai-feature-manager";
 
-const DEFAULT_SETTINGS: SmartMPSetting = {
-	mpAccounts: [],
-	ipAddress: "",
-	css_styles_folder: "smart-mp-css-styles",
-	codeLineNumber: true,
-	codeTheme: "github",
-	showCodeMacHeader: true,
-	fontSize: "15px",
-	firstLineIndent: false,
-	linkFootnotes: true,
-	showImageCaptions: false,
-	showArticleStats: false,
-	embedArticleStats: false,
-	hrStyle: "dots",
-	customHrText: "· · ·",
-	accountDataPath: "smart-mp-accounts",
-	useCenterToken: false,
-	chatAccounts: [],
-	drawAccounts: [],
-	realTimeRender: true,
-	realTimeRenderDelay: 500,
-	scrollSync: true,
-	enableStrictSecurityMode: true,
-	enableFloatingToolbar: true,
-	chatSetting: {
-		temperature: 0.7,
-		max_tokens: 2048,
-		top_p: 1,
-		frequency_penalty: 0,
-		presence_penalty: 0,
-	},
-	// 滚动同步增强设置
-	scrollSyncPrecision: 'balanced',
-	scrollHighlightPreset: 'gold',
-	enableCodeBlockLineMapping: false,
-	scrollSyncMode: 'precise',
-};
-
 export default class SmartMPPlugin extends Plugin {
 	settings: SmartMPSetting;
 	wechatClient: WechatClient;
@@ -108,7 +68,7 @@ export default class SmartMPPlugin extends Plugin {
 	private imageGenerateModal: ImageGenerateModal | undefined;
 	matierialView: MaterialView;
 	messageService: MessageService;
-	resourceManager = ResourceManager.getInstance(this);
+	resourceManager: ResourceManager | undefined;
 	active: boolean = false;
 	spinner: Spinner;
 	themeHotReloader: ThemeHotReloader;
@@ -120,9 +80,8 @@ export default class SmartMPPlugin extends Plugin {
 	aiFeatureManager: AIFeatureManager;
 
 	async saveThemeFolder() {
-		const config = {
-			custom_theme_folder: this.settings.css_styles_folder,
-		};
+		const config = (await this.loadData()) || {};
+		config.custom_theme_folder = this.settings.css_styles_folder;
 		await this.saveData(config);
 		this.messageService.sendMessage("custom-theme-folder-changed", null);
 	}
@@ -170,6 +129,10 @@ export default class SmartMPPlugin extends Plugin {
 	}, 3000);
 
 	private async persistSettings(): Promise<void> {
+		// [Fix] 保存前强制解密：懒解密未触发时内存中仍是密文，直接再加密
+		// 会产生双重加密，之后解密得到乱码，密钥被静默永久损坏
+		await this.ensureDecrypted();
+
 		const settingsCopy: SmartMPSetting = JSON.parse(JSON.stringify(this.settings));
 		delete settingsCopy._id;
 		delete settingsCopy._rev;
@@ -185,10 +148,29 @@ export default class SmartMPPlugin extends Plugin {
 		for (const acc of settingsCopy.drawAccounts) {
 			if (acc.apiKey) acc.apiKey = await CryptoHelper.encrypt(acc.apiKey, key);
 		}
+		// [Fix] llmProviders 此前从不加密：解密进内存后明文落盘，与旧字段策略不一致
+		for (const provider of settingsCopy.llmProviders || []) {
+			if (provider.apiKey) provider.apiKey = await CryptoHelper.encrypt(provider.apiKey, key);
+		}
+		// [Fix] proPassword/proToken 此前明文落盘，与其余敏感字段策略不一致
+		if (settingsCopy.proPassword) {
+			settingsCopy.proPassword = await CryptoHelper.encrypt(settingsCopy.proPassword, key);
+		}
+		if (settingsCopy.proToken) {
+			settingsCopy.proToken = await CryptoHelper.encrypt(settingsCopy.proToken, key);
+		}
 
 		// this.trimSettings(); // Trim only makes sense for raw input, here we are saving
-		await saveSmartMPSetting(settingsCopy);
+		await saveSmartMPSetting(this, settingsCopy);
 		await this.saveThemeFolder();
+	}
+
+	/**
+	 * 立即持久化（绕过 saveSettings 的 3s 防抖）。
+	 * 供导入设置等一次性重要操作使用，避免防抖窗口内崩溃导致数据丢失。
+	 */
+	async saveSettingsNow(): Promise<void> {
+		await this.persistSettings();
 	}
 
 	// proofService: ProofService;
@@ -240,11 +222,68 @@ export default class SmartMPPlugin extends Plugin {
 		this.spinner.hideSpinner();
 	}
 
+	private _isDecrypted = false;
+
+	/**
+	 * Ensures that sensitive settings (API keys, secrets) are decrypted.
+	 * This is called lazily when a service actually needs to use these values.
+	 * This avoids expensive bulk decryption during plugin startup.
+	 */
+	async ensureDecrypted(): Promise<void> {
+		if (this._isDecrypted) return;
+		
+		const key = this.settings.cryptoKey;
+		if (!key) {
+			this._isDecrypted = true;
+			return;
+		}
+
+		Logger.debug("Main", "Starting lazy decryption of settings...");
+		const startTime = Date.now();
+
+		await Promise.all([
+			// MP Accounts
+			...this.settings.mpAccounts.map(async (acc) => {
+				if (acc.appSecret && CryptoHelper.isEncrypted(acc.appSecret)) {
+					acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
+				}
+			}),
+			// LLM Providers (New Architecture)
+			...(this.settings.llmProviders || []).map(async (provider) => {
+				if (provider.apiKey && CryptoHelper.isEncrypted(provider.apiKey)) {
+					provider.apiKey = await CryptoHelper.decrypt(provider.apiKey, key);
+				}
+			}),
+			// Legacy accounts (Compatibility)
+			...this.settings.chatAccounts.map(async (acc) => {
+				if (acc.apiKey && CryptoHelper.isEncrypted(acc.apiKey)) {
+					acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				}
+			}),
+			...this.settings.drawAccounts.map(async (acc) => {
+				if (acc.apiKey && CryptoHelper.isEncrypted(acc.apiKey)) {
+					acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
+				}
+			}),
+			(async () => {
+				if (this.settings.proPassword && CryptoHelper.isEncrypted(this.settings.proPassword)) {
+					this.settings.proPassword = await CryptoHelper.decrypt(this.settings.proPassword, key);
+				}
+				if (this.settings.proToken && CryptoHelper.isEncrypted(this.settings.proToken)) {
+					this.settings.proToken = await CryptoHelper.decrypt(this.settings.proToken, key);
+				}
+			})(),
+		]);
+
+		this._isDecrypted = true;
+		Logger.debug("Main", `Lazy decryption completed in ${Date.now() - startTime}ms`);
+	}
+
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await getSmartMPSetting()
+			await getSmartMPSetting(this)
 		);
 
 		// Run Migration
@@ -267,28 +306,14 @@ export default class SmartMPPlugin extends Plugin {
 				if (acc.apiKey) acc.apiKey = CryptoHelper.deobfuscateLegacy(acc.apiKey);
 			});
 			// Save immediately to apply new AES encryption
-			await this.saveSettings();
+			// [Fix] 迁移后内存中已是明文，先置标记再持久化，
+			// 避免 persistSettings 内的 ensureDecrypted 重复处理
+			this._isDecrypted = true;
+			await this.persistSettings();
 		} else {
-			// Decrypt sensitive info using AES-GCM (or fallback to XOR)
-			const key = this.settings.cryptoKey || "";
-			for (const acc of this.settings.mpAccounts) {
-				if (acc.appSecret) acc.appSecret = await CryptoHelper.decrypt(acc.appSecret, key);
-			}
-			for (const acc of this.settings.chatAccounts) {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
-			}
-			for (const acc of this.settings.drawAccounts) {
-				if (acc.apiKey) acc.apiKey = await CryptoHelper.decrypt(acc.apiKey, key);
-			}
+			// DO NOT DECRYPT HERE. Will be done lazily via ensureDecrypted()
+			this._isDecrypted = false;
 		}
-
-		// If migration happened (plain text found and decrypted=plain), saving will encrypted it.
-		// Since we modify saveSettings to encrypt, we should trigger a save to ensure data on disk becomes encrypted eventually.
-		// However, explicitly saving on every load might be aggressive. 
-		// Let's rely on user action or auto-migration if we detect plain text?
-		// Actually, CryptoHelper.deobfuscate returns plain text if it detects it's not encrypted.
-		// So if we find any plain text that SHOULD be encrypted, we might want to trigger a save.
-		// For now, let's keep it simple: It validates on load, and encrypts on next manual save.
 
 		await this.loadThemeFolder();
 	}
@@ -437,39 +462,38 @@ export default class SmartMPPlugin extends Plugin {
 			modal.open();
 		});
 	}
-	initDB() {
-		initSmartMPDB();
-		initAssetsDB();
-		initDraftDB();
-	}
+	// DB init removed — each service uses its own lazy PouchDB singleton
 	async onload() {
-		const buildTime = "2026-03-26 18:58"; // 动态注入或手动更新
-		console.log(`[SmartMP] Plugin loading... Build: ${buildTime}`);
-		Logger.info("Main", `Plugin loading... Build: ${buildTime}`);
+		const buildTime = "2026-05-12 06:03"; 
+		console.log(`[SmartMP] Initializing... Build: ${buildTime}`);
+		const totalStartTime = Date.now();
+
 		addIcon("smart-mp-logo", SMART_MP_ICON);
-		this.initDB();
 		this.messageService = new MessageService();
+
+		// Phase 1: Critical path - minimum work to be active
 		await this.loadSettings();
-		this.wechatClient = WechatClient.getInstance(this);
-		this.assetsManager = AssetsManager.getInstance(this.app, this);
-		this.aiClient = AiClient.getInstance(this);
-		this.ipService = new IPService(this);
-		this.accountService = new AccountService(this);
-		this.aiFeatureManager = new AIFeatureManager(this);
-		this.authService = new AuthService(this);
-		// 异步初始化认证服务，不阻塞插件 onload，避免黑屏
-		this.authService.init().then(() => {
-			Logger.debug("Main", "AuthService initialized in background");
-			// 检查是否有即将过期（7天内）的订阅产品
-			this.authService.checkExpirationReminder();
-			// 通知 UI 更新激活状态
-			this.messageService.sendMessage("auth-initialized", null);
-		}).catch(err => {
-			Logger.error("Main", "AuthService failed to initialize:", err);
+
+		// Phase 2: UI Elements (Non-blocking)
+		requestAnimationFrame(() => {
+			this.registerViews();
+			this.addSettingTab(new SmartMPSettingTab(this.app, this));
+			this.createSpinner();
+			
+			// Phase 3: Commands and Menus
+			setTimeout(() => {
+				this.initCommands();
+				Logger.info("Main", `Critical loading path completed in ${Date.now() - totalStartTime}ms`);
+			}, 0);
+
+			// Phase 4: Deferred Services (Heavy lifting)
+			setTimeout(() => {
+				this.initDeferredServices();
+			}, 100);
 		});
+	}
 
-		this.registerViews();
-
+	private initCommands(): void {
 		this.commandManager = new CommandManager(this);
 		this.commandManager.registerCommands();
 		this.commandManager.addEditorMenu();
@@ -478,69 +502,70 @@ export default class SmartMPPlugin extends Plugin {
 			void this.activateView();
 		});
 
-		// Initialize Floating Toolbar
+		// Floating Toolbar setup
 		this.floatingToolbar = new FloatingToolbar(this);
+		this.registerFloatingToolbarEvents();
+	}
 
-		// Register Smart Toolbar events
+	private initDeferredServices(): void {
+		Logger.debug("Main", "Initializing deferred services...");
+		this.resourceManager = ResourceManager.getInstance(this);
+		this.wechatClient = WechatClient.getInstance(this);
+		this.assetsManager = AssetsManager.getInstance(this.app, this);
+		this.aiClient = AiClient.getInstance(this);
+		this.ipService = new IPService(this);
+		this.accountService = new AccountService(this);
+		this.aiFeatureManager = new AIFeatureManager(this);
+
+		// Auth service (async init, non-blocking)
+		this.authService = new AuthService(this);
+		this.authService.init().then(() => {
+			this.authService.checkExpirationReminder();
+			this.messageService.sendMessage("auth-initialized", null);
+		}).catch(err => {
+			Logger.error("Main", "AuthService failed to initialize:", err);
+		});
+
+		// Editor extensions
+		this.registerEditorExtension([syncLineField, scrollSyncPlugin, scrollSyncStyles]);
+		initScrollSyncStyle(this.settings.scrollHighlightPreset as any);
+
+		// [Fix] 接线主题热更新：ThemeHotReloader 此前只声明未实例化，
+		// 'theme-reloaded' 消息永远无人发送，编辑主题 CSS 预览不会刷新
+		this.themeHotReloader = new ThemeHotReloader(this);
+		this.themeHotReloader.startWatching();
+	}
+
+	private registerFloatingToolbarEvents(): void {
 		this.registerDomEvent(document, 'mouseup', (evt: MouseEvent) => {
 			if (!this.settings.enableFloatingToolbar) return;
-			// Delay to ensure selection is settled
+
+			const docSelection = document.getSelection();
+			if (!docSelection || docSelection.toString().trim().length === 0) return;
+
 			setTimeout(() => {
 				const activeLeaf = this.app.workspace.activeLeaf;
 				if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
 					const editor = activeLeaf.view.editor;
 					if (editor.somethingSelected()) {
 						const selection = editor.getSelection();
-						// Only show if selection is meaningful (not just whitespace)
 						if (selection && selection.trim().length > 0) {
-							// Also check browser selection to be safe about focus
-							const docSelection = document.getSelection();
-							if (docSelection && docSelection.toString().length > 0) {
-								Logger.debug("FloatingToolbar", `Show Toolbar for selection: ${selection.substring(0, 20)}...`);
-								this.floatingToolbar.show(editor, selection);
-							} else {
-								Logger.debug("FloatingToolbar", "Document selection empty/invalid.");
-							}
+							this.floatingToolbar.show(editor, selection);
 						}
 					}
 				}
-			}, 100);
+			}, 50);
 		});
 
-		// 滚动同步相关
-		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-			this.floatingToolbar.hide();
-		}));
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.floatingToolbar.hide()));
+		this.registerEvent(this.app.workspace.on('editor-change', () => this.floatingToolbar.hide()));
 
-		this.registerEvent(this.app.workspace.on('editor-change', () => {
-			this.floatingToolbar.hide();
-		}));
-
-		this.addSettingTab(new SmartMPSettingTab(this.app, this));
-
-		this.createSpinner();
-
-		// -- proofread
-		// this.registerEditorExtension([proofreadStateField, proofreadPlugin]);
-
-		// -- scroll sync
-		this.registerEditorExtension([syncLineField, scrollSyncPlugin, scrollSyncStyles]);
-		// 初始化滚动同步样式
-		initScrollSyncStyle(this.settings.scrollHighlightPreset as 'gold' | 'blue' | 'green' | 'purple' | 'minimal' | undefined);
-
-		// this.addCommand({
-		// 	id: "proofread-text",
-		// 	name: "校对文本",
-		// 	editorCallback: async (editor: Editor, view: MarkdownView) => {
-		// 		await proofreadText(editor, view);
-		// 	},
-		// });
 		this.messageService.registerListener('show-spinner', (msg: string) => {
 			this.showSpinner(msg);
-		})
+		});
 		this.messageService.registerListener('hide-spinner', () => {
 			this.hideSpinner();
-		})
+		});
 	}
 	registerViewOnce(viewType: string) {
 		if (this.app.workspace.getLeavesOfType(viewType).length === 0) {
@@ -562,10 +587,17 @@ export default class SmartMPPlugin extends Plugin {
 		if (this.editorChangeListener) {
 			this.app.workspace.offref(this.editorChangeListener);
 		}
-		// this.spinnerEl.remove();
-		// this.spinnerEl.remove();
-		this.spinner.unload();
+		// [Fix] spinner 在 rAF 回调中创建，插件在首帧前被禁用时可能尚未初始化，
+		// 无保护会抛 TypeError 中断后续清理
+		this.spinner?.unload();
 		if (this.themeHotReloader) this.themeHotReloader.stopWatching();
+
+		// [Fix] flush 防抖保存：3 秒防抖窗口内禁用插件/退出 Obsidian 会丢失未落盘的设置改动。
+		// saveSmartMPSetting 内部有"未变化则跳过写入"检查，无条件落盘是安全的
+		void this.persistSettings();
+
+		// [Fix] 清理滚动同步注入到文档的动态样式
+		removeDynamicCSS();
 
 		// Clean up static instances
 		ThemeManager.onPluginUnload();
@@ -584,8 +616,6 @@ export default class SmartMPPlugin extends Plugin {
 				leaf.detach();
 			}
 		});
-		this.app.workspace.getLeavesOfType(VIEW_TYPE_SMART_MP_PREVIEW).forEach((leaf) => leaf.detach());
-		this.app.workspace.getLeavesOfType(VIEW_TYPE_MP_MATERIAL).forEach((leaf) => leaf.detach());
 	}
 
 

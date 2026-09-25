@@ -42,7 +42,7 @@ export class CodespanRenderer extends SmartMPMarkedExtension {
 		let style = 'padding: .2em .4em; border-radius: 4px; font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; font-size: .85em; margin: 0 .2em;';
 
 		if (theme === 'github' || theme === 'github-light') {
-			style += 'background-color: rgba(27,31,35,0.05); color: #24292e;';
+			style += 'background-color: #f6f8fa; color: #24292e;';
 		} else {
 			// One Dark / Default
 			style += 'background-color: #282c34; color: #e5c07b;';
@@ -56,17 +56,14 @@ export class CodespanRenderer extends SmartMPMarkedExtension {
 
 	markedExtension() {
 		return {
-			extensions: [{
-				name: 'codespan',
-				level: 'inline',
-				renderer: (token: Tokens.Generic) => {
-					return token.html;
-				},
-			}
-			],
+			renderer: {
+				codespan: (token: Tokens.Codespan) => {
+					return (token as any).html || this.codespanRenderer(token.text);
+				}
+			},
 			walkTokens: (token: Tokens.Generic) => {
 				if (token.type === 'codespan') {
-					token.html = this.codespanRenderer(token.text);
+					(token as any).html = this.codespanRenderer(token.text);
 				}
 			}
 		}

@@ -34,8 +34,15 @@ export class Logger {
         if (!data) return data;
 
         if (typeof data === 'string') {
-            // 简单的字符串包含检查 (如果字符串很长且包含敏感key的引用，这里可能很难处理，暂时只处理 key-value 对象)
             return data;
+        }
+
+        if (data instanceof Error) {
+            return {
+                message: data.message,
+                stack: data.stack,
+                name: data.name,
+            };
         }
 
         if (Array.isArray(data)) {

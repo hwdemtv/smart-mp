@@ -33,6 +33,7 @@
     "node_modules",
     "test",
     "icons",
+    "temp_study",
     "src/assets/css/build-template-css.js",
     "*.mjs",
     "**/*.js",

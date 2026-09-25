@@ -28,11 +28,21 @@ export class OllamaClient extends BaseAIClient {
 		const { ollama, model, systemPrompt } = this.getOllama();
 		if (!ollama) return "";
 
+		// [Fix] 注入 provider 配置的 System Prompt（此前取了变量却从未使用）
+		// 并应用全局采样参数（temperature / num_predict）
+		const opts = this.mergeOptions(options);
 		try {
 			const response = await ollama.chat({
 				model: model || "deepseek-r1",
-				messages: messages,
+				messages: systemPrompt
+					? [{ role: "system", content: systemPrompt }, ...messages]
+					: messages,
 				stream: false,
+				options: {
+					...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+					...(opts.max_tokens != null ? { num_predict: opts.max_tokens } : {}),
+					...(opts.top_p != null ? { top_p: opts.top_p } : {}),
+				},
 			});
 			return removeThinkTags(response.message.content || "");
 		} catch (e) {
@@ -46,11 +56,19 @@ export class OllamaClient extends BaseAIClient {
 		const { ollama, model, systemPrompt } = this.getOllama();
 		if (!ollama) return "";
 
+		const opts = this.mergeOptions(options);
 		try {
 			const response = await ollama.chat({
 				model: model || "deepseek-r1",
-				messages: messages,
+				messages: systemPrompt
+					? [{ role: "system", content: systemPrompt }, ...messages]
+					: messages,
 				stream: true,
+				options: {
+					...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+					...(opts.max_tokens != null ? { num_predict: opts.max_tokens } : {}),
+					...(opts.top_p != null ? { top_p: opts.top_p } : {}),
+				},
 			});
 
 			let result = "";
@@ -104,17 +122,26 @@ export class OllamaClient extends BaseAIClient {
 
 	/** 特有的校对实现 (处理 JSON 解析与 Fallback) */
 	public async proofContent(content: string): Promise<DeepSeekResult | null> {
-		const promptStr = this.getPrompt("proofread", `#角色：你是一个专业的文本校对助手... #任务：请校对以下文本：\n\n{{content}}`, content);
-		
+		// [Fix] 改用统一的 buildMessages（prompt.json 预置模板 + 自定义覆盖）
+		const messages = this.buildMessages(
+			"proofread",
+			"你是专业校对编辑，请校对以下文本并仅输出 JSON（corrections 数组）：\n\n{{content}}",
+			content
+		);
+
 		try {
-			const result = await this.chat([{ role: "user", content: promptStr }]);
+			const result = await this.chat(messages);
 			if (!result) return this.getEmptyProofResult(content);
 
-			const json = JSON.parse(result);
+			// [Fix] 容错提取 JSON（```json 包裹/前后杂文字），失败时回退整体修正文本
+			const parsed = this.extractJsonObject(result) as { corrections?: any[]; polished?: string } | null;
+			if (!parsed) {
+				return { summary: "", corrections: [], polished: result.trim() || content, coverImage: "" };
+			}
 			return {
 				summary: "",
-				corrections: json.corrections || [],
-				polished: json.polished || result,
+				corrections: parsed.corrections || [],
+				polished: parsed.polished || result,
 				coverImage: "",
 			};
 		} catch (e) {

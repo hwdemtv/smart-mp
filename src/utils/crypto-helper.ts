@@ -27,6 +27,14 @@ export class CryptoHelper {
     }
 
     /**
+     * 判断文本是否已是 AES 加密格式
+     * 用于幂等解密：明文（如尚未加密的 API key）不会被误处理
+     */
+    static isEncrypted(text: string): boolean {
+        return typeof text === 'string' && text.startsWith(AES_PREFIX);
+    }
+
+    /**
      * 加密文本 (AES-GCM)
      * 返回格式: aes:<base64(iv)>:<base64(ciphertext)>
      */

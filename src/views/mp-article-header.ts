@@ -29,9 +29,16 @@ export class MPArticleHeader {
 		}
 	}
 
+	/** 释放本组件注册的全部监听器（视图关闭时调用） */
+	destroy(): void {
+		this.disposers.forEach(d => d());
+		this.disposers = [];
+	}
+
 	private plugin: SmartMPPlugin;
 	private cover_image: string | null;
 	private coverFrame: HTMLElement;
+	private container: HTMLElement;
 	private activeLocalDraft: LocalDraftItem | undefined;
 	private localDraftmanager: LocalDraftManager;
 	private _title: TextComponent;
@@ -41,44 +48,54 @@ export class MPArticleHeader {
 	private _needOpenComment: ToggleComponent;
 	private _onlyFansCanComment: ToggleComponent;
 	private imageGenerateModal: ImageGenerateModal | undefined;
+	/** messageService 注销函数，视图关闭时清理，防止旧实例继续响应消息 */
+	private disposers: (() => void)[] = [];
 	constructor(plugin: SmartMPPlugin, containerEl: HTMLElement) {
 		this.plugin = plugin;
 		this.localDraftmanager = LocalDraftManager.getInstance(plugin);
 		this.BuildUI(containerEl);
-		this.plugin.messageService.registerListener(
-			"wechat-account-changed",
-			(data: string) => {
-				void this.updateLocalDraft();
-			}
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"wechat-account-changed",
+				(data: string) => {
+					void this.updateLocalDraft();
+				}
+			)
 		);
 
-		this.plugin.messageService.registerListener(
-			"active-file-changed",
-			(data: string) => {
-				void this.updateLocalDraft();
-			}
-		);
-		this.plugin.messageService.registerListener(
-			"set-draft-cover-image",
-			(url: string) => {
-				this.cover_image = url;
-				this.setCoverImage(url);
-				if (this.activeLocalDraft) {
-					this.activeLocalDraft.thumb_media_id = undefined;
-					void this.localDraftmanager.setDraft(this.activeLocalDraft);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"active-file-changed",
+				(data: string) => {
+					void this.updateLocalDraft();
 				}
-			}
+			)
 		);
-		this.plugin.messageService.registerListener(
-			"set-image-as-cover",
-			(item: MaterialMeidaItem) => {
-				this.cover_image = item.url;
-				this.setCoverImage(item.url);
-				if (this.activeLocalDraft) {
-					this.activeLocalDraft.thumb_media_id = item.media_id;
-					void this.localDraftmanager.setDraft(this.activeLocalDraft);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"set-draft-cover-image",
+				(url: string) => {
+					this.cover_image = url;
+					this.setCoverImage(url);
+					if (this.activeLocalDraft) {
+						this.activeLocalDraft.thumb_media_id = undefined;
+						void this.localDraftmanager.setDraft(this.activeLocalDraft);
+					}
 				}
-			}
+			)
+		);
+		this.disposers.push(
+			this.plugin.messageService.registerListener(
+				"set-image-as-cover",
+				(item: MaterialMeidaItem) => {
+					this.cover_image = item.url;
+					this.setCoverImage(item.url);
+					if (this.activeLocalDraft) {
+						this.activeLocalDraft.thumb_media_id = item.media_id;
+						void this.localDraftmanager.setDraft(this.activeLocalDraft);
+					}
+				}
+			)
 		);
 
 		this.imageGenerateModal = new ImageGenerateModal(
@@ -114,14 +131,18 @@ export class MPArticleHeader {
 	public getActiveLocalDraft() {
 		return this.activeLocalDraft;
 	}
+
+	public getContainerEl(): HTMLElement {
+		return this.container;
+	}
+
 	private BuildUI(containerEl: HTMLElement) {
-		const container = containerEl.createEl("div", {
+		this.container = containerEl.createEl("div", {
 			cls: "smart-mp-article-header",
 		});
-		const details = container.createEl("details");
-		details.createEl("summary", { text: $t("views.article-header.title"), cls: "smart-mp-draft-header" });
 
-		new Setting(details)
+		// 直接添加内容，不使用折叠结构
+		new Setting(this.container)
 			.setName($t("views.article-header.article-title"))
 			.addExtraButton((button) => {
 				button
@@ -147,7 +168,7 @@ export class MPArticleHeader {
 					}
 				});
 			});
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.author"))
 			.addText((text) => {
 				this._author = text;
@@ -161,7 +182,7 @@ export class MPArticleHeader {
 				});
 			});
 
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.digest"))
 			.addExtraButton((button) => {
 				button
@@ -175,12 +196,12 @@ export class MPArticleHeader {
 			});
 
 		// [UI] Add digest length counter
-		this._digestCounter = details.createEl("div", {
+		this._digestCounter = this.container.createEl("div", {
 			cls: "smart-mp-digest-counter",
 			attr: { style: "text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;" }
 		});
 
-		this._digest = details.createEl("textarea", {
+		this._digest = this.container.createEl("textarea", {
 			cls: "digest",
 			attr: {
 				rows: 3,
@@ -215,9 +236,9 @@ export class MPArticleHeader {
 		// We need to wait until value is set (updateHeaderProperties will set it) or set initial
 		this.updateDigestCounter();
 
-		this.coverFrame = this.createCoverFrame(details);
+		this.coverFrame = this.createCoverFrame(this.container);
 
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.open-comments"))
 			.setDesc($t("views.article-header.comments-description"))
 			.addToggle((toggle) => {
@@ -230,7 +251,7 @@ export class MPArticleHeader {
 					}
 				});
 			});
-		new Setting(details)
+		new Setting(this.container)
 			.setName($t("views.article-header.only-fans-can-comment"))
 			.setDesc($t("views.article-header.only-fans-can-comment-description"))
 			.addToggle((toggle) => {
@@ -364,8 +385,8 @@ export class MPArticleHeader {
 			}
 		}
 	}
-	private createCoverFrame(details: HTMLElement) {
-		new Setting(details)
+	private createCoverFrame(container: HTMLElement) {
+		new Setting(container)
 			.setName($t("views.article-header.cover-image"))
 			.setDesc($t("views.article-header.cover-image-description"))
 			.addExtraButton((button) =>
@@ -387,8 +408,8 @@ export class MPArticleHeader {
 						this.imageGenerateModal.open();
 					})
 			);
-		const container = details.createDiv({ cls: "cover-container" });
-		const coverframe = container.createDiv({
+		const coverContainer = container.createDiv({ cls: "cover-container" });
+		const coverframe = coverContainer.createDiv({
 			cls: "cover-frame",
 			attr: { droppable: true },
 		});
@@ -524,6 +545,23 @@ export class MPArticleHeader {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 重新上传封面图并更新 thumb_media_id
+	 * 用于 thumb_media_id 已失效（如 40007 错误）时的自动恢复
+	 */
+	async reuploadCoverImage(draft: LocalDraftItem): Promise<string | undefined> {
+		const coverUrl = draft.cover_image_url;
+		if (!coverUrl) return undefined;
+
+		const media_id = await this.getCoverImageMediaId(coverUrl, true);
+		if (media_id) {
+			draft.thumb_media_id = media_id;
+			await this.localDraftmanager.setDraft(draft);
+			Logger.info("MPArticleHeader", `Cover re-uploaded, new thumb_media_id: ${media_id}`);
+		}
+		return media_id;
 	}
 	async getCoverImageMediaId(url: string, upload: boolean = false) {
 		let _media_id = this.plugin.findImageMediaId(url);

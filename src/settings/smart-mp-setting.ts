@@ -2,7 +2,7 @@
 manage the wechat account settings
 
 */
-import PouchDB from 'pouchdb';
+import { Plugin } from 'obsidian';
 import { areObjectsEqual } from 'src/utils/utils';
 import { LLMProvider } from './llm-types';
 import Logger from 'src/utils/logger';
@@ -69,9 +69,13 @@ export type SmartMPSetting = {
     showImageCaptions?: boolean;
     showArticleStats?: boolean;
     embedArticleStats?: boolean;
+    /** 渲染时将中英混排的半角标点规范化为全角（代码块/URL/路径不受影响） */
+    normalizePunctuation?: boolean;
+    /** 微信兼容预览：预览阶段即过滤微信不支持的 CSS，预览所见=微信所得 */
+    wechatCompatPreview?: boolean;
     css_styles_folder: string;
-    _id?: string; // = 'smart-mp-setting';
-    _rev?: string;
+    _id?: string; // deprecated (PouchDB), kept for type compat
+    _rev?: string; // deprecated (PouchDB), kept for type compat
     ipAddress?: string;
     selectedMPAccount?: string;
     selectedChatAccount?: string;
@@ -90,12 +94,14 @@ export type SmartMPSetting = {
     llmProviders?: Array<LLMProvider>;
     selectedLLMProviderId?: string;
     selectedLLMModelId?: string;
+    /** 设置结构版本号，用于迁移幂等保护（>=2 表示已完成 chatAccounts → llmProviders 迁移） */
+    schemaVersion?: number;
     cryptoKey?: string; // For upgraded encryption
     enableFloatingToolbar?: boolean;
     proPassword?: string; // Password to unlock Pro features (remove watermark)
     proToken?: string; // Cloudflare worker returned JWT token for true Pro validation
     fallbackDeviceId?: string; // UUID fallback for cases where HWID is unavailable
-    proProducts?: Array<{ product_id: string, expires_at: string | null, status: string }>; // 存储由服务器返回的激活产品列表及其状态
+    proProducts?: Array<{ product_id: string, expires_at: string | null, status: string }>;
 
     // ============== 滚动同步增强设置 ==============
     /** 同步精度预设: 'precise' | 'balanced' | 'performance' */
@@ -126,54 +132,73 @@ export type ChatSetting = {
     max_tokens?: number;
 }
 
-export const initSmartMPDB = () => {
-    const db = new PouchDB('smart-mp-settings');
-    return db;
+export const DEFAULT_SETTINGS: SmartMPSetting = {
+    mpAccounts: [],
+    ipAddress: "",
+    css_styles_folder: "smart-mp-css-styles",
+    codeLineNumber: true,
+    codeTheme: "github",
+    showCodeMacHeader: true,
+    fontSize: "15px",
+    firstLineIndent: false,
+    linkFootnotes: true,
+    showImageCaptions: false,
+    showArticleStats: false,
+    embedArticleStats: false,
+    normalizePunctuation: false,
+    wechatCompatPreview: true,
+    hrStyle: "dots",
+    customHrText: "· · ·",
+    accountDataPath: "smart-mp-accounts",
+    useCenterToken: false,
+    chatAccounts: [],
+    drawAccounts: [],
+    realTimeRender: true,
+    realTimeRenderDelay: 500,
+    scrollSync: true,
+    enableStrictSecurityMode: true,
+    enableFloatingToolbar: true,
+    chatSetting: {
+        temperature: 0.7,
+        max_tokens: 2048,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+    },
+    // 滚动同步增强设置
+    scrollSyncPrecision: 'balanced',
+    scrollHighlightPreset: 'gold',
+    enableCodeBlockLineMapping: false,
+    scrollSyncMode: 'precise',
 }
-// Create a new database
-const db = initSmartMPDB();
 
-
-export const getSmartMPSetting = (): Promise<SmartMPSetting | undefined> => {
-    return new Promise((resolve, reject) => {
-        db.get('smart-mp-settings')
-            .then((doc) => {
-                resolve(doc as SmartMPSetting);
-            })
-            .catch((error: any) => {
-                if (error.status !== 404) {
-                    Logger.warn("SmartMPSetting", "获取 SmartMPSetting 失败:", error);
-                }
-                resolve(undefined)
-            });
-    })
+export const getSmartMPSetting = async (plugin: Plugin): Promise<SmartMPSetting | undefined> => {
+    try {
+        const data = await plugin.loadData();
+        return data?.settings as SmartMPSetting | undefined;
+    } catch (error) {
+        Logger.warn("SmartMPSetting", "获取 SmartMPSetting 失败:", error);
+        return undefined;
+    }
 }
 
-export const saveSmartMPSetting = (doc: SmartMPSetting): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        doc._id = 'smart-mp-settings';
-        db.get(doc._id).then(existedDoc => {
-            if (areObjectsEqual(doc, existedDoc)) {
-                resolve()
-            }
-            doc._rev = existedDoc._rev;
-            db.put(doc)
-                .then(() => {
-                    resolve();
-                })
-                .catch((error: unknown) => {
-                    Logger.error("SmartMPSetting", "Error setting SmartMPSetting:", error);
-                    resolve()
-                });
-        }).catch(error => {
-            db.put(doc)
-                .then(() => {
-                    resolve();
-                })
-                .catch((error: unknown) => {
-                    Logger.error("SmartMPSetting", "Error setting SmartMPSetting:", error);
-                    resolve()
-                });
-        })
-    })
+export const saveSmartMPSetting = async (plugin: Plugin, doc: SmartMPSetting): Promise<void> => {
+    try {
+        const existing = (await plugin.loadData()) || {};
+
+        // Strip PouchDB fields before saving
+        const cleaned = { ...doc };
+        delete cleaned._id;
+        delete cleaned._rev;
+
+        // Skip write if unchanged
+        if (existing.settings && areObjectsEqual(cleaned, existing.settings)) {
+            return;
+        }
+
+        existing.settings = cleaned;
+        await plugin.saveData(existing);
+    } catch (error) {
+        Logger.error("SmartMPSetting", "Error saving SmartMPSetting:", error);
+    }
 }

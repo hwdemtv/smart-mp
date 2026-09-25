@@ -288,7 +288,11 @@ export class CSSMerger {
 		// Check Static Cache
 		if (CSSMerger.BASE_STATE_CACHE) {
 			Logger.debug('CssMerger', 'Base State Cache hit!');
-			this.rules = new Map(CSSMerger.BASE_STATE_CACHE.rules);
+			// [Fix] 深拷贝：此前 new Map(cache.rules) 是浅拷贝，内层声明 Map
+			// 与静态缓存共享，pickRules 的写入会污染 BASE_STATE_CACHE，
+			// 进而影响之后所有主题的合并结果（与 init() 命中路径保持一致）
+			this.rules = new Map();
+			CSSMerger.BASE_STATE_CACHE.rules.forEach((rule, selector) => this.rules.set(selector, new Map(rule)));
 			this.vars = new Map(CSSMerger.BASE_STATE_CACHE.vars);
 			this.keyedRules = new Map(CSSMerger.BASE_STATE_CACHE.keyedRules);
 			this.universalRules = [...CSSMerger.BASE_STATE_CACHE.universalRules];
@@ -354,6 +358,20 @@ export class CSSMerger {
 		'--code-background': '#f5f5f5',
 		'--tag-background': '#e0e0e0',
 		'--tag-color': '#333333',
+		// [Fix] Code block related variables used in default-styles/25_code.css
+		'--code-radius': '6px',
+		'--code-line-color': 'rgb(253, 247, 247)',
+		'--code-line-height': '20px',
+		'--code-header-text': '#999',
+		'--code-font-size': '14px',
+		'--code-line-number-color': '#999',
+		'--code-line-number-width': '35px',
+		'--code-padding': '12px',
+		// Theme variables that may appear in custom themes
+		'--smart-mp-primary': '#2c3e50',
+		'--smart-mp-text': '#333333',
+		'--article-text': '#333333',
+		'--article-heading': '#2c3e50',
 	};
 
 	private resolveCssVars(value: string, vars: Map<string, string>, depth = 0): string {
@@ -566,8 +584,9 @@ export class CSSMerger {
 							rule.forEach((decl, prop) => {
 								if (prop === 'content') return;
 								// Values are already pre-resolved in pickRules!
-								const fullValue = decl.important ? `${decl.value} !important` : decl.value;
-								this.appendStyleText(target, prop, fullValue);
+								// [Fix] Don't write !important — WeChat strips it, causing priority inversion.
+								// Instead, rely on correct rule order in CSSMerger to handle overrides.
+								this.appendStyleText(target, prop, decl.value);
 							})
 						} else {
 							// Main Element Rules
@@ -591,8 +610,9 @@ export class CSSMerger {
 									return;
 								}
 
-								const fullValue = decl.important ? `${value} !important` : value;
-								themeStyleBatch.push(`${prop}: ${fullValue}`);
+								// [Fix] Don't append !important — WeChat strips it, causing priority inversion.
+								// The CSSMerger rule order already handles priority correctly (later rules override).
+								themeStyleBatch.push(`${prop}: ${value}`);
 							})
 						}
 					}

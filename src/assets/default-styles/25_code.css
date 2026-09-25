@@ -103,7 +103,7 @@
 	border-bottom-left-radius: var(--code-border-radius, 4px);
 }
 
-.smart-mp .code-section ul>li {
+.smart-mp .code-section ul li {
 	position: relative;
 	margin: 0;
 	display: list-item;
@@ -118,7 +118,7 @@
 
 }
 
-.smart-mp .code-section ul>li::marker {
+.smart-mp .code-section ul li::marker {
 	content: none;
 }
 
@@ -211,7 +211,7 @@
 .smart-mp .hljs-built_in,
 .smart-mp .hljs-title.class_,
 .smart-mp .hljs-class .smart-mp .hljs-title {
-	color: var (--code-class-color, #e6c07b)
+	color: var(--code-class-color, #e6c07b)
 }
 
 .smart-mp .hljs-emphasis {
