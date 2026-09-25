@@ -7,7 +7,7 @@
  */
 
 import SmartMPPlugin from "src/main";
-import { debounce } from "obsidian";
+import { debounce, TFile } from "obsidian";
 import { areObjectsEqual } from "src/utils/utils";
 import Logger from "src/utils/logger";
 import { $t } from "src/lang/i18n";
@@ -82,6 +82,38 @@ export class LocalDraftManager {
         }
         return LocalDraftManager.instance;
     }
+
+    /** 支持自动封面的图片扩展名 */
+    private static readonly IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "avif"]);
+
+    /**
+     * [新增] 从笔记嵌入图中自动挑选封面：
+     * 1. 优先取文件名以"封面"结尾的图片（如 ![[笔记封面.png]]、![[封面.jpg]]）
+     * 2. 否则取正文第一张嵌入图
+     * 返回 null 表示笔记中没有可用图片。
+     */
+    private findAutoCoverImage(note: TFile): TFile | null {
+        const cache = this.plugin.app.metadataCache.getCache(note.path);
+        const embeds = cache?.embeds ?? [];
+        const images: TFile[] = [];
+
+        for (const embed of embeds) {
+            // embed.link 可能带别名/块引用后缀（path|alias、path#block），先剥离
+            let linkPath = embed.link;
+            if (linkPath.includes("|")) linkPath = linkPath.split("|")[0];
+            if (linkPath.includes("#")) linkPath = linkPath.split("#")[0];
+            if (!linkPath.trim()) continue;
+
+            const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(linkPath, note.path);
+            if (resolved instanceof TFile && LocalDraftManager.IMAGE_EXTS.has(resolved.extension.toLowerCase())) {
+                images.push(resolved);
+            }
+        }
+
+        if (images.length === 0) return null;
+        return images.find(img => img.basename.endsWith("封面")) ?? images[0];
+    }
+
     public async getDrafOfActiveNote() {
         let draft: LocalDraftItem | undefined
 
@@ -162,6 +194,25 @@ export class LocalDraftManager {
                                 draft.cover_image_url = fmCover;
                                 needSave = true;
                             }
+                        }
+                    }
+                }
+
+                // 5. [新增] 封面自动获取（仅在 frontmatter 未指定且草稿无封面时）
+                // 优先级：名称以"封面"结尾的嵌入图 > 正文第一张嵌入图
+                if (!draft.cover_image_url) {
+                    const autoCover = this.findAutoCoverImage(f);
+                    if (autoCover) {
+                        const urlUtils = new UrlUtils(this.plugin.app);
+                        try {
+                            const displayUrl = await urlUtils.getDisplayUrl(autoCover);
+                            if (displayUrl) {
+                                Logger.debug("DraftManager", `Auto cover detected: ${autoCover.path}`);
+                                draft.cover_image_url = displayUrl;
+                                needSave = true;
+                            }
+                        } catch (e) {
+                            Logger.error("DraftManager", "Failed to read auto cover image", e);
                         }
                     }
                 }
