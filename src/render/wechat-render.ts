@@ -36,6 +36,7 @@ import { Summary } from "./marked-extensions/summary";
 import { Image } from "./marked-extensions/image";
 import { Highlight } from "./marked-extensions/highlight";
 import { getCodeBlockMapper, processCodeBlockLineNumbers, resetCodeBlockMapper } from "../utils/code-block-mapper";
+import { sha256Short } from "../utils/content-hash";
 import { normalizeRenderedDomPunctuation } from "../utils/cjk-punctuation";
 // import { ListItem } from './marked-extensions/list-item'
 
@@ -55,15 +56,6 @@ export class WechatRender {
 	private contentCache = new Map<string, { hash: string; html: string }>();
 	private tempContainer: HTMLElement | null = null;
 
-	private simpleHash(str: string): string {
-		let hash = 0;
-		for (let i = 0; i < str.length; i++) {
-			const char = str.charCodeAt(i);
-			hash = ((hash << 5) - hash) + char;
-			hash = hash & hash; // Convert to 32bit integer
-		}
-		return hash.toString(36);
-	}
 
 	delayParse = (path: string) => {
 		return new Promise<HTMLElement>((resolve, reject) => {
@@ -413,7 +405,9 @@ export class WechatRender {
 			}
 		}
 
-		const hash = this.simpleHash(content);
+		// [Fix] 缓存键用 SHA-256 且混入 path：32 位哈希在多文档场景碰撞概率不可忽略，
+		// 碰撞即把 A 文档的缓存 HTML 返回给 B 文档
+		const hash = await sha256Short(`${path} ${content}`);
 
 		// 1. Check Cache
 		if (this.contentCache.has(path)) {

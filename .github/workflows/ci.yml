@@ -11,18 +11,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm install
-      
+
       - name: Run ESLint
         run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npx tsc -noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build (production)
+        run: npm run build
+
+      # [回归防护] 构建产物完整性：styles.css 必须包含插件 UI 样式与文章样式两部分
+      # （此前 build-styles.js 重生成曾静默丢失 219 个 UI 类，见 ea9deed0）
+      - name: Verify styles.css completeness
+        run: node scripts/verify-styles.js
 
   # 微信《公众平台编辑器插件开发规范》内容结构验证：
   # 固定基准文章全管线导出 → 官方 CLI（wechatjs/verify-article-structure-spec）+ 补充条款静态检查

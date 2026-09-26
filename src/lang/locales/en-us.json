@@ -425,6 +425,14 @@
       "error-downloading-themes": "Error downloading themes.",
       "failed-to-fetch-themes-json-themesrespon": "Failed to fetch themes.json: {0}",
       "total-themes-length-themes-downloaded": "Total {0} themes downloaded."
+    },
+    "theme-gallery": {
+      "title": "Theme Gallery",
+      "search": "Search themes…",
+      "no-match": "No matching themes",
+      "applied": "Theme applied",
+      "applied-default": "Switched to default theme",
+      "open-tooltip": "Theme gallery (visual preview)"
     }
   },
   "wechat-api": {

@@ -425,6 +425,14 @@
       "error-downloading-themes": "下载主题出错。",
       "failed-to-fetch-themes-json-themesrespon": "获取themes.json失败：{0}",
       "total-themes-length-themes-downloaded": "共下载{0}个主题。"
+    },
+    "theme-gallery": {
+      "title": "主题画廊",
+      "search": "搜索主题…",
+      "no-match": "没有匹配的主题",
+      "applied": "已应用主题",
+      "applied-default": "已切换为默认主题",
+      "open-tooltip": "主题画廊（可视化预览选主题）"
     }
   },
   "wechat-api": {

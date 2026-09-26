@@ -39,6 +39,7 @@ import { MPArticleHeader } from "./mp-article-header";
 import { ThemeManager } from "../theme/theme-manager";
 import { ThemeSelector } from "../theme/theme-selector";
 import { setSyncLineEffect } from "../render/scroll-sync-extension";
+import { ThemeGalleryModal } from "../modals/theme-gallery-modal";
 import { SmartMPWebViewModal } from "./webview";
 import {
 	SyncPrecisionController,
@@ -433,6 +434,27 @@ export class PreviewPanel extends ItemView implements PreviewRender {
 		const themeSetting = new Setting(toolbar)
 			.addDropdown((dropdown: DropdownComponent) => {
 				void this.themeSelector.dropdown(dropdown);
+			})
+			.addExtraButton((button) => {
+				// [新增] 主题画廊：缩略卡片 + 搜索选主题
+				button
+					.setIcon("layout-grid")
+					.setTooltip($t("views.theme-gallery.open-tooltip") || "主题画廊")
+					.onClick(() => {
+						const sample = this.articleDiv.firstElementChild?.outerHTML
+							|| this.articleDiv.innerHTML
+							|| "<h1>标题样式预览</h1><p>这是一段用于预览主题效果的正文内容，包含<strong>加粗</strong>与<a href='#'>链接</a>。</p><blockquote>引用块样式</blockquote>";
+						const modal = new ThemeGalleryModal(
+							this.plugin,
+							sample,
+							this.plugin.settings.custom_theme || "",
+							() => {
+								// 应用后走快速刷新（不整篇重渲染）
+								void this.refreshTheme();
+							}
+						);
+						modal.open();
+					});
 			})
 			.setClass("smart-mp-toolbar-item");
 

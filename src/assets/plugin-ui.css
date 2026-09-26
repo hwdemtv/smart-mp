@@ -4242,3 +4242,54 @@ h6  标题
 .smart-mp-toolbar-item { border: none !important; padding: 0 !important; margin: 0 !important; }
 .smart-mp-list-frame { border: 1px solid var(--background-modifier-border); border-radius: 6px; margin: 1em 0; }
 .smart-mp-domtoimage-sandbox { position: absolute; left: -9999px; top: -9999px; visibility: hidden; }
+
+/* ============== 主题画廊 ============== */
+.smart-mp-theme-gallery .smart-mp-theme-gallery-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 12px;
+	margin-top: 8px;
+}
+.smart-mp-theme-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 8px;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 60px;
+}
+.smart-mp-theme-card:hover {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.smart-mp-theme-card.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+.smart-mp-theme-card-name {
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.smart-mp-theme-card-thumb {
+	border-radius: 4px;
+	overflow: hidden;
+	background: #fff;
+}
+.smart-mp-theme-card-thumb img {
+	width: 100%;
+	display: block;
+}
+.smart-mp-theme-card-content {
+	width: 630px;
+	transform-origin: top left;
+	font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+	font-size: 15px;
+	line-height: 1.75;
+	color: #333;
+}

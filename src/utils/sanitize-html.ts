@@ -50,6 +50,10 @@ const DANGEROUS_CSS_PATTERNS = [
     /vbscript\s*:/i,              // vbscript: in CSS
     /url\s*\(\s*['"]?\s*javascript:/i, // javascript: in url()
     /url\s*\(\s*['"]?\s*data:\s*text\/html/i, // data: HTML in url()
+    // 布局劫持：fixed 定位可全屏覆盖 Obsidian UI 实施点击劫持/钓鱼
+    /position\s*:\s*fixed/i,
+    // 巨幅元素覆盖正常界面
+    /(?:width|height)\s*:\s*(?:100000|[5-9]\d{4})px/i,
 ];
 
 /**

@@ -26,24 +26,24 @@ describe('CSSCache', () => {
             expect(key1).not.toBe(key2);
         });
 
-        it('should generate 8-character hex string', () => {
+        it('should generate 16-character hex string (64-bit, collision-resistant)', () => {
             const css = '.test { color: red; }';
             const key = CSSCache.generateKey(css);
 
-            expect(key).toHaveLength(8);
+            expect(key).toHaveLength(16);
             expect(/^[0-9a-f]+$/.test(key)).toBe(true);
         });
 
         it('should handle empty CSS', () => {
             const key = CSSCache.generateKey('');
-            expect(key).toHaveLength(8);
+            expect(key).toHaveLength(16);
         });
 
         it('should handle large CSS content', () => {
             const largeCss = '.test { color: red; }'.repeat(1000);
             const key = CSSCache.generateKey(largeCss);
 
-            expect(key).toHaveLength(8);
+            expect(key).toHaveLength(16);
             // Should still be consistent
             const key2 = CSSCache.generateKey(largeCss);
             expect(key).toBe(key2);

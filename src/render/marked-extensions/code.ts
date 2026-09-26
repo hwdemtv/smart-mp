@@ -17,6 +17,7 @@ import { Logger } from "src/utils/logger";
 import { Notice } from "obsidian";
 import { hljs } from "../hljs-languages";
 import { ResourceManager } from "src/assets/resource-manager";
+import { fastHash64 } from "../../utils/content-hash";
 
 export class CodeRenderer extends SmartMPMarkedExtension {
 	showLineNumber: boolean;
@@ -96,22 +97,15 @@ export class CodeRenderer extends SmartMPMarkedExtension {
 	static readonly MAX_CACHE_SIZE = 100;
 	static readonly CACHE_VERSION = "v14"; // v14: 全主题官方色板（从 hljs styles/*.css 精确提取）
 
-	private simpleHash(str: string): string {
-		let hash = 0;
-		// Limit hash calculation to first 1000 chars for speed, usually enough for cache collision avoidance in this context
-		for (let i = 0; i < Math.min(str.length, 1000); i++) {
-			const char = str.charCodeAt(i);
-			hash = ((hash << 5) - hash) + char;
-			hash = hash & hash; // Convert to 32bit integer
-		}
-		return hash.toString(36);
-	}
+
 
 	codeRenderer(code: string, infostring: string | undefined): string {
 		const lang = (infostring || '').match(/^\S*/)?.[0];
 		const theme = this.plugin.settings.codeTheme || 'github';
 		const showLineNumbers = this.plugin.settings.codeLineNumber === true;
-		const codeHash = this.simpleHash(code);
+		// [Fix] 64 位全量哈希：此前 32 位只取前 1000 字符，前缀相同的长代码块
+		// （如相同 import 头）会错误共享缓存键，渲染出别人的高亮
+		const codeHash = fastHash64(code);
 		const cacheKey = `${CodeRenderer.CACHE_VERSION}:${theme}:${lang || 'auto'}:${codeHash}:${showLineNumbers ? 'ln' : ''}`;
 
 		if (CodeRenderer.HighlightCache.has(cacheKey)) {

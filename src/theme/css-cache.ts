@@ -1,18 +1,14 @@
 import { loadAllCacheEntries, saveCacheEntry, deleteCacheEntry, clearAllCacheEntries, CachedEntry } from '../utils/indexeddb';
+import { fastHash64 } from '../utils/content-hash';
 import Logger from '../utils/logger';
 
 /**
- * Simple hash function for CSS content (djb2 variant)
- * Generates a short, collision-resistant hash for cache keys
+ * CSS content hash for cache keys
+ * [Fix] 64 位双车道哈希取代 32 位 djb2：主题数量多时 32 位碰撞会
+ * 把 A 主题的合并状态错误地命中到 B 主题（显示错主题且被"已应用"标记固化）
  */
 function hashCSS(css: string): string {
-    let hash = 5381;
-    for (let i = 0; i < css.length; i++) {
-        const char = css.charCodeAt(i);
-        hash = ((hash << 5) + hash) ^ char; // hash * 33 ^ char
-    }
-    // Convert to hex string, ensuring positive number
-    return (hash >>> 0).toString(16).padStart(8, '0');
+    return fastHash64(css);
 }
 
 /**

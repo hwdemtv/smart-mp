@@ -17,8 +17,6 @@ export type WeChatTheme = {
 
 }
 export class ThemeManager {
-	private cssMerger: CSSMerger | null = null;
-	private cachedCssKey: string | null = null;
 
 	async downloadThemes() {
 		const baseUrl = "https://raw.githubusercontent.com/hwdemtv/smart-mp/main/themes/";
@@ -96,8 +94,6 @@ export class ThemeManager {
 	}
 
 	public async reloadTheme() {
-		this.cssMerger = null;
-		this.cachedCssKey = null;
 		// Also clear cache for current content? 
 		// Best handled by caller (HotReloader) or here? 
 		// HotReloader knows WHICH file changed. ThemeManager gets 'customCSS' which is content.
@@ -293,65 +289,70 @@ export class ThemeManager {
 		// Use hash key instead of full CSS content for cache efficiency
 		const cssKey = CSSCache.generateKey(customCss);
 		const cache = CSSCache.getInstance();
-		
+
 		try {
+			// [Fix] 并发竞态消除：merger 改为局部变量，不再挂到共享实例字段上。
+			// 此前两次 applyTheme 交错时（预览渲染 vs 主题热切换），
+			// A 创建 merger 后挂起，B 换掉 this.cssMerger，A 恢复后用 B 的 merger
+			// 给 A 的 root 上样式，还把错误结果标记为"已应用"（SmartMPThemeKey）。
+			// 同 key 的重复初始化由 CSSCache（IndexedDB 级）兜底，代价可接受。
 			const cachedState = await cache.get(cssKey);
+			let merger = await this.loadMergerFor(cssKey, cachedState, customCss);
 
-			if (!this.cssMerger || this.cachedCssKey !== cssKey) {
-				this.cssMerger = new CSSMerger();
-
-				if (cachedState && cachedState.state) {
-					// Cache Hit: Restore state instantly
-					this.cssMerger.restoreState(cachedState.state);
-					Logger.debug('ThemeManager', 'Restored CSSMerger state from cache.');
-				} else {
-					// Cache Miss: Perform expensive init
-					await this.cssMerger.init(customCss);
-					// Cache the resulting state
-					const mergerState = this.cssMerger.getState();
-					await cache.set(cssKey, null as any, mergerState.vars, mergerState);
-					Logger.debug('ThemeManager', 'Initialized CSSMerger and saved to cache.');
-				}
-
-				this.cachedCssKey = cssKey;
+			// 优化：同一主题重复应用同一 DOM 直接跳过（在拿到 merger 后判定，
+			// 避免共享字段被并发修改影响）
+			if (htmlRoot.dataset.SmartMPThemeKey === cssKey) {
+				return htmlRoot;
 			}
-		} catch (mergerError) {
-			Logger.error('ThemeManager', 'CSS 合并初始化失败:', mergerError);
-			return htmlRoot; // Initialization failed, return unstyled
-		}
 
-		// Optimization: Skip DOM traversal if same theme already applied
-		if (htmlRoot.dataset.SmartMPThemeKey === cssKey) {
-			return htmlRoot;
-		}
+			// [NEW] Inject custom theme CSS as <style> tag for class selector rules
+			const themeStartMarker = '/* --- Theme CSS Start --- */';
+			const themeStartIndex = customCss.indexOf(themeStartMarker);
 
-		// [NEW] Inject custom theme CSS as <style> tag for class selector rules
-		const themeStartMarker = '/* --- Theme CSS Start --- */';
-		const themeStartIndex = customCss.indexOf(themeStartMarker);
-		
-		if (themeStartIndex !== -1) {
-			const customThemeCss = customCss.substring(themeStartIndex + themeStartMarker.length).trim();
-			if (customThemeCss) {
-				const existingStyleTag = htmlRoot.querySelector('style[data-smart-mp-custom-theme]');
-				if (existingStyleTag) {
-					existingStyleTag.remove();
+			if (themeStartIndex !== -1) {
+				const customThemeCss = customCss.substring(themeStartIndex + themeStartMarker.length).trim();
+				if (customThemeCss) {
+					const existingStyleTag = htmlRoot.querySelector('style[data-smart-mp-custom-theme]');
+					if (existingStyleTag) {
+						existingStyleTag.remove();
+					}
+					const styleTag = document.createElement('style');
+					styleTag.setAttribute('data-smart-mp-custom-theme', 'true');
+					styleTag.textContent = customThemeCss;
+					htmlRoot.prepend(styleTag);
+					Logger.debug('ThemeManager', 'Injected custom theme style tag.');
 				}
-				const styleTag = document.createElement('style');
-				styleTag.setAttribute('data-smart-mp-custom-theme', 'true');
-				styleTag.textContent = customThemeCss;
-				htmlRoot.prepend(styleTag);
-				Logger.debug('ThemeManager', 'Injected custom theme style tag.');
 			}
-		}
 
-		try {
-			const node = this.cssMerger.applyStyleToElement(htmlRoot);
+			const node = merger.applyStyleToElement(htmlRoot);
 			node.dataset.SmartMPThemeKey = cssKey;
 			return node;
-		} catch (applyError) {
-			Logger.error('ThemeManager', '应用样式到 DOM 失败:', applyError);
-			return htmlRoot;
+		} catch (mergerError) {
+			Logger.error('ThemeManager', 'CSS 合并/应用失败:', mergerError);
+			return htmlRoot; // Initialization failed, return unstyled
 		}
+	}
+
+	/**
+	 * [新增] 为指定 cssKey 获取（或构建）CSSMerger：缓存命中恢复状态，
+	 * 未命中完整初始化并回写缓存。结果为局部返回值，不存在共享字段竞态。
+	 */
+	private async loadMergerFor(
+		cssKey: string,
+		cachedState: Awaited<ReturnType<CSSCache['get']>>,
+		customCss: string
+	): Promise<CSSMerger> {
+		const merger = new CSSMerger();
+		if (cachedState && cachedState.state) {
+			merger.restoreState(cachedState.state);
+			Logger.debug('ThemeManager', 'Restored CSSMerger state from cache.');
+			return merger;
+		}
+		await merger.init(customCss);
+		const mergerState = merger.getState();
+		await CSSCache.getInstance().set(cssKey, null as any, mergerState.vars, mergerState);
+		Logger.debug('ThemeManager', 'Initialized CSSMerger and saved to cache.');
+		return merger;
 	}
 
 	public async saveTheme(name: string, css: string): Promise<void> {
